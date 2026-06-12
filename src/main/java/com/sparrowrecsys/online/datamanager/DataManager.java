@@ -265,24 +265,9 @@ public class DataManager {
         if (null != genre){
             // 从类型倒排索引中获取该类型的所有电影
             List<Movie> movies = new ArrayList<>(this.genreReverseIndexMap.get(genre));
-            
-            // 根据sortBy参数进行排序
-            switch (sortBy){
-                // 按平均评分降序排序（首页默认）
-                // m2.getAverageRating() - m1.getAverageRating() 实现降序
-                case "rating":
-                    movies.sort((m1, m2) -> Double.compare(m2.getAverageRating(), m1.getAverageRating()));
-                    break;
-                // 按上映年份降序排序
-                case "releaseYear": 
-                    movies.sort((m1, m2) -> Integer.compare(m2.getReleaseYear(), m1.getReleaseYear()));
-                    break;
-                // 按热度降序排序（热度 = 被评价次数）
-                case "popularity":
-                    movies.sort((m1, m2) -> Integer.compare(m2.getRatingNumber(), m1.getRatingNumber()));
-                    break;
-                default:
-            }
+
+            // 调用公共排序方法
+            sortMovies(movies, sortBy);
 
             // 如果电影数量超过size，截取前size个返回
             if (movies.size() > size){
@@ -293,15 +278,37 @@ public class DataManager {
         return null;
     }
 
+    /**
+     * 根据指定的排序方式对电影列表进行排序
+     * @param movies 待排序的电影列表（会被原地修改）
+     * @param sortBy 排序方式：
+     *               - "rating": 按平均评分降序
+     *               - "releaseYear": 按上映年份降序
+     *               - "popularity": 按热度（被评价次数）降序
+     */
+    private void sortMovies(List<Movie> movies, String sortBy){
+        switch (sortBy){
+            // 按平均评分降序排序
+            case "rating":
+                movies.sort((m1, m2) -> Double.compare(m2.getAverageRating(), m1.getAverageRating()));
+                break;
+            // 按上映年份降序排序
+            case "releaseYear":
+                movies.sort((m1, m2) -> Integer.compare(m2.getReleaseYear(), m1.getReleaseYear()));
+                break;
+            // 按热度降序排序（热度 = 被评价次数）
+            case "popularity":
+                movies.sort((m1, m2) -> Integer.compare(m2.getRatingNumber(), m1.getRatingNumber()));
+                break;
+            default:
+        }
+    }
+
     //get top N movies order by sortBy method
     public List<Movie> getMovies(int size, String sortBy){
             List<Movie> movies = new ArrayList<>(movieMap.values());
-            switch (sortBy){
-                case "rating":movies.sort((m1, m2) -> Double.compare(m2.getAverageRating(), m1.getAverageRating()));break;
-                case "releaseYear": movies.sort((m1, m2) -> Integer.compare(m2.getReleaseYear(), m1.getReleaseYear()));break;
-                case "popularity":movies.sort((m1, m2) -> Integer.compare(m2.getRatingNumber(), m1.getRatingNumber()));break;
-                default:
-            }
+            // 调用公共排序方法
+            sortMovies(movies, sortBy);
 
             if (movies.size() > size){
                 return movies.subList(0, size);
