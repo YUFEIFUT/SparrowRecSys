@@ -112,8 +112,9 @@ public class Movie {
     }
 
     /**
-     * 将新评分插入到 topRatings 列表中的正确位置，保持降序排列
+     * 将新评分插入到 topRatings 列表中的正确位置，保持升序排列
      * topRatings 用于记录对该电影评分最高的前N个用户（默认TOP_RATING_SIZE=10）
+     * 列表升序排列，超过容量时删除最小的（第一个元素），保留最大的10个
      * 此方法在电影详情页显示"Who likes the movie most"时使用
      * 
      * @param rating 用户对该电影的评分对象
@@ -123,11 +124,11 @@ public class Movie {
         if (this.topRatings.isEmpty()){
             this.topRatings.add(rating);
         }else{
-            // 找到合适的插入位置（按评分降序排列）
+            // 找到合适的插入位置（按评分升序排列）
             int index = 0;
             for (Rating topRating : this.topRatings){
-                // 找到第一个评分 >= 当前评分的位置，插入到其前面
-                if (topRating.getScore() >= rating.getScore()){
+                // 找到第一个评分 >= 当前评分的位置，插入到其前面（保持升序）
+                if (topRating.getScore() >= rating.getScore()) {
                     break;
                 }
                 index++;
@@ -135,7 +136,7 @@ public class Movie {
             // 插入到指定位置
             topRatings.add(index, rating);
             
-            // 如果超过最大容量，移除评分最低的（列表第一个元素）
+            // 如果超过最大容量，移除评分最低的（列表第一个元素，因为是升序排列）
             if (topRatings.size() > TOP_RATING_SIZE) {
                 topRatings.remove(0);
             }
