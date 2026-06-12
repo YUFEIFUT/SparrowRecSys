@@ -97,9 +97,26 @@ function addRowFrameWithoutLink(pageId, rowName, rowId, baseUrl) {
      $(pageId).prepend(divstr);
 };
 
+/**
+ * 添加指定类型的电影行到页面
+ * 这是首页电影列表加载的核心函数，负责获取某一类型的电影并按评分排序
+ * @param {string} pageId - 页面容器ID
+ * @param {string} rowName - 电影类型名称（如Action、Romance）
+ * @param {string} rowId - 行容器ID，用于动态填充电影卡片
+ * @param {number} size - 返回的电影数量
+ * @param {string} baseUrl - 服务基础URL
+ */
 function addGenreRow(pageId, rowName, rowId, size, baseUrl) {
+    // 创建电影行的HTML框架（标题、滚动容器等）
     addRowFrame(pageId, rowName, rowId, baseUrl);
+    
+    // 发起AJAX请求获取推荐电影
+    // 关键参数说明：
+    // - genre: 指定电影类型
+    // - size: 返回数量
+    // - sortby=rating: 按评分排序（核心排序参数！）
     $.getJSON(baseUrl + "getrecommendation?genre="+rowName+"&size="+size+"&sortby=rating", function(result){
+        // 遍历返回的电影列表，逐个渲染到页面
         $.each(result, function(i, movie){
           appendMovie2Row(rowId, movie.title, movie.movieId, movie.releaseYear, movie.averageRating.toPrecision(2), movie.ratingNumber, movie.genres,baseUrl);
         });

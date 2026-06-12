@@ -107,14 +107,29 @@
 
 <script type="text/javascript">
 
+// 获取当前页面的基础URL，用于拼接API请求地址
 var getUrl = window.location;
-var baseUrl = getUrl .protocol + "//" + getUrl.host + "/"
+var baseUrl = getUrl.protocol + "//" + getUrl.host + "/";
 
+// 首页初始化：加载6个不同类型的电影列表
+// 每个类型调用 addGenreRow() 函数，参数说明：
+// 参数1: 页面容器选择器 (#recPage)
+// 参数2: 电影类型名称（用于显示和API查询）
+// 参数3: 该类型电影的容器ID（用于动态填充）
+// 参数4: 返回的电影数量（8部）
+// 参数5: 服务基础URL
+
+// Action（动作片）类型 - 默认按评分排序
 addGenreRow('#recPage', 'Action', 'action-collection', 8, baseUrl);
+// Romance（爱情片）类型 - 默认按评分排序
 addGenreRow('#recPage', 'Romance', 'romance-collection', 8, baseUrl);
+// Thriller（惊悚片）类型 - 默认按评分排序
 addGenreRow('#recPage', 'Thriller', 'thriller-collection', 8, baseUrl);
+// Comedy（喜剧片）类型 - 默认按评分排序
 addGenreRow('#recPage', 'Comedy', 'comedy-collection', 8, baseUrl);
+// Drama（剧情片）类型 - 默认按评分排序
 addGenreRow('#recPage', 'Drama', 'drama-collection', 8, baseUrl);
+// Adventure（冒险片）类型 - 默认按评分排序
 addGenreRow('#recPage', 'Adventure', 'adventure-collection', 8, baseUrl);
 
 </script>

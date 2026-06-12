@@ -90,25 +90,52 @@ public class Movie {
         return ratings;
     }
 
+    /**
+     * 添加用户评分并动态更新平均评分
+     * 这是计算"历史用户平均打分"的核心方法，采用增量计算方式
+     * 
+     * @param rating 用户对该电影的评分对象
+     */
     public void addRating(Rating rating) {
-        averageRating = (averageRating * ratingNumber + rating.getScore()) / (ratingNumber+1);
+        // 增量计算平均评分：(当前平均分 * 已有评分数 + 新评分) / (已有评分数 + 1)
+        // 这种方式避免了每次都重新遍历所有评分，提高计算效率
+        averageRating = (averageRating * ratingNumber + rating.getScore()) / (ratingNumber + 1);
+        
+        // 评分数量加1
         ratingNumber++;
+        
+        // 将评分加入评分列表
         this.ratings.add(rating);
+        
+        // 维护Top评分列表（用于展示喜欢该电影的用户）
         addTopRating(rating);
     }
 
+    /**
+     * 将新评分插入到 topRatings 列表中的正确位置，保持降序排列
+     * topRatings 用于记录对该电影评分最高的前N个用户（默认TOP_RATING_SIZE=10）
+     * 此方法在电影详情页显示"Who likes the movie most"时使用
+     * 
+     * @param rating 用户对该电影的评分对象
+     */
     public void addTopRating(Rating rating){
+        // 如果列表为空，直接添加
         if (this.topRatings.isEmpty()){
             this.topRatings.add(rating);
         }else{
+            // 找到合适的插入位置（按评分降序排列）
             int index = 0;
             for (Rating topRating : this.topRatings){
+                // 找到第一个评分 >= 当前评分的位置，插入到其前面
                 if (topRating.getScore() >= rating.getScore()){
                     break;
                 }
-                index ++;
+                index++;
             }
+            // 插入到指定位置
             topRatings.add(index, rating);
+            
+            // 如果超过最大容量，移除评分最低的（列表第一个元素）
             if (topRatings.size() > TOP_RATING_SIZE) {
                 topRatings.remove(0);
             }

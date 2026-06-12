@@ -249,16 +249,37 @@ public class DataManager {
         this.genreReverseIndexMap.get(genre).add(movie);
     }
 
-    //get movies by genre, and order the movies by sortBy method
+    /**
+     * 根据电影类型获取电影列表，并按指定方式排序
+     * 这是首页电影列表排序的核心方法，实现了按历史用户平均评分排序的逻辑
+     * 
+     * @param genre   电影类型（如Action、Romance）
+     * @param size    返回的电影数量
+     * @param sortBy  排序方式：
+     *                - "rating": 按平均评分降序（首页默认使用）
+     *                - "releaseYear": 按上映年份降序
+     * @return 排序后的电影列表，最多返回size个
+     */
     public List<Movie> getMoviesByGenre(String genre, int size, String sortBy){
         if (null != genre){
+            // 从类型倒排索引中获取该类型的所有电影
             List<Movie> movies = new ArrayList<>(this.genreReverseIndexMap.get(genre));
+            
+            // 根据sortBy参数进行排序
             switch (sortBy){
-                case "rating":movies.sort((m1, m2) -> Double.compare(m2.getAverageRating(), m1.getAverageRating()));break;
-                case "releaseYear": movies.sort((m1, m2) -> Integer.compare(m2.getReleaseYear(), m1.getReleaseYear()));break;
+                // 按平均评分降序排序（首页默认）
+                // m2.getAverageRating() - m1.getAverageRating() 实现降序
+                case "rating":
+                    movies.sort((m1, m2) -> Double.compare(m2.getAverageRating(), m1.getAverageRating()));
+                    break;
+                // 按上映年份降序排序
+                case "releaseYear": 
+                    movies.sort((m1, m2) -> Integer.compare(m2.getReleaseYear(), m1.getReleaseYear()));
+                    break;
                 default:
             }
 
+            // 如果电影数量超过size，截取前size个返回
             if (movies.size() > size){
                 return movies.subList(0, size);
             }
