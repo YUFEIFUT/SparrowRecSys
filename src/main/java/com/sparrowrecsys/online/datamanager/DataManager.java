@@ -258,6 +258,7 @@ public class DataManager {
      * @param sortBy  排序方式：
      *                - "rating": 按平均评分降序（首页默认使用）
      *                - "releaseYear": 按上映年份降序
+     *                - "popularity": 按热度降序（即被评价次数）
      * @return 排序后的电影列表，最多返回size个
      */
     public List<Movie> getMoviesByGenre(String genre, int size, String sortBy){
@@ -275,6 +276,10 @@ public class DataManager {
                 // 按上映年份降序排序
                 case "releaseYear": 
                     movies.sort((m1, m2) -> Integer.compare(m2.getReleaseYear(), m1.getReleaseYear()));
+                    break;
+                // 按热度降序排序（热度 = 被评价次数）
+                case "popularity":
+                    movies.sort((m1, m2) -> Integer.compare(m2.getRatingNumber(), m1.getRatingNumber()));
                     break;
                 default:
             }

@@ -114,8 +114,8 @@ function addGenreRow(pageId, rowName, rowId, size, baseUrl) {
     // 关键参数说明：
     // - genre: 指定电影类型
     // - size: 返回数量
-    // - sortby=rating: 按评分排序（核心排序参数！）
-    $.getJSON(baseUrl + "getrecommendation?genre="+rowName+"&size="+size+"&sortby=rating", function(result){
+    // - sortby=popularity: 按热度排序（热度 = 被评价次数）
+    $.getJSON(baseUrl + "getrecommendation?genre="+rowName+"&size="+size+"&sortby=popularity", function(result){
         // 遍历返回的电影列表，逐个渲染到页面
         $.each(result, function(i, movie){
           appendMovie2Row(rowId, movie.title, movie.movieId, movie.releaseYear, movie.averageRating.toPrecision(2), movie.ratingNumber, movie.genres,baseUrl);
