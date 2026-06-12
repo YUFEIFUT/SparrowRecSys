@@ -1,0 +1,972 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <!--<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>-->
+    <title>模型实战准备（二）-模型特征、训练样本的处理</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <style>
+        html {
+            color: #333;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            text-rendering: optimizelegibility;
+            font-family: Helvetica Neue, PingFang SC, Verdana, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif
+        }
+
+        html.borderbox *,
+        html.borderbox :after,
+        html.borderbox :before {
+            box-sizing: border-box
+        }
+
+        article,
+        aside,
+        blockquote,
+        body,
+        button,
+        code,
+        dd,
+        details,
+        dl,
+        dt,
+        fieldset,
+        figcaption,
+        figure,
+        footer,
+        form,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        header,
+        hr,
+        input,
+        legend,
+        li,
+        menu,
+        nav,
+        ol,
+        p,
+        pre,
+        section,
+        td,
+        textarea,
+        th,
+        ul {
+            margin: 0;
+            padding: 0
+        }
+
+        article,
+        aside,
+        details,
+        figcaption,
+        figure,
+        footer,
+        header,
+        menu,
+        nav,
+        section {
+            display: block
+        }
+
+        audio,
+        canvas,
+        video {
+            display: inline-block
+        }
+
+        body,
+        button,
+        input,
+        select,
+        textarea {
+            font: 300 1em/1.8 PingFang SC, Lantinghei SC, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, Helvetica, sans-serif
+        }
+
+        button::-moz-focus-inner,
+        input::-moz-focus-inner {
+            padding: 0;
+            border: 0
+        }
+
+        table {
+            border-collapse: collapse;
+            border-spacing: 0
+        }
+
+        fieldset,
+        img {
+            border: 0
+        }
+
+        blockquote {
+            position: relative;
+            color: #999;
+            font-weight: 400;
+            border-left: 1px solid #1abc9c;
+            padding-left: 1em;
+            margin: 1em 3em 1em 2em
+        }
+
+        @media only screen and (max-width: 640px) {
+            blockquote {
+                margin: 1em 0
+            }
+        }
+
+        abbr,
+        acronym {
+            border-bottom: 1px dotted;
+            font-variant: normal
+        }
+
+        abbr {
+            cursor: help
+        }
+
+        del {
+            text-decoration: line-through
+        }
+
+        address,
+        caption,
+        cite,
+        code,
+        dfn,
+        em,
+        th,
+        var {
+            font-style: normal;
+            font-weight: 400
+        }
+
+        ol,
+        ul {
+            list-style: none
+        }
+
+        caption,
+        th {
+            text-align: left
+        }
+
+        q:after,
+        q:before {
+            content: ""
+        }
+
+        sub,
+        sup {
+            font-size: 75%;
+            line-height: 0;
+            position: relative
+        }
+
+        :root sub,
+        :root sup {
+            vertical-align: baseline
+        }
+
+        sup {
+            top: -.5em
+        }
+
+        sub {
+            bottom: -.25em
+        }
+
+        a {
+            color: #1abc9c
+        }
+
+        a:hover {
+            text-decoration: underline
+        }
+
+        .typo a {
+            border-bottom: 1px solid #1abc9c
+        }
+
+        .typo a:hover {
+            border-bottom-color: #555;
+            color: #555
+        }
+
+        .typo a:hover,
+        a,
+        ins {
+            text-decoration: none
+        }
+
+        .typo-u,
+        u {
+            text-decoration: underline
+        }
+
+        mark {
+            background: #fffdd1;
+            border-bottom: 1px solid #ffedce;
+            padding: 2px;
+            margin: 0 5px
+        }
+
+        code,
+        pre,
+        pre tt {
+            font-family: Courier, Courier New, monospace
+        }
+
+        pre {
+            background: hsla(0, 0%, 97%, .7);
+            border: 1px solid #ddd;
+            padding: 1em 1.5em;
+            display: block;
+            -webkit-overflow-scrolling: touch
+        }
+
+        hr {
+            border: none;
+            border-bottom: 1px solid #cfcfcf;
+            margin-bottom: .8em;
+            height: 10px
+        }
+
+        .typo-small,
+        figcaption,
+        small {
+            font-size: .9em;
+            color: #888
+        }
+
+        b,
+        strong {
+            font-weight: 700;
+            color: #000
+        }
+
+        [draggable] {
+            cursor: move
+        }
+
+        .clearfix:after,
+        .clearfix:before {
+            content: "";
+            display: table
+        }
+
+        .clearfix:after {
+            clear: both
+        }
+
+        .clearfix {
+            zoom: 1
+        }
+
+        .textwrap,
+        .textwrap td,
+        .textwrap th {
+            word-wrap: break-word;
+            word-break: break-all
+        }
+
+        .textwrap-table {
+            table-layout: fixed
+        }
+
+        .serif {
+            font-family: Palatino, Optima, Georgia, serif
+        }
+
+        .typo-dl,
+        .typo-form,
+        .typo-hr,
+        .typo-ol,
+        .typo-p,
+        .typo-pre,
+        .typo-table,
+        .typo-ul,
+        .typo dl,
+        .typo form,
+        .typo hr,
+        .typo ol,
+        .typo p,
+        .typo pre,
+        .typo table,
+        .typo ul,
+        blockquote {
+            margin-bottom: 1rem
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: PingFang SC, Helvetica Neue, Verdana, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif;
+            color: #000;
+            line-height: 1.35
+        }
+
+        .typo-h1,
+        .typo-h2,
+        .typo-h3,
+        .typo-h4,
+        .typo-h5,
+        .typo-h6,
+        .typo h1,
+        .typo h2,
+        .typo h3,
+        .typo h4,
+        .typo h5,
+        .typo h6 {
+            margin-top: 1.2em;
+            margin-bottom: .6em;
+            line-height: 1.35
+        }
+
+        .typo-h1,
+        .typo h1 {
+            font-size: 2em
+        }
+
+        .typo-h2,
+        .typo h2 {
+            font-size: 1.8em
+        }
+
+        .typo-h3,
+        .typo h3 {
+            font-size: 1.6em
+        }
+
+        .typo-h4,
+        .typo h4 {
+            font-size: 1.4em
+        }
+
+        .typo-h5,
+        .typo-h6,
+        .typo h5,
+        .typo h6 {
+            font-size: 1.2em
+        }
+
+        .typo-ul,
+        .typo ul {
+            margin-left: 1.3em;
+            list-style: disc
+        }
+
+        .typo-ol,
+        .typo ol {
+            list-style: decimal;
+            margin-left: 1.9em
+        }
+
+        .typo-ol ol,
+        .typo-ol ul,
+        .typo-ul ol,
+        .typo-ul ul,
+        .typo li ol,
+        .typo li ul {
+            margin-bottom: .8em;
+            margin-left: 2em
+        }
+
+        .typo-ol ul,
+        .typo-ul ul,
+        .typo li ul {
+            list-style: circle
+        }
+
+        .typo-table td,
+        .typo-table th,
+        .typo table caption,
+        .typo table td,
+        .typo table th {
+            border: 1px solid #ddd;
+            padding: .5em 1em;
+            color: #666
+        }
+
+        .typo-table th,
+        .typo table th {
+            background: #fbfbfb
+        }
+
+        .typo-table thead th,
+        .typo table thead th {
+            background: hsla(0, 0%, 95%, .7)
+        }
+
+        .typo table caption {
+            border-bottom: none
+        }
+
+        .typo-input,
+        .typo-textarea {
+            -webkit-appearance: none;
+            border-radius: 0
+        }
+
+        .typo-em,
+        .typo em,
+        caption,
+        legend {
+            color: #000;
+            font-weight: inherit
+        }
+
+        .typo-em {
+            position: relative
+        }
+
+        .typo-em:after {
+            position: absolute;
+            top: .65em;
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            content: "\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB"
+        }
+
+        .typo img {
+            max-width: 100%
+        }
+
+        .common-content {
+            font-weight: 400;
+            color: #353535;
+            line-height: 1.75rem;
+            white-space: normal;
+            word-break: normal;
+            font-size: 1rem
+        }
+
+        .common-content img {
+            display: block;
+            max-width: 100%;
+            background-color: #eee
+        }
+
+        .common-content audio,
+        .common-content video {
+            width: 100%;
+            background-color: #eee
+        }
+
+        .common-content center,
+        .common-content font {
+            margin-top: 1rem;
+            display: inline-block
+        }
+
+        .common-content center {
+            width: 100%
+        }
+
+        .common-content pre {
+            margin-top: 1rem;
+            padding-left: 0;
+            padding-right: 0;
+            position: relative;
+            overflow: hidden
+        }
+
+        .common-content pre code {
+            font-size: .8rem;
+            font-family: Consolas, Liberation Mono, Menlo, monospace, Courier;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            overflow-x: auto
+        }
+
+        .common-content hr {
+            border: none;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #f5f5f5;
+            height: 1px;
+            background: none
+        }
+
+        .common-content b,
+        .common-content h1,
+        .common-content h2,
+        .common-content h3,
+        .common-content h4,
+        .common-content h5,
+        .common-content strong {
+            font-weight: 700
+        }
+
+        .common-content h1,
+        .common-content h2 {
+            font-size: 1.125rem;
+            margin-bottom: .45rem
+        }
+
+        .common-content h3,
+        .common-content h4,
+        .common-content h5 {
+            font-size: 1rem;
+            margin-bottom: .45rem
+        }
+
+        .common-content p {
+            font-weight: 400;
+            color: #353535;
+            margin-top: .15rem
+        }
+
+        .common-content .orange {
+            color: #ff5a05
+        }
+
+        .common-content .reference {
+            font-size: 1rem;
+            color: #888
+        }
+
+        .custom-rich-content h1 {
+            margin-top: 0;
+            font-weight: 400;
+            font-size: 15.25px;
+            border-bottom: 1px solid #eee;
+            line-height: 2.8
+        }
+
+        .custom-rich-content li,
+        .custom-rich-content p {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.6
+        }
+
+        table.hljs-ln {
+            margin-bottom: 0;
+            border-spacing: 0;
+            border-collapse: collapse
+        }
+
+        table.hljs-ln,
+        table.hljs-ln tbody,
+        table.hljs-ln td,
+        table.hljs-ln tr {
+            box-sizing: border-box
+        }
+
+        table.hljs-ln td {
+            padding: 0;
+            border: 0
+        }
+
+        table.hljs-ln td.hljs-ln-numbers {
+            min-width: 15px;
+            color: rgba(27, 31, 35, .3);
+            text-align: right;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none
+        }
+
+        table.hljs-ln td.hljs-ln-code,
+        table.hljs-ln td.hljs-ln-numbers {
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, Courier, monospace;
+            font-size: 12px;
+            line-height: 20px;
+            vertical-align: top
+        }
+
+        table.hljs-ln td.hljs-ln-code {
+            position: relative;
+            padding-right: 10px;
+            padding-left: 10px;
+            overflow: visible;
+            color: #24292e;
+            word-wrap: normal;
+            white-space: pre
+        }
+
+        video::-webkit-media-controls {
+            overflow: hidden !important
+        }
+
+        video::-webkit-media-controls-enclosure {
+            width: calc(100% + 32px);
+            margin-left: auto
+        }
+
+        ._29HP61GA_0 {
+            max-width:800px;
+            margin:0 auto;
+            margin-bottom: 20px;
+            font-weight: 400;
+            color: #353535;
+            line-height: 1.76;
+            white-space: normal;
+            word-break: normal;
+            font-size: 17px;
+            -webkit-transition: background-color .3s ease;
+            transition: background-color .3s ease
+        }
+
+        ._29HP61GA_0 .MathJax_Display {
+            overflow: auto
+        }
+
+        ._29HP61GA_0 .poster {
+            position: fixed;
+            left: -10000px;
+            top: -10000px;
+            overflow: hidden;
+            padding: 1rem;
+            background: #ececec
+        }
+
+        ._29HP61GA_0 .richcontent-pre-copy {
+            font-size: 13px;
+            color: #888;
+            position: absolute;
+            right: 1em;
+            top: .5em;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none
+        }
+
+        ._29HP61GA_0 .richcontent-pre-copy .iconfont {
+            font-size: 12px;
+            margin-right: .2em
+        }
+
+        ._29HP61GA_0 a {
+            color: #fa8919;
+            border-bottom: 1px solid #fa8919
+        }
+
+        ._29HP61GA_0 img {
+            display: block;
+            max-width: 100%;
+            position: relative;
+            left: 50%;
+            -webkit-transform: translateX(-50%);
+            transform: translateX(-50%);
+            background-color: #eee;
+            vertical-align: top;
+            border-radius: 0
+        }
+
+        ._29HP61GA_0 audio,
+        ._29HP61GA_0 video {
+            width: 100%;
+            background-color: #eee
+        }
+
+        ._29HP61GA_0 pre {
+            margin-top: 16px;
+            padding: 34px 0 0;
+            margin-bottom: 30px;
+            position: relative;
+            border-radius: 6px;
+            background: rgba(246, 247, 251, .749);
+            border: 0
+        }
+
+        ._29HP61GA_0 pre code {
+            font-size: 12px;
+            font-family: Consolas, Liberation Mono, Menlo, monospace, Courier;
+            display: block;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            margin-left: 16px;
+            margin-right: 16px;
+            overflow-x: scroll
+        }
+
+        ._29HP61GA_0 pre code:after {
+            content: "";
+            height: 30px;
+            width: 100%;
+            display: block
+        }
+
+        ._29HP61GA_0 hr {
+            border: none;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #f5f5f5;
+            height: 1px;
+            background: none
+        }
+
+        ._29HP61GA_0 h1,
+        ._29HP61GA_0 h2,
+        ._29HP61GA_0 h3,
+        ._29HP61GA_0 h4,
+        ._29HP61GA_0 h5 {
+            margin-bottom: 20px;
+            margin-top: 0;
+            font-weight: 700
+        }
+
+        ._29HP61GA_0 b,
+        ._29HP61GA_0 strong {
+            font-weight: 700
+        }
+
+        ._29HP61GA_0 h1 {
+            font-size: 21px
+        }
+
+        ._29HP61GA_0 h2 {
+            font-size: 20px
+        }
+
+        ._29HP61GA_0 h3 {
+            font-size: 19px
+        }
+
+        ._29HP61GA_0 h4 {
+            font-size: 18px
+        }
+
+        ._29HP61GA_0 h5 {
+            font-size: 17px
+        }
+
+        ._29HP61GA_0 center,
+        ._29HP61GA_0 p {
+            font-weight: 400;
+            color: #353535;
+            margin-top: 0;
+            margin-bottom: 30px;
+            word-break: break-word
+        }
+
+        ._29HP61GA_0 center {
+            text-align: center
+        }
+
+        ._29HP61GA_0 blockquote {
+            margin-top: 0;
+            margin-bottom: 34px;
+            border-left: 3px solid #e8e8e8;
+            padding-left: 17px;
+            color: #353535
+        }
+
+        ._29HP61GA_0 blockquote p {
+            margin-top: 0;
+            margin-bottom: 0
+        }
+
+        ._29HP61GA_0 ol,
+        ._29HP61GA_0 ul {
+            margin-bottom: 30px
+        }
+
+        ._29HP61GA_0 ol p,
+        ._29HP61GA_0 ul p {
+            margin-top: 0;
+            margin-bottom: 0
+        }
+
+        ._29HP61GA_0 ol {
+            list-style: decimal;
+            margin-left: 20px
+        }
+
+        ._29HP61GA_0 ul li {
+            padding-left: 17px;
+            position: relative;
+            margin-bottom: 10px
+        }
+
+        ._29HP61GA_0 ul li:after {
+            content: "";
+            height: 6px;
+            width: 6px;
+            border-radius: 50%;
+            background: #353535;
+            position: absolute;
+            top: 10px;
+            left: 0
+        }
+
+        ._29HP61GA_0 .orange {
+            color: #fa8919
+        }
+
+        ._29HP61GA_0 .reference {
+            color: #888
+        }
+
+        ._29HP61GA_0 .m-right {
+            text-align: right
+        }
+
+        ._29HP61GA_0 .m-center {
+            text-align: center;
+            display: block
+        }
+
+        ._29HP61GA_0 .m-gray {
+            color: #888
+        }
+
+        ._29HP61GA_0 .m-small {
+            font-size: 15px
+        }
+
+        ._29HP61GA_0 table.hljs-ln {
+            margin-bottom: 0;
+            border-spacing: 0;
+            border-collapse: collapse
+        }
+
+        ._29HP61GA_0 table.hljs-ln,
+        ._29HP61GA_0 table.hljs-ln tbody,
+        ._29HP61GA_0 table.hljs-ln td,
+        ._29HP61GA_0 table.hljs-ln tr {
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box
+        }
+
+        ._29HP61GA_0 table.hljs-ln td {
+            padding: 0;
+            border: 0
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-numbers {
+            min-width: 15px;
+            font-size: 12px;
+            color: rgba(27, 31, 35, .3);
+            text-align: right;
+            white-space: nowrap;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-code,
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-numbers {
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, Courier, monospace;
+            line-height: 20px;
+            vertical-align: top
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-code {
+            position: relative;
+            padding-right: 10px;
+            padding-left: 10px;
+            overflow: visible;
+            font-size: 13px;
+            color: #666;
+            word-wrap: normal;
+            white-space: pre
+        }
+
+    </style>
+</head>
+<body>
+<div class="_29HP61GA_0">
+<h1>模型实战准备（二）-模型特征、训练样本的处理</h1>
+<p>你好，我是王喆，欢迎来到模型实战准备第二课。</p><p>这节课，我们来讲实战中所需的模型特征和训练样本的处理。为什么我们要专门花一节课的时间讲这些呢？因为在推荐模型篇中，我们的重点在于学习模型结构的原理和实现，而要实现并且训练这些模型，我们就必须先解决训练所需的样本和特征的处理的问题。</p><p>这节课我们先来把模型实战的准备工作做完。具体来说，今天，我会带你用Spark来处理深度学习模型训练所需的样本和特征，再把特征存储到Redis中，供模型线上服务时调用。</p><h2>为什么选择Spark为TensorFlow处理特征和样本？</h2><p>这个时候，你可能会有疑问，我们的深度学习模型将在TensorFlow上进行训练，为什么要用Spark处理样本？可不可以直接让TensorFlow解决所有的事情呢？这是一个好问题，在我们学习具体的技术之前，先解决这个架构上的疑问是很有必要的。</p><p>在业界的实践中，我们需要记住一个原则，就是<strong>让合适的平台做合适的事情</strong>。比如说，数据处理是Spark的专长，流处理是Flink的专长，构建和训练模型是TensorFlow的专长。在使用这些平台的时候，我们最好能够用其所长，避其所短。这也是一个业界应用拥有那么多个模块、平台的原因。</p><!-- [[[read_end]]] --><p>你可能想说，TensorFlow也可以处理数据啊。没错，但是它并不擅长分布式的并行数据处理，在并行数据处理能力上，TensorFlow很难和动辄拥有几百上千个节点的Spark相比。那在面对海量数据的时候，如果我们能够利用Spark进行数据清洗、数据预处理、特征提取的话，最好的方案就是让Spark发挥它的长处，承担“繁重”但相对简单的样本和特征处理的工作，为TensorFlow减轻负担。</p><h2>物品和用户特征都有哪些？</h2><p>既然我们决定用Spark进行样本和特征处理，那下一个问题又接踵而来，我们能从MovieLens的数据集中抽取出什么特征呢？这就要用到我们在特征工程篇中学到的，关于推荐系统特征以及相关特征处理方法的知识，如果你记得还不够扎实，我建议你可以先回去复习一下。</p><p>MovieLens数据集中，可供我们提取特征的数据表有两个，分别是movies表和ratings表，它们的数据格式如下：</p><p><img src="https://static001.geekbang.org/resource/image/87/b8/87cd18e09550522e85ef81a8f30869b8.jpg" alt="" title="图1 电影基本数据movies表（左），用户评分数据ratings表（右）"></p><p>接下来，我们按照“物品特征”“用户特征”“场景特征”，这三大类推荐系统特征的顺序，来看一看从这两张表中能提取出什么样的特征。</p><p>“物品特征”在我们的项目里指的就是电影特征了，从movies表中我们可以提取出电影的基本信息，包括movieId、title（电影名）、releaseYear（发布年份）和genre（风格类型）。除此之外，我们还可以利用ratings表为每个电影提取出一些统计类的特征，包括电影的平均评分、评分标准差等等。</p><p>接下来是“用户特征”，乍一看，从movies和ratings表中，除了userId，我们好像找不到其他直接可用的用户信息了。这个时候，千万不要忘了我们之前提到过的，用户特征最重要的部分就是历史行为特征，所以，从用户的评分历史中，我们其实可以提取出非常多有价值的特征。比如，我们可以根据ratings表的历史联合movies表的电影信息，提取出用户统计类特征，它包括用户评分总数、用户平均评分、用户评分标准差、用户好评电影的发布年份均值、用户好评电影的发布年份标准差、用户最喜欢的电影风格，以及用户好评电影ID等等。</p><p>最后是“场景特征”，我们可用的场景特征就一个，那就是评分的时间戳，我们把它作为代表时间场景的特征放到特征工程中。</p><p>好了，到这儿，我们就梳理完了所有可用的特征，我把它们总结在了下面的表格里，供你参考。</p><p><img src="https://static001.geekbang.org/resource/image/ae/d5/ae45f7d9020dcb406291b8519d0312d5.jpeg" alt="" title="图2 所有可用的特征汇总表"></p><p>用Spark来提取这些特征的总体实现会比较琐碎，所以我就不把全部代码贴在这里了，你可以参考SparrowRecsys项目中的com.wzhe.sparrowrecsys.offline.spark.featureeng.FeatureEngForRecModel对象，里面包含了所有特征工程的代码。这里，我们只讲几个有代表性的统计型特征的处理方法。</p><pre><code>val movieRatingFeatures = samplesWithMovies3.groupBy(col(&quot;movieId&quot;))
+  .agg(count(lit(1)).as(&quot;movieRatingCount&quot;),
+   avg(col(&quot;rating&quot;)).as(&quot;movieAvgRating&quot;),
+   stddev(col(&quot;rating&quot;)).as(&quot;movieRatingStddev&quot;))
+</code></pre><p>计算统计型特征的典型方法，就是利用Spark中的groupBy操作，将原始评分数据按照movieId分组，然后用agg聚合操作来计算一些统计型特征。比如，在上面的代码中，我们就分别使用了count内置聚合函数来统计电影评价次数（movieRatingCount），用avg函数来统计评分均值（movieAvgRating），以及使用stddev函数来计算评价分数的标准差（movieRatingStddev）。</p><p>特征处理具体过程，我们就讲完了。不过，这里我还想和你多分享一些我的经验。<strong>一般来说，我们不会人为预设哪个特征有用，哪个特征无用，而是让模型自己去判断，如果一个特征的加入没有提升模型效果，我们再去除这个特征。就像我刚才虽然提取了不少特征，但并不是说每个模型都会使用全部的特征，而是根据模型结构、模型效果有针对性地部分使用它们。</strong>在接下来的课程中，我们还会详细探讨不同模型对这些特征的具体使用方法。</p><h2>最终的训练样本是什么样的？</h2><p>特征提取之后就到了训练模型的步骤，为了训练模型，我们还需要生成模型所需的训练样本。这里我们需要明确两件事情，
+<font color='red'>一是样本从哪里来，二是样本的标签是什么</font>
+。这两件事情都跟我们训练模型的目标有关系。</p><p>对于一个推荐模型来说，
+<font color='red'>它的根本任务是预测一个用户U对一个物品I在场景C下的喜好分数</font>
+。所以在训练时，我们要为模型生成一组包含U、I、C的特征，以及最终真实得分的样本。在SparrowRecsys中，这样的样本就是基于评分数据ratings，联合用户、物品特征得来的。</p><p>其中，用户特征和物品特征都需要我们提前生成好，然后让它们与ratings数据进行join后，生成最终的训练样本，具体的实现也在FeatureEngForRecModel中，你可以先参考我在下面贴出的关键代码。这样，我们就解决了第一个关键问题。</p><pre><code>//读取原始ratings数据
+val ratingSamples = spark.read.format(&quot;csv&quot;).option(&quot;header&quot;, &quot;true&quot;).load(ratingsResourcesPath.getPath)
+//添加样本标签
+val ratingSamplesWithLabel = addSampleLabel(ratingSamples)
+//添加物品（电影）特征
+val samplesWithMovieFeatures = addMovieFeatures(movieSamples, ratingSamplesWithLabel)
+//添加用户特征
+val samplesWithUserFeatures = addUserFeatures(samplesWithMovieFeatures)
+</code></pre><p>接着，我们来看第二个关键问题，也就是样本的标签是什么，对于MovieLens数据集来说，用户对电影的评分是最直接的标签数据，因为它就是我们想要预测的用户对电影的评价，所以ratings表中的0-5的评分数据自然可以作为样本的标签。</p><p>但对于很多应用来说，我们基本上不可能拿到它们的评分数据，更多的是点击、观看、购买这些隐性的反馈数据，所以业界更多使用CTR【<b>解释：CTR（Click-Through-Rate）即点击通过率，是互联网广告常用的术语，指网络广告（图片广告/文字广告/关键词广告/排名广告/视频广告等）的点击到达率，即该广告的实际点击次数（严格的来说，可以是到达目标页面的数量）除以广告的展现量（Show content）</b>】预估这类解决二分类问题的模型去解决推荐问题。</p><p>为了让我们的实践过程更接近真实的应用场景，我也对MovieLens数据集进行了进一步处理。具体来说就是，把评分大于等于3.5分的样本标签标识为1，意为“喜欢”，评分小于3.5分的样本标签标识为0，意为“不喜欢”。这样一来，我们可以完全把推荐问题转换为CTR预估问题。</p><h2>如何在生成样本时避免引入“未来信息”？</h2><p>训练模型所需要的训练样本我们已经得到了，但是，在处理训练样本的时候，还有一个问题我们一定要注意，那就是引入未来信息（Future Information）的问题，这也是我们在实际工作中经常会遇到的问题。</p><p>什么叫做未来信息呢？如果我们在t时刻进行模型预测，那么t+1时刻的信息就是未来信息。这个问题在模型线上服务的时候是不存在的，因为未来的事情还未发生，我们不可能知道。但在离线训练的时候，我们就容易犯这样的错误。比如说，我们利用t时刻的样本进行训练，但是使用了全量的样本生成特征，那么这些特征就包含了t+1时刻的未来信息，这就是一个典型的引入未来信息的错误例子。</p><p>这样说可能还是有点抽象，我们用刚才讲过的特征举个例子。刚才我们说到有一个用户特征叫做用户平均评分（userAvgRating），我们通过把用户评论过的电影评分取均值得到它。假设，一个用户今年评论过三部电影，分别是11月1日评价电影A，评分为3分，11月2日评价电影B，评分为4分，11月3日评价电影C，评分为5分。如果让你利用电影B这条评价记录生成样本，样本中userAvgRating这个特征的值应该取多少呢？</p><p>有的同学会说，应该取评价过的电影评分的均值啊，（3+4+5）/3=4分，应该取4分啊。这就错了，因为在样本B发生的时候，样本C还未产生啊，它属于未来信息，你怎么能把C的评分也加进去计算呢？而且样本B的评分也不应该加进去，因为userAvgRating指的是历史评分均值，B的评分是我们要预估的值，也不可以加到历史评分中去，所以正确答案是3分，我们只能考虑电影A的评分。</p><p>因此，在处理历史行为相关的特征的时候，我们一定要考虑未来信息问题。类似的还有用户评分总数、用户评分标准差、用户最喜欢的电影风格、用户好评电影ID等一系列特征。</p><p>那在Spark中，我们应该如何处理这些跟历史行为相关的特征呢？这就需要用到window函数了。比如说，我在生成userAvgRating这个特征的时候，是使用下面的代码生成的：</p><pre><code>withColumn(&quot;userAvgRating&quot;, avg(col(&quot;rating&quot;))
+  .over(Window.partitionBy(&quot;userId&quot;)
+    .orderBy(col(&quot;timestamp&quot;)).rowsBetween(-100, -1)))
+
+</code></pre><p>我们可以看到，代码中有一个over(Window.partitionBy(“userId”).orderBy(col(“timestamp”)))操作，它的意思是，在做rating平均这个操作的时候，我们不要对这个userId下面的所有评分取平均值，而是要创建一个滑动窗口，先把这个用户下面的评分按照时间排序，再让这个滑动窗口一一滑动，滑动窗口的位置始终在当前rating前一个rating的位置。这样，我们再对滑动窗口内的分数做平均，就不会引入未来信息了。</p><p>类似的操作，我使用在了所有与历史行为有关的特征中，你也可以在SparrowRecsys的源码中看到。</p><h2>如何把特征数据存入线上供模型服务用？</h2><p>在生成好特征和训练样本之后，还有一个问题需要我们解决，那就是特征的线上存储问题。因为训练样本是供离线训练使用的，而线上模型推断过程是要使用线上特征的。</p><p>好在，特征数据库Redis已经为我们提供了解决办法。我们把用户特征和物品特征分别存入Redis，线上推断的时候，再把所需的用户特征和物品特征分别取出，拼接成模型所需的特征向量就可以了。</p><p>FeatureEngForRecModel中的extractAndSaveUserFeaturesToRedis函数给出了详细的Redis操作，我把其中的关键操作放在了下面。</p><pre><code>val userKey = userFeaturePrefix + sample.getAs[String](&quot;userId&quot;)
+val valueMap = mutable.Map[String, String]()
+valueMap(&quot;userRatedMovie1&quot;) = sample.getAs[String](&quot;userRatedMovie1&quot;)
+valueMap(&quot;userRatedMovie2&quot;) = sample.getAs[String](&quot;userRatedMovie2&quot;)
+...
+valueMap(&quot;userAvgRating&quot;) = sample.getAs[String](&quot;userAvgRating&quot;)
+valueMap(&quot;userRatingStddev&quot;) = sample.getAs[String](&quot;userRatingStddev&quot;)
+
+
+redisClient.hset(userKey, JavaConversions.mapAsJavaMap(valueMap))
+</code></pre><p>我们可以看到，代码中使用了Redis一个新的操作hset，它的作用是把一个Map存入Redis。这样做有什么好处呢？对于这里的用户特征来说，Map中存储的就是特征的键值对，又因为这个Map本身是userId的值，所以，每个userId都拥有一组用户特征。这样一来，我们就可以在推荐服务器内部，通过userId来取出所有对应的用户特征了。当然，物品特征的储存方式是一样的。</p><p>到这里，我们完成了所有特征工程相关的准备工作，为之后的模型训练也做好了充足的准备。</p><h2>小结</h2><p>这节课，我们选择Spark作为特征和样本处理的平台，是因为Spark更擅长海量数据的分布式处理，为TensorFlow减轻数据处理的负担。在选择具体特征的过程中，我们遵循了“物品特征”“用户特征”“场景特征”这三大类特征分类方式，基于MovieLens的ratings表和movies表完成了特征抽取。</p><p>在样本处理过程中，我们选用评分和基于评分生成的好评差评标识作为样本标签，并基于ratings表的每条数据，通过联合物品和用户数据生成训练样本。在训练样本的生成中，要特别注意“未来信息”的问题，利用Spark中的window函数滑动生成历史行为相关特征。最后我们利用Redis的hset操作把线上推断用的特征存储Redis。</p><p>这些重点内容，我也都总结在了下面的表格里，你可以看一看。</p><p><img src="https://static001.geekbang.org/resource/image/48/4d/48e15afe48dba3d35bef1e6f69aee84d.jpg" alt=""></p><h2>课后思考</h2><p>为了避免引入未来信息，咱们课程中讲了基于userId的window函数方法，你觉得还有哪些方法也能避免引入未来信息吗？</p><p>欢迎把你的思考和答案写在留言区，如果你觉得今天的内容对你有所帮助，也欢迎你分享给你的朋友或同事。我们下节课见！</p><h2>精选留言：</h2>
+        <ul>
+        
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            那时刻  2020-11-17 10:11:03
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            把评分大于等于 3.5 分的样本标签标识为 1，意为“喜欢”，评分小于 3.5 分的样本标签标识为 0，意为“不喜欢”。这样可以完全把推荐问题转换为 CTR 预估问题。请问老师，3.5分这个值是怎么来的呢？<br><br>另外一个问题，我们把评分时间戳作为代表时间场景的特征放到特征工程中。请问把时间戳用于特征工程，有木有需要注意的地方？比如是否是周末，假日等？老师在实际应用中有哪些实践么？ 
+        </div>
+        
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            onepencil  2020-11-16 23:09:20
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            线上会组装当前访问时的历史序列及历史平均值等，可以利用flink实时落盘这些线上特征，这样线下就不用再离线生成，也就杜绝了特征穿越问题 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-11-17 03:08:10</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">赞，这是业界的解决方法之一，存储特征的snapshot。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            Sebastian  2020-11-16 09:50:09
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            老师好，想问下使用hset把用户和物品的特征存入redis的场景下，如果用户上亿物品也上亿的话，存入redis会使用很大的资源。实际场景下并不是所有用户都是活跃用户，很多情况下可能用不上。那是否是在redis只存入活跃用户的特征呢？但是如果这样解决，遇到非活跃用户是否就没有特征值了？<br><br>从您的实践经验里有什么好的方法吗？ 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-11-17 03:07:32</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">我在存储模块那节课说过，SparrowRecsys项目确实对存储模块进行了一定程度的简化，实际应用中还是要多考虑分级存储，redis实际上当作一个缓存层来使用。<br><br>关于大量数据key value数据的存储和线上查找，可以多调研rocksdb，cassandra，dynamodb和mongodb。</div>
+</div>
+            
+    </div>
+</li>
+            </ul>
+</div>
+</body>
+</html>

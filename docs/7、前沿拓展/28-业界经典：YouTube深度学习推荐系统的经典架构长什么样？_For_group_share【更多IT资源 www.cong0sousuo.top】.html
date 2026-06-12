@@ -1,0 +1,975 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <!--<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>-->
+    <title>28-业界经典：YouTube深度学习推荐系统的经典架构长什么样？</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <style>
+        html {
+            color: #333;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            text-rendering: optimizelegibility;
+            font-family: Helvetica Neue, PingFang SC, Verdana, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif
+        }
+
+        html.borderbox *,
+        html.borderbox :after,
+        html.borderbox :before {
+            box-sizing: border-box
+        }
+
+        article,
+        aside,
+        blockquote,
+        body,
+        button,
+        code,
+        dd,
+        details,
+        dl,
+        dt,
+        fieldset,
+        figcaption,
+        figure,
+        footer,
+        form,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        header,
+        hr,
+        input,
+        legend,
+        li,
+        menu,
+        nav,
+        ol,
+        p,
+        pre,
+        section,
+        td,
+        textarea,
+        th,
+        ul {
+            margin: 0;
+            padding: 0
+        }
+
+        article,
+        aside,
+        details,
+        figcaption,
+        figure,
+        footer,
+        header,
+        menu,
+        nav,
+        section {
+            display: block
+        }
+
+        audio,
+        canvas,
+        video {
+            display: inline-block
+        }
+
+        body,
+        button,
+        input,
+        select,
+        textarea {
+            font: 300 1em/1.8 PingFang SC, Lantinghei SC, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, Helvetica, sans-serif
+        }
+
+        button::-moz-focus-inner,
+        input::-moz-focus-inner {
+            padding: 0;
+            border: 0
+        }
+
+        table {
+            border-collapse: collapse;
+            border-spacing: 0
+        }
+
+        fieldset,
+        img {
+            border: 0
+        }
+
+        blockquote {
+            position: relative;
+            color: #999;
+            font-weight: 400;
+            border-left: 1px solid #1abc9c;
+            padding-left: 1em;
+            margin: 1em 3em 1em 2em
+        }
+
+        @media only screen and (max-width: 640px) {
+            blockquote {
+                margin: 1em 0
+            }
+        }
+
+        abbr,
+        acronym {
+            border-bottom: 1px dotted;
+            font-variant: normal
+        }
+
+        abbr {
+            cursor: help
+        }
+
+        del {
+            text-decoration: line-through
+        }
+
+        address,
+        caption,
+        cite,
+        code,
+        dfn,
+        em,
+        th,
+        var {
+            font-style: normal;
+            font-weight: 400
+        }
+
+        ol,
+        ul {
+            list-style: none
+        }
+
+        caption,
+        th {
+            text-align: left
+        }
+
+        q:after,
+        q:before {
+            content: ""
+        }
+
+        sub,
+        sup {
+            font-size: 75%;
+            line-height: 0;
+            position: relative
+        }
+
+        :root sub,
+        :root sup {
+            vertical-align: baseline
+        }
+
+        sup {
+            top: -.5em
+        }
+
+        sub {
+            bottom: -.25em
+        }
+
+        a {
+            color: #1abc9c
+        }
+
+        a:hover {
+            text-decoration: underline
+        }
+
+        .typo a {
+            border-bottom: 1px solid #1abc9c
+        }
+
+        .typo a:hover {
+            border-bottom-color: #555;
+            color: #555
+        }
+
+        .typo a:hover,
+        a,
+        ins {
+            text-decoration: none
+        }
+
+        .typo-u,
+        u {
+            text-decoration: underline
+        }
+
+        mark {
+            background: #fffdd1;
+            border-bottom: 1px solid #ffedce;
+            padding: 2px;
+            margin: 0 5px
+        }
+
+        code,
+        pre,
+        pre tt {
+            font-family: Courier, Courier New, monospace
+        }
+
+        pre {
+            background: hsla(0, 0%, 97%, .7);
+            border: 1px solid #ddd;
+            padding: 1em 1.5em;
+            display: block;
+            -webkit-overflow-scrolling: touch
+        }
+
+        hr {
+            border: none;
+            border-bottom: 1px solid #cfcfcf;
+            margin-bottom: .8em;
+            height: 10px
+        }
+
+        .typo-small,
+        figcaption,
+        small {
+            font-size: .9em;
+            color: #888
+        }
+
+        b,
+        strong {
+            font-weight: 700;
+            color: #000
+        }
+
+        [draggable] {
+            cursor: move
+        }
+
+        .clearfix:after,
+        .clearfix:before {
+            content: "";
+            display: table
+        }
+
+        .clearfix:after {
+            clear: both
+        }
+
+        .clearfix {
+            zoom: 1
+        }
+
+        .textwrap,
+        .textwrap td,
+        .textwrap th {
+            word-wrap: break-word;
+            word-break: break-all
+        }
+
+        .textwrap-table {
+            table-layout: fixed
+        }
+
+        .serif {
+            font-family: Palatino, Optima, Georgia, serif
+        }
+
+        .typo-dl,
+        .typo-form,
+        .typo-hr,
+        .typo-ol,
+        .typo-p,
+        .typo-pre,
+        .typo-table,
+        .typo-ul,
+        .typo dl,
+        .typo form,
+        .typo hr,
+        .typo ol,
+        .typo p,
+        .typo pre,
+        .typo table,
+        .typo ul,
+        blockquote {
+            margin-bottom: 1rem
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: PingFang SC, Helvetica Neue, Verdana, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif;
+            color: #000;
+            line-height: 1.35
+        }
+
+        .typo-h1,
+        .typo-h2,
+        .typo-h3,
+        .typo-h4,
+        .typo-h5,
+        .typo-h6,
+        .typo h1,
+        .typo h2,
+        .typo h3,
+        .typo h4,
+        .typo h5,
+        .typo h6 {
+            margin-top: 1.2em;
+            margin-bottom: .6em;
+            line-height: 1.35
+        }
+
+        .typo-h1,
+        .typo h1 {
+            font-size: 2em
+        }
+
+        .typo-h2,
+        .typo h2 {
+            font-size: 1.8em
+        }
+
+        .typo-h3,
+        .typo h3 {
+            font-size: 1.6em
+        }
+
+        .typo-h4,
+        .typo h4 {
+            font-size: 1.4em
+        }
+
+        .typo-h5,
+        .typo-h6,
+        .typo h5,
+        .typo h6 {
+            font-size: 1.2em
+        }
+
+        .typo-ul,
+        .typo ul {
+            margin-left: 1.3em;
+            list-style: disc
+        }
+
+        .typo-ol,
+        .typo ol {
+            list-style: decimal;
+            margin-left: 1.9em
+        }
+
+        .typo-ol ol,
+        .typo-ol ul,
+        .typo-ul ol,
+        .typo-ul ul,
+        .typo li ol,
+        .typo li ul {
+            margin-bottom: .8em;
+            margin-left: 2em
+        }
+
+        .typo-ol ul,
+        .typo-ul ul,
+        .typo li ul {
+            list-style: circle
+        }
+
+        .typo-table td,
+        .typo-table th,
+        .typo table caption,
+        .typo table td,
+        .typo table th {
+            border: 1px solid #ddd;
+            padding: .5em 1em;
+            color: #666
+        }
+
+        .typo-table th,
+        .typo table th {
+            background: #fbfbfb
+        }
+
+        .typo-table thead th,
+        .typo table thead th {
+            background: hsla(0, 0%, 95%, .7)
+        }
+
+        .typo table caption {
+            border-bottom: none
+        }
+
+        .typo-input,
+        .typo-textarea {
+            -webkit-appearance: none;
+            border-radius: 0
+        }
+
+        .typo-em,
+        .typo em,
+        caption,
+        legend {
+            color: #000;
+            font-weight: inherit
+        }
+
+        .typo-em {
+            position: relative
+        }
+
+        .typo-em:after {
+            position: absolute;
+            top: .65em;
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            content: "\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB"
+        }
+
+        .typo img {
+            max-width: 100%
+        }
+
+        .common-content {
+            font-weight: 400;
+            color: #353535;
+            line-height: 1.75rem;
+            white-space: normal;
+            word-break: normal;
+            font-size: 1rem
+        }
+
+        .common-content img {
+            display: block;
+            max-width: 100%;
+            background-color: #eee
+        }
+
+        .common-content audio,
+        .common-content video {
+            width: 100%;
+            background-color: #eee
+        }
+
+        .common-content center,
+        .common-content font {
+            margin-top: 1rem;
+            display: inline-block
+        }
+
+        .common-content center {
+            width: 100%
+        }
+
+        .common-content pre {
+            margin-top: 1rem;
+            padding-left: 0;
+            padding-right: 0;
+            position: relative;
+            overflow: hidden
+        }
+
+        .common-content pre code {
+            font-size: .8rem;
+            font-family: Consolas, Liberation Mono, Menlo, monospace, Courier;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            overflow-x: auto
+        }
+
+        .common-content hr {
+            border: none;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #f5f5f5;
+            height: 1px;
+            background: none
+        }
+
+        .common-content b,
+        .common-content h1,
+        .common-content h2,
+        .common-content h3,
+        .common-content h4,
+        .common-content h5,
+        .common-content strong {
+            font-weight: 700
+        }
+
+        .common-content h1,
+        .common-content h2 {
+            font-size: 1.125rem;
+            margin-bottom: .45rem
+        }
+
+        .common-content h3,
+        .common-content h4,
+        .common-content h5 {
+            font-size: 1rem;
+            margin-bottom: .45rem
+        }
+
+        .common-content p {
+            font-weight: 400;
+            color: #353535;
+            margin-top: .15rem
+        }
+
+        .common-content .orange {
+            color: #ff5a05
+        }
+
+        .common-content .reference {
+            font-size: 1rem;
+            color: #888
+        }
+
+        .custom-rich-content h1 {
+            margin-top: 0;
+            font-weight: 400;
+            font-size: 15.25px;
+            border-bottom: 1px solid #eee;
+            line-height: 2.8
+        }
+
+        .custom-rich-content li,
+        .custom-rich-content p {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.6
+        }
+
+        table.hljs-ln {
+            margin-bottom: 0;
+            border-spacing: 0;
+            border-collapse: collapse
+        }
+
+        table.hljs-ln,
+        table.hljs-ln tbody,
+        table.hljs-ln td,
+        table.hljs-ln tr {
+            box-sizing: border-box
+        }
+
+        table.hljs-ln td {
+            padding: 0;
+            border: 0
+        }
+
+        table.hljs-ln td.hljs-ln-numbers {
+            min-width: 15px;
+            color: rgba(27, 31, 35, .3);
+            text-align: right;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none
+        }
+
+        table.hljs-ln td.hljs-ln-code,
+        table.hljs-ln td.hljs-ln-numbers {
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, Courier, monospace;
+            font-size: 12px;
+            line-height: 20px;
+            vertical-align: top
+        }
+
+        table.hljs-ln td.hljs-ln-code {
+            position: relative;
+            padding-right: 10px;
+            padding-left: 10px;
+            overflow: visible;
+            color: #24292e;
+            word-wrap: normal;
+            white-space: pre
+        }
+
+        video::-webkit-media-controls {
+            overflow: hidden !important
+        }
+
+        video::-webkit-media-controls-enclosure {
+            width: calc(100% + 32px);
+            margin-left: auto
+        }
+
+        ._29HP61GA_0 {
+            max-width:800px;
+            margin:0 auto;
+            margin-bottom: 20px;
+            font-weight: 400;
+            color: #353535;
+            line-height: 1.76;
+            white-space: normal;
+            word-break: normal;
+            font-size: 17px;
+            -webkit-transition: background-color .3s ease;
+            transition: background-color .3s ease
+        }
+
+        ._29HP61GA_0 .MathJax_Display {
+            overflow: auto
+        }
+
+        ._29HP61GA_0 .poster {
+            position: fixed;
+            left: -10000px;
+            top: -10000px;
+            overflow: hidden;
+            padding: 1rem;
+            background: #ececec
+        }
+
+        ._29HP61GA_0 .richcontent-pre-copy {
+            font-size: 13px;
+            color: #888;
+            position: absolute;
+            right: 1em;
+            top: .5em;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none
+        }
+
+        ._29HP61GA_0 .richcontent-pre-copy .iconfont {
+            font-size: 12px;
+            margin-right: .2em
+        }
+
+        ._29HP61GA_0 a {
+            color: #fa8919;
+            border-bottom: 1px solid #fa8919
+        }
+
+        ._29HP61GA_0 img {
+            display: block;
+            max-width: 100%;
+            position: relative;
+            left: 50%;
+            -webkit-transform: translateX(-50%);
+            transform: translateX(-50%);
+            background-color: #eee;
+            vertical-align: top;
+            border-radius: 0
+        }
+
+        ._29HP61GA_0 audio,
+        ._29HP61GA_0 video {
+            width: 100%;
+            background-color: #eee
+        }
+
+        ._29HP61GA_0 pre {
+            margin-top: 16px;
+            padding: 34px 0 0;
+            margin-bottom: 30px;
+            position: relative;
+            border-radius: 6px;
+            background: rgba(246, 247, 251, .749);
+            border: 0
+        }
+
+        ._29HP61GA_0 pre code {
+            font-size: 12px;
+            font-family: Consolas, Liberation Mono, Menlo, monospace, Courier;
+            display: block;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            margin-left: 16px;
+            margin-right: 16px;
+            overflow-x: scroll
+        }
+
+        ._29HP61GA_0 pre code:after {
+            content: "";
+            height: 30px;
+            width: 100%;
+            display: block
+        }
+
+        ._29HP61GA_0 hr {
+            border: none;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #f5f5f5;
+            height: 1px;
+            background: none
+        }
+
+        ._29HP61GA_0 h1,
+        ._29HP61GA_0 h2,
+        ._29HP61GA_0 h3,
+        ._29HP61GA_0 h4,
+        ._29HP61GA_0 h5 {
+            margin-bottom: 20px;
+            margin-top: 0;
+            font-weight: 700
+        }
+
+        ._29HP61GA_0 b,
+        ._29HP61GA_0 strong {
+            font-weight: 700
+        }
+
+        ._29HP61GA_0 h1 {
+            font-size: 21px
+        }
+
+        ._29HP61GA_0 h2 {
+            font-size: 20px
+        }
+
+        ._29HP61GA_0 h3 {
+            font-size: 19px
+        }
+
+        ._29HP61GA_0 h4 {
+            font-size: 18px
+        }
+
+        ._29HP61GA_0 h5 {
+            font-size: 17px
+        }
+
+        ._29HP61GA_0 center,
+        ._29HP61GA_0 p {
+            font-weight: 400;
+            color: #353535;
+            margin-top: 0;
+            margin-bottom: 30px;
+            word-break: break-word
+        }
+
+        ._29HP61GA_0 center {
+            text-align: center
+        }
+
+        ._29HP61GA_0 blockquote {
+            margin-top: 0;
+            margin-bottom: 34px;
+            border-left: 3px solid #e8e8e8;
+            padding-left: 17px;
+            color: #353535
+        }
+
+        ._29HP61GA_0 blockquote p {
+            margin-top: 0;
+            margin-bottom: 0
+        }
+
+        ._29HP61GA_0 ol,
+        ._29HP61GA_0 ul {
+            margin-bottom: 30px
+        }
+
+        ._29HP61GA_0 ol p,
+        ._29HP61GA_0 ul p {
+            margin-top: 0;
+            margin-bottom: 0
+        }
+
+        ._29HP61GA_0 ol {
+            list-style: decimal;
+            margin-left: 20px
+        }
+
+        ._29HP61GA_0 ul li {
+            padding-left: 17px;
+            position: relative;
+            margin-bottom: 10px
+        }
+
+        ._29HP61GA_0 ul li:after {
+            content: "";
+            height: 6px;
+            width: 6px;
+            border-radius: 50%;
+            background: #353535;
+            position: absolute;
+            top: 10px;
+            left: 0
+        }
+
+        ._29HP61GA_0 .orange {
+            color: #fa8919
+        }
+
+        ._29HP61GA_0 .reference {
+            color: #888
+        }
+
+        ._29HP61GA_0 .m-right {
+            text-align: right
+        }
+
+        ._29HP61GA_0 .m-center {
+            text-align: center;
+            display: block
+        }
+
+        ._29HP61GA_0 .m-gray {
+            color: #888
+        }
+
+        ._29HP61GA_0 .m-small {
+            font-size: 15px
+        }
+
+        ._29HP61GA_0 table.hljs-ln {
+            margin-bottom: 0;
+            border-spacing: 0;
+            border-collapse: collapse
+        }
+
+        ._29HP61GA_0 table.hljs-ln,
+        ._29HP61GA_0 table.hljs-ln tbody,
+        ._29HP61GA_0 table.hljs-ln td,
+        ._29HP61GA_0 table.hljs-ln tr {
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box
+        }
+
+        ._29HP61GA_0 table.hljs-ln td {
+            padding: 0;
+            border: 0
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-numbers {
+            min-width: 15px;
+            font-size: 12px;
+            color: rgba(27, 31, 35, .3);
+            text-align: right;
+            white-space: nowrap;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-code,
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-numbers {
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, Courier, monospace;
+            line-height: 20px;
+            vertical-align: top
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-code {
+            position: relative;
+            padding-right: 10px;
+            padding-left: 10px;
+            overflow: visible;
+            font-size: 13px;
+            color: #666;
+            word-wrap: normal;
+            white-space: pre
+        }
+
+    </style>
+</head>
+<body>
+<div class="_29HP61GA_0">
+<h1>28-业界经典：YouTube深度学习推荐系统的经典架构长什么样？</h1>
+<p>你好，我是王喆。今天我们一起来开启前沿拓展篇的学习。</p><p>如果你是跟着课程安排学到这里的，我可以很自信地说，你几乎已经掌握了推荐系统的全部重点知识。从数据特征的处理，模型构建，到模型的评估和上线，再到推荐服务器的实现，你的知识广度已经覆盖了推荐系统领域的全部要点。但要想成为一名合格的推荐工程师，我们还需要做两件事情，一件是追踪前沿，另一件是融会贯通。</p><p>因此，在这一篇中，我会通过详细讲解几个一线大厂的推荐系统解决方案，来帮你追踪行业的热点、创新点。它们既包括一些推荐模型的业界实现，如YouTube和Pinterest的推荐模型，也包括推荐系统的工程落地方案，如Flink的经典应用和美团对于强化学习的落地方案。最后，我还会对算法工程师的所需能力做一个全面的总结。</p><p>今天，我们今天先来学习YouTube的经典深度学习推荐系统架构。YouTube这套深度学习解决方案，已经经典到可以成为一个业界标杆式的方案了，也是我在国内外和同学、同事们交流、讨论的时候经常会提到的方案。</p><p>话不多说，我们正式开始今天的学习吧！</p><h2>YouTube推荐系统架构</h2><p>提起YouTube，我想你肯定不会陌生，作为全球最大的视频分享网站，YouTube平台中几乎所有的视频都来自UGC（User Generated Content，用户原创内容），这样的内容产生模式有两个特点：</p><!-- [[[read_end]]] --><ul>
+<li>一是其商业模式不同于Netflix，以及国内的腾讯视频、爱奇艺这样的流媒体，这些流媒体的大部分内容都是采购或自制的电影、剧集等头部内容，而YouTube的内容都是用户上传的自制视频，种类风格繁多，头部效应没那么明显；</li>
+<li>二是由于YouTube的视频基数巨大，用户难以发现喜欢的内容。</li>
+</ul><p>这样的内容特点简直就是深度学习推荐系统最适合扎根的土壤，所以YouTube也是最早落地深度学习的一线公司。那YouTube的深度学习推荐系统架构长什么样呢？</p><p><img src="https://static001.geekbang.org/resource/image/47/05/47c0fa06ffc18912b027fe920ac30905.jpg" alt="" title="图1 YouTube推荐系统整体架构"></p><p>上图就是YouTube在2016年发布的推荐系统架构。我们可以看到，为了对海量的视频进行快速、准确的排序，YouTube也采用了经典的召回层+排序层的推荐系统架构。</p><p><strong>它的推荐过程可以分成二级。第一级是用候选集生成模型（Candidate Generation Model）完成候选视频的快速筛选，在这一步，候选视频集合由百万降低到几百量级，这就相当于经典推荐系统架构中的召回层。第二级是用排序模型（Ranking Model）完成几百个候选视频的精排，这相当于经典推荐系统架构中的排序层。</strong></p><p>无论是候选集生成模型还是排序模型，YouTube都采用了深度学习的解决方案。下面，就让我们详细讲讲这两个深度学习模型是如何构建起来的。</p><h2>候选集生成模型</h2><p>首先，是用于视频召回的候选集生成模型，它的模型架构如下图所示。</p><p><img src="https://static001.geekbang.org/resource/image/69/cf/6968873184cf93194aa476398c2e35cf.jpg" alt="" title="图2 YouTube候选集生成模型架构"></p><p>我们一起自下而上地好好看一看这个模型的结构。</p><p>最底层是它的输入层，输入的特征包括用户历史观看视频的Embedding向量，以及搜索词的Embedding向量。对于这些Embedding特征，YouTube是利用用户的观看序列和搜索序列，采用了类似Item2vec的预训练方式生成的。</p><p>当然，我们也完全可以采用Embedding跟模型在一起End2End训练的方式来训练模型。至于预训练和End2End训练这两种方式孰优孰劣，我们也探讨过很多次了，你可以自己再深入思考一下。</p><p>除了视频和搜索词Embedding向量，特征向量中还包括用户的地理位置Embedding、年龄、性别等特征。这里我们需要注意的是，对于样本年龄这个特征，YouTube不仅使用了原始特征值，还把经过平方处理的特征值也作为一个新的特征输入模型。</p><p>这个操作其实是为了挖掘特征非线性的特性，当然，这种对连续型特征的处理方式不仅限于平方，其他诸如开方、Log、指数等操作都可以用于挖掘特征的非线性特性。具体使用哪个，需要我们根据实际的效果而定。</p><p>确定好了特征，跟我们之前实践过的深度学习模型一样，这些特征会在concat层中连接起来，输入到上层的ReLU神经网络进行训练。</p><p>三层ReLU神经网络过后，YouTube又使用了softmax函数作为输出层。值得一提的是，<strong>这里的输出层不是要预测用户会不会点击这个视频，而是要预测用户会点击哪个视频</strong>，这就跟我们之前实现过的深度推荐模型不一样了。</p><p>比如说，YouTube上有100万个视频，因为输出层要预测用户会点击哪个视频，所以这里的sofmax就有100万个输出。因此，这个候选集生成模型的最终输出，就是一个在所有候选视频上的概率分布。为什么要这么做呢？它其实是为了更好、更快地进行线上服务，这一点我们等会再详细讲。</p><p>总的来讲，YouTube推荐系统的候选集生成模型，是一个标准的利用了Embedding预训练特征的深度推荐模型，它遵循我们之前实现的Embedding MLP模型的架构，只是在最后的输出层有所区别。</p><h2>候选集生成模型独特的线上服务方法</h2><p>好，现在我们就详细说一说，为什么候选集生成模型要用“视频ID”这个标签，来代替“用户会不会点击视频”这个标签作为预测目标。事实上，这跟候选集生成模型独特的线上服务方式紧密相关。</p><p><img src="https://static001.geekbang.org/resource/image/e9/69/e9a20bc7260296e09078509e3f42df69.jpg" alt="" title="图3 模型服务部分示意图"></p><p>细心的同学可能已经留意到，架构图左上角的模型服务（Serving）方法与模型训练方法完全不同。在候选集生成模型的线上服务过程中，YouTube并没有直接采用训练时的模型进行预测，而是采用了一种最近邻搜索的方法，我们曾经在<a href="https://time.geekbang.org/column/article/301739">第12课</a>详细讲过基于Embedding的最近邻搜索方法，不记得的同学可以先去回顾一下。</p><p>具体来说，在模型服务过程中，网络结构比较复杂，如果我们对每次推荐请求都端到端地运行一遍模型，处理一遍候选集，那模型的参数数量就会巨大，整个推断过程的开销也会非常大。</p><p><strong> 因此，在通过“候选集生成模型”得到用户和视频的Embedding后，我们再通过Embedding最近邻搜索的方法，就可以提高模型服务的效率了。这样一来，我们甚至不用把模型推断的逻辑搬上服务器，只需要将用户Embedding和视频Embedding存到特征数据库就行了。</strong>再加上可以使用局部敏感哈希这类快速Embedding查找方法，这对于百万量级规模的候选集生成过程的效率提升是巨大的。</p><p>那么问题又来了，这里的用户Embedding和视频Embedding到底是从哪里来的呢？这个问题的答案就是，候选集生成模型为什么要用视频ID作为多分类输出的答案了。我们再仔细看一下图2的架构，架构图中从softmax向模型服务模块画了个箭头，用于代表视频Embedding向量的生成。</p><p>由于最后的输出层是softmax，而这个softmax层的参数本质上就是一个m x n维的矩阵，其中m指的是最后一层红色的ReLU层的维度m，n指的是分类的总数，也就是YouTube所有视频的总数n。因此，视频Embedding就是这个m x n维矩阵的各列向量。</p><p>这样的Embedding生成方法其实和word2vec中词向量的生成方法是相同的，你也可以参考<a href="https://time.geekbang.org/column/article/295939">第6节课</a>的内容来理解它。</p><p>清楚了视频Embedding的生成原理，用户Embedding的生成就非常好理解了，因为输入的特征向量全部都是用户相关的特征，一个物品和场景特征都没有，所以在使用某用户u的特征向量作为模型输入时，最后一层ReLU层的输出向量就可以当作该用户u的Embedding向量。</p><p>在模型训练完成后，逐个输入所有用户的特征向量到模型中，YouTube就可以得到所有用户的Embedding向量，之后就可以把它们预存到线上的特征数据库中了。</p><p>在预测某用户的视频候选集时，YouTube要先从特征数据库中拿到该用户的Embedding向量，再在视频Embedding向量空间中，利用局部敏感哈希等方法搜索该用户Embedding向量的K近邻，这样就可以快速得到k个候选视频集合。这就是整个候选集生成模型的训练原理和服务过程。</p><p>到这里，你一定已经体会到了咱们前沿拓展篇案例分析的作用，通过一个YouTube候选集生成模型的原理分析，我们就已经把第6课的Embedding、第10课的特征数据库、第12课的局部敏感哈希，以及第17课的Embedding MLP模型都回顾了一遍。</p><p>如果你喜欢这种通过学习业界实践方案，把知识串联起来的方式，可以给我留言反馈，我也会在之后的课程中多采用这样的方式。</p><h2>排序模型</h2><p>通过候选集生成模型，YouTube已经得到了几百个候选视频的集合了，下一步就是利用排序模型进行精排序。下图就是YouTube深度学习排序模型的架构，我们一起来看一看。</p><p><img src="https://static001.geekbang.org/resource/image/28/1a/28e0acbb64760670ee94d015025da81a.jpg" alt="" title="图3 YouTube的深度学习排序模型的架构"></p><p>第一眼看上去，你可能会认为排序模型的网络结构与候选集生成模型没有太大区别，在模型结构上确实是这样的，它们都遵循Embedding MLP的模型架构。但是我们来看其中的细节，特别是输入层和输出层的部分，它们跟候选集生成模型还是有很大不同的，这就是我们要重点关注的。</p><p>我们先看输入层，相比于候选集生成模型需要对几百万候选集进行粗筛，排序模型只需对几百个候选视频进行排序，因此可以引入更多特征进行精排。具体来说，YouTube的输入层从左至右引入的特征依次是：</p><ol>
+<li>impression video ID embedding：当前候选视频的Embedding；</li>
+<li>watched video IDs average embedding：用户观看过的最后N个视频Embedding的平均值；</li>
+<li>language embedding：用户语言的Embedding和当前候选视频语言的Embedding；</li>
+<li>time since last watch：表示用户上次观看同频道视频距今的时间；</li>
+<li>#previous impressions：该视频已经被曝光给该用户的次数；</li>
+</ol><p>上面5个特征中，前3个Embedding特征的含义很好理解，我就不细说了。第4个特征和第5个特征，因为很好地引入了YouTube工程师对用户行为的观察，所以我来重点解释一下。</p><p>第4个特征 <strong>time since last watch</strong>说的是用户观看同类视频的间隔时间。如果从用户的角度出发，假如某用户刚看过“DOTA比赛经典回顾”这个频道的视频，那他很大概率会继续看这个频道的其他视频，该特征就可以很好地捕捉到这一用户行为。</p><p>第5个特征<strong>#previous impressions</strong> 说的是这个视频已经曝光给用户的次数。我们试想如果一个视频已经曝光给了用户10次，用户都没有点击，那我们就应该清楚，用户对这个视频很可能不感兴趣。所以<strong>#previous impressions</strong> 这个特征的引入就可以很好地捕捉到用户这样的行为习惯，避免让同一个视频对同一用户进行持续的无效曝光，尽量增加用户看到新视频的可能性。</p><p>把这5类特征连接起来之后，需要再经过三层ReLU网络进行充分的特征交叉，然后就到了输出层。这里我们要重点注意，排序模型的输出层与候选集生成模型又有所不同。不同主要有两点：<strong>一是候选集生成模型选择了softmax作为其输出层，而排序模型选择了weighted logistic regression（加权逻辑回归）作为模型输出层；二是候选集生成模型预测的是用户会点击“哪个视频”，排序模型预测的是用户“要不要点击当前视频”。</strong></p><p>那么问题来了，YouTube为什么要这么做呢？</p><p>其实，排序模型采用不同输出层的根本原因就在于，YouTube想要更精确地预测用户的观看时长，因为观看时长才是YouTube最看中的商业指标，而使用Weighted LR作为输出层，就可以实现这样的目标。</p><p>这是怎么做到的呢？在Weighted LR的训练中，我们需要为每个样本设置一个权重，权重的大小，代表了这个样本的重要程度。为了能够预估观看时长，YouTube将正样本的权重设置为用户观看这个视频的时长，然后再用Weighted LR进行训练，就可以让模型学到用户观看时长的信息。</p><p>这是因为观看时长长的样本更加重要，严格一点来说，就是观看时长长的样本被模型预测的为正样本的概率更高，这个概率与观看时长成正比，这就是使用Weighted LR来学习观看时长信息的基本原理。</p><p>最后，我们再聊一聊排序模型的模型服务方法。我刚才讲过了，候选集生成模型是可以直接利用用户Embedding和视频Embedding进行快速最近邻搜索的。那排序模型还能这样做吗？</p><p>这就不可以了，原因有两点：一是因为我们的输入向量中同时包含了用户和视频的特征，不再只是单纯的用户特征。这样一来，用户x物品特征的组合过多，就无法通过预存的方式保存所有模型结果；二是因为排序模型的输出层不再是预测视频ID，所以我们也无法拿到视频Embedding。因此对于排序模型，我们必须使用TensorFlow Serving等模型服务平台，来进行模型的线上推断。</p><p>到这里，我们就讲完了YouTube推荐模型的全部细节。如果你有任何疑惑的地方，可以在留言区提问，同时我也建议你多看几遍这节课的内容，因为这个解决方案真的是太经典了。</p><h2>小结</h2><p>好了，这节课的内容讲完了，我们再总结一下YouTube推荐系统的重点知识。</p><p>YouTube推荐系统的架构是一个典型的召回层加排序层的架构，其中候选集生成模型负责从百万候选集中召回几百个候选视频，排序模型负责几百个候选视频的精排，最终选出几十个推荐给用户。</p><p>候选集生成模型是一个典型的Embedding MLP的架构，我们要注意的是它的输出层，它是一个多分类的输出层，预测的是用户点击了“哪个”视频。在候选集生成模型的serving过程中，需要从输出层提取出视频Embedding，从最后一层ReLU层得到用户Embedding，然后利用最近邻搜索快速得到候选集。</p><p>排序模型同样是一个Embedding MLP的架构，不同的是，它的输入层包含了更多的用户和视频的特征，输出层采用了Weighted LR作为输出层，并且使用观看时长作为正样本权重，让模型能够预测出观看时长，这更接近YouTube要达成的商业目标。</p><p>好了，这些关键知识点，我也总结在了下面的表格中，希望它能帮助你加深记忆。</p><p><img src="https://static001.geekbang.org/resource/image/60/2e/60509d00835ac95ayya3bdeb17f0532e.jpeg" alt=""></p><p>在这节课结束前，关于YouTube的推荐模型我还想多说几句。事实上，YouTube的推荐系统论文中还包含了更多的细节，业界真正好的论文并不多，YouTube的这篇《Deep Neural Networks for YouTube Recommendations》绝对是不可多得的一篇，我甚至推荐大家逐句来读，抓住每一个细节。</p><p>当然，你也可以在我的书《深度学习推荐系统》中的相应章节找到更多的实现细节。这些内容让我曾经受益匪浅，相信也会对你有所帮助。</p><h2>课后思考</h2><p>YouTube的排序模型和候选集生成模型，都使用了平均池化这一操作，来把用户的历史观看视频整合起来。你能想到更好的方法来改进这个操作吗？</p><p>期待在留言区看到你的思考和总结，我们下节课见！</p><h2>精选留言：</h2>
+        <ul>
+        
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            fsc2016  2020-12-18 15:50:10
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            思考题：<br>1，在召回层，对用户历史观看的序列，按照时间衰减因子，对用户观看emb序列进行加权求平均，加强最近观看视频的影响力<br>2，在排序层，可以加入注意力机制，类似DIN模型中，计算候选emb与用户行为序列中视频emb的权重，然后在进行加权求平均，得到用户行为序列的emb<br>提问：老师 ，之前讲emb近邻搜索，需要用户emb和物品emb在同一向量空间。那么在召回层relu中提取的用户emb和softmax提取的物品emb，是在同一向量空间的，为什么？难道是因为同一个模型训练出来，输入特征一致才允许这样操作嘛？<br> 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-12-19 06:37:49</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">1、2都是非常好的回答。<br><br>提问也非常好，但我推荐你自己再好好想想他们为什么在一个向量空间，你要思考一下relu最后输出的用户emb和softmax中的物品emb是怎么运算的？在最近邻搜索中又是怎么运算的？</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            会飞的鱼  2020-12-18 11:27:22
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            为什么不以一开始item2vec训练视频embedding 平均为用户的embedding呢？是因为维度对不上还是因为不在同一个向量空间?而且这时候输入的视频embedding可以finetune的 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-12-19 06:35:36</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">做法上当然是可以的，我想youtube仅仅是把所有的模型结构都画在这里，至于怎么实现，说实话那是每个人自己的事情。<br><br>个人而言，候选集生成模型的输入用户embedding完全可以像你说的一样预训练生成，没有一点问题</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            你笑起来真好看  2020-12-18 08:24:02
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            YouTube的召回模型中，视频可以用node2vec学习embedding，然后把softmax换成负采样这样做可以吗？ 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-12-19 06:32:39</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">当然可以。任何预训练生成embedding的方法理论上都可以</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            Sicolas Flamel  2020-12-18 00:51:39
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            由于平均池化会丢掉原始特征 所以最大池化可能效果更好。池化的目的也是降维，那么是否可以考虑dense等其他层？ 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-12-19 06:31:44</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">是的，理论上任何池化操作都可以尝试。此外还有attention，序列模型等等</div>
+</div>
+            
+    </div>
+</li>
+            </ul>
+</div>
+</body>
+</html>

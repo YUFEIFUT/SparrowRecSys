@@ -1,0 +1,966 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <!--<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>-->
+    <title>22-强化学习：让推荐系统像智能机器人一样自主学习</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <style>
+        html {
+            color: #333;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            text-rendering: optimizelegibility;
+            font-family: Helvetica Neue, PingFang SC, Verdana, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif
+        }
+
+        html.borderbox *,
+        html.borderbox :after,
+        html.borderbox :before {
+            box-sizing: border-box
+        }
+
+        article,
+        aside,
+        blockquote,
+        body,
+        button,
+        code,
+        dd,
+        details,
+        dl,
+        dt,
+        fieldset,
+        figcaption,
+        figure,
+        footer,
+        form,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        header,
+        hr,
+        input,
+        legend,
+        li,
+        menu,
+        nav,
+        ol,
+        p,
+        pre,
+        section,
+        td,
+        textarea,
+        th,
+        ul {
+            margin: 0;
+            padding: 0
+        }
+
+        article,
+        aside,
+        details,
+        figcaption,
+        figure,
+        footer,
+        header,
+        menu,
+        nav,
+        section {
+            display: block
+        }
+
+        audio,
+        canvas,
+        video {
+            display: inline-block
+        }
+
+        body,
+        button,
+        input,
+        select,
+        textarea {
+            font: 300 1em/1.8 PingFang SC, Lantinghei SC, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, Helvetica, sans-serif
+        }
+
+        button::-moz-focus-inner,
+        input::-moz-focus-inner {
+            padding: 0;
+            border: 0
+        }
+
+        table {
+            border-collapse: collapse;
+            border-spacing: 0
+        }
+
+        fieldset,
+        img {
+            border: 0
+        }
+
+        blockquote {
+            position: relative;
+            color: #999;
+            font-weight: 400;
+            border-left: 1px solid #1abc9c;
+            padding-left: 1em;
+            margin: 1em 3em 1em 2em
+        }
+
+        @media only screen and (max-width: 640px) {
+            blockquote {
+                margin: 1em 0
+            }
+        }
+
+        abbr,
+        acronym {
+            border-bottom: 1px dotted;
+            font-variant: normal
+        }
+
+        abbr {
+            cursor: help
+        }
+
+        del {
+            text-decoration: line-through
+        }
+
+        address,
+        caption,
+        cite,
+        code,
+        dfn,
+        em,
+        th,
+        var {
+            font-style: normal;
+            font-weight: 400
+        }
+
+        ol,
+        ul {
+            list-style: none
+        }
+
+        caption,
+        th {
+            text-align: left
+        }
+
+        q:after,
+        q:before {
+            content: ""
+        }
+
+        sub,
+        sup {
+            font-size: 75%;
+            line-height: 0;
+            position: relative
+        }
+
+        :root sub,
+        :root sup {
+            vertical-align: baseline
+        }
+
+        sup {
+            top: -.5em
+        }
+
+        sub {
+            bottom: -.25em
+        }
+
+        a {
+            color: #1abc9c
+        }
+
+        a:hover {
+            text-decoration: underline
+        }
+
+        .typo a {
+            border-bottom: 1px solid #1abc9c
+        }
+
+        .typo a:hover {
+            border-bottom-color: #555;
+            color: #555
+        }
+
+        .typo a:hover,
+        a,
+        ins {
+            text-decoration: none
+        }
+
+        .typo-u,
+        u {
+            text-decoration: underline
+        }
+
+        mark {
+            background: #fffdd1;
+            border-bottom: 1px solid #ffedce;
+            padding: 2px;
+            margin: 0 5px
+        }
+
+        code,
+        pre,
+        pre tt {
+            font-family: Courier, Courier New, monospace
+        }
+
+        pre {
+            background: hsla(0, 0%, 97%, .7);
+            border: 1px solid #ddd;
+            padding: 1em 1.5em;
+            display: block;
+            -webkit-overflow-scrolling: touch
+        }
+
+        hr {
+            border: none;
+            border-bottom: 1px solid #cfcfcf;
+            margin-bottom: .8em;
+            height: 10px
+        }
+
+        .typo-small,
+        figcaption,
+        small {
+            font-size: .9em;
+            color: #888
+        }
+
+        b,
+        strong {
+            font-weight: 700;
+            color: #000
+        }
+
+        [draggable] {
+            cursor: move
+        }
+
+        .clearfix:after,
+        .clearfix:before {
+            content: "";
+            display: table
+        }
+
+        .clearfix:after {
+            clear: both
+        }
+
+        .clearfix {
+            zoom: 1
+        }
+
+        .textwrap,
+        .textwrap td,
+        .textwrap th {
+            word-wrap: break-word;
+            word-break: break-all
+        }
+
+        .textwrap-table {
+            table-layout: fixed
+        }
+
+        .serif {
+            font-family: Palatino, Optima, Georgia, serif
+        }
+
+        .typo-dl,
+        .typo-form,
+        .typo-hr,
+        .typo-ol,
+        .typo-p,
+        .typo-pre,
+        .typo-table,
+        .typo-ul,
+        .typo dl,
+        .typo form,
+        .typo hr,
+        .typo ol,
+        .typo p,
+        .typo pre,
+        .typo table,
+        .typo ul,
+        blockquote {
+            margin-bottom: 1rem
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: PingFang SC, Helvetica Neue, Verdana, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif;
+            color: #000;
+            line-height: 1.35
+        }
+
+        .typo-h1,
+        .typo-h2,
+        .typo-h3,
+        .typo-h4,
+        .typo-h5,
+        .typo-h6,
+        .typo h1,
+        .typo h2,
+        .typo h3,
+        .typo h4,
+        .typo h5,
+        .typo h6 {
+            margin-top: 1.2em;
+            margin-bottom: .6em;
+            line-height: 1.35
+        }
+
+        .typo-h1,
+        .typo h1 {
+            font-size: 2em
+        }
+
+        .typo-h2,
+        .typo h2 {
+            font-size: 1.8em
+        }
+
+        .typo-h3,
+        .typo h3 {
+            font-size: 1.6em
+        }
+
+        .typo-h4,
+        .typo h4 {
+            font-size: 1.4em
+        }
+
+        .typo-h5,
+        .typo-h6,
+        .typo h5,
+        .typo h6 {
+            font-size: 1.2em
+        }
+
+        .typo-ul,
+        .typo ul {
+            margin-left: 1.3em;
+            list-style: disc
+        }
+
+        .typo-ol,
+        .typo ol {
+            list-style: decimal;
+            margin-left: 1.9em
+        }
+
+        .typo-ol ol,
+        .typo-ol ul,
+        .typo-ul ol,
+        .typo-ul ul,
+        .typo li ol,
+        .typo li ul {
+            margin-bottom: .8em;
+            margin-left: 2em
+        }
+
+        .typo-ol ul,
+        .typo-ul ul,
+        .typo li ul {
+            list-style: circle
+        }
+
+        .typo-table td,
+        .typo-table th,
+        .typo table caption,
+        .typo table td,
+        .typo table th {
+            border: 1px solid #ddd;
+            padding: .5em 1em;
+            color: #666
+        }
+
+        .typo-table th,
+        .typo table th {
+            background: #fbfbfb
+        }
+
+        .typo-table thead th,
+        .typo table thead th {
+            background: hsla(0, 0%, 95%, .7)
+        }
+
+        .typo table caption {
+            border-bottom: none
+        }
+
+        .typo-input,
+        .typo-textarea {
+            -webkit-appearance: none;
+            border-radius: 0
+        }
+
+        .typo-em,
+        .typo em,
+        caption,
+        legend {
+            color: #000;
+            font-weight: inherit
+        }
+
+        .typo-em {
+            position: relative
+        }
+
+        .typo-em:after {
+            position: absolute;
+            top: .65em;
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            content: "\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB"
+        }
+
+        .typo img {
+            max-width: 100%
+        }
+
+        .common-content {
+            font-weight: 400;
+            color: #353535;
+            line-height: 1.75rem;
+            white-space: normal;
+            word-break: normal;
+            font-size: 1rem
+        }
+
+        .common-content img {
+            display: block;
+            max-width: 100%;
+            background-color: #eee
+        }
+
+        .common-content audio,
+        .common-content video {
+            width: 100%;
+            background-color: #eee
+        }
+
+        .common-content center,
+        .common-content font {
+            margin-top: 1rem;
+            display: inline-block
+        }
+
+        .common-content center {
+            width: 100%
+        }
+
+        .common-content pre {
+            margin-top: 1rem;
+            padding-left: 0;
+            padding-right: 0;
+            position: relative;
+            overflow: hidden
+        }
+
+        .common-content pre code {
+            font-size: .8rem;
+            font-family: Consolas, Liberation Mono, Menlo, monospace, Courier;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            overflow-x: auto
+        }
+
+        .common-content hr {
+            border: none;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #f5f5f5;
+            height: 1px;
+            background: none
+        }
+
+        .common-content b,
+        .common-content h1,
+        .common-content h2,
+        .common-content h3,
+        .common-content h4,
+        .common-content h5,
+        .common-content strong {
+            font-weight: 700
+        }
+
+        .common-content h1,
+        .common-content h2 {
+            font-size: 1.125rem;
+            margin-bottom: .45rem
+        }
+
+        .common-content h3,
+        .common-content h4,
+        .common-content h5 {
+            font-size: 1rem;
+            margin-bottom: .45rem
+        }
+
+        .common-content p {
+            font-weight: 400;
+            color: #353535;
+            margin-top: .15rem
+        }
+
+        .common-content .orange {
+            color: #ff5a05
+        }
+
+        .common-content .reference {
+            font-size: 1rem;
+            color: #888
+        }
+
+        .custom-rich-content h1 {
+            margin-top: 0;
+            font-weight: 400;
+            font-size: 15.25px;
+            border-bottom: 1px solid #eee;
+            line-height: 2.8
+        }
+
+        .custom-rich-content li,
+        .custom-rich-content p {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.6
+        }
+
+        table.hljs-ln {
+            margin-bottom: 0;
+            border-spacing: 0;
+            border-collapse: collapse
+        }
+
+        table.hljs-ln,
+        table.hljs-ln tbody,
+        table.hljs-ln td,
+        table.hljs-ln tr {
+            box-sizing: border-box
+        }
+
+        table.hljs-ln td {
+            padding: 0;
+            border: 0
+        }
+
+        table.hljs-ln td.hljs-ln-numbers {
+            min-width: 15px;
+            color: rgba(27, 31, 35, .3);
+            text-align: right;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none
+        }
+
+        table.hljs-ln td.hljs-ln-code,
+        table.hljs-ln td.hljs-ln-numbers {
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, Courier, monospace;
+            font-size: 12px;
+            line-height: 20px;
+            vertical-align: top
+        }
+
+        table.hljs-ln td.hljs-ln-code {
+            position: relative;
+            padding-right: 10px;
+            padding-left: 10px;
+            overflow: visible;
+            color: #24292e;
+            word-wrap: normal;
+            white-space: pre
+        }
+
+        video::-webkit-media-controls {
+            overflow: hidden !important
+        }
+
+        video::-webkit-media-controls-enclosure {
+            width: calc(100% + 32px);
+            margin-left: auto
+        }
+
+        ._29HP61GA_0 {
+            max-width:800px;
+            margin:0 auto;
+            margin-bottom: 20px;
+            font-weight: 400;
+            color: #353535;
+            line-height: 1.76;
+            white-space: normal;
+            word-break: normal;
+            font-size: 17px;
+            -webkit-transition: background-color .3s ease;
+            transition: background-color .3s ease
+        }
+
+        ._29HP61GA_0 .MathJax_Display {
+            overflow: auto
+        }
+
+        ._29HP61GA_0 .poster {
+            position: fixed;
+            left: -10000px;
+            top: -10000px;
+            overflow: hidden;
+            padding: 1rem;
+            background: #ececec
+        }
+
+        ._29HP61GA_0 .richcontent-pre-copy {
+            font-size: 13px;
+            color: #888;
+            position: absolute;
+            right: 1em;
+            top: .5em;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none
+        }
+
+        ._29HP61GA_0 .richcontent-pre-copy .iconfont {
+            font-size: 12px;
+            margin-right: .2em
+        }
+
+        ._29HP61GA_0 a {
+            color: #fa8919;
+            border-bottom: 1px solid #fa8919
+        }
+
+        ._29HP61GA_0 img {
+            display: block;
+            max-width: 100%;
+            position: relative;
+            left: 50%;
+            -webkit-transform: translateX(-50%);
+            transform: translateX(-50%);
+            background-color: #eee;
+            vertical-align: top;
+            border-radius: 0
+        }
+
+        ._29HP61GA_0 audio,
+        ._29HP61GA_0 video {
+            width: 100%;
+            background-color: #eee
+        }
+
+        ._29HP61GA_0 pre {
+            margin-top: 16px;
+            padding: 34px 0 0;
+            margin-bottom: 30px;
+            position: relative;
+            border-radius: 6px;
+            background: rgba(246, 247, 251, .749);
+            border: 0
+        }
+
+        ._29HP61GA_0 pre code {
+            font-size: 12px;
+            font-family: Consolas, Liberation Mono, Menlo, monospace, Courier;
+            display: block;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            margin-left: 16px;
+            margin-right: 16px;
+            overflow-x: scroll
+        }
+
+        ._29HP61GA_0 pre code:after {
+            content: "";
+            height: 30px;
+            width: 100%;
+            display: block
+        }
+
+        ._29HP61GA_0 hr {
+            border: none;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #f5f5f5;
+            height: 1px;
+            background: none
+        }
+
+        ._29HP61GA_0 h1,
+        ._29HP61GA_0 h2,
+        ._29HP61GA_0 h3,
+        ._29HP61GA_0 h4,
+        ._29HP61GA_0 h5 {
+            margin-bottom: 20px;
+            margin-top: 0;
+            font-weight: 700
+        }
+
+        ._29HP61GA_0 b,
+        ._29HP61GA_0 strong {
+            font-weight: 700
+        }
+
+        ._29HP61GA_0 h1 {
+            font-size: 21px
+        }
+
+        ._29HP61GA_0 h2 {
+            font-size: 20px
+        }
+
+        ._29HP61GA_0 h3 {
+            font-size: 19px
+        }
+
+        ._29HP61GA_0 h4 {
+            font-size: 18px
+        }
+
+        ._29HP61GA_0 h5 {
+            font-size: 17px
+        }
+
+        ._29HP61GA_0 center,
+        ._29HP61GA_0 p {
+            font-weight: 400;
+            color: #353535;
+            margin-top: 0;
+            margin-bottom: 30px;
+            word-break: break-word
+        }
+
+        ._29HP61GA_0 center {
+            text-align: center
+        }
+
+        ._29HP61GA_0 blockquote {
+            margin-top: 0;
+            margin-bottom: 34px;
+            border-left: 3px solid #e8e8e8;
+            padding-left: 17px;
+            color: #353535
+        }
+
+        ._29HP61GA_0 blockquote p {
+            margin-top: 0;
+            margin-bottom: 0
+        }
+
+        ._29HP61GA_0 ol,
+        ._29HP61GA_0 ul {
+            margin-bottom: 30px
+        }
+
+        ._29HP61GA_0 ol p,
+        ._29HP61GA_0 ul p {
+            margin-top: 0;
+            margin-bottom: 0
+        }
+
+        ._29HP61GA_0 ol {
+            list-style: decimal;
+            margin-left: 20px
+        }
+
+        ._29HP61GA_0 ul li {
+            padding-left: 17px;
+            position: relative;
+            margin-bottom: 10px
+        }
+
+        ._29HP61GA_0 ul li:after {
+            content: "";
+            height: 6px;
+            width: 6px;
+            border-radius: 50%;
+            background: #353535;
+            position: absolute;
+            top: 10px;
+            left: 0
+        }
+
+        ._29HP61GA_0 .orange {
+            color: #fa8919
+        }
+
+        ._29HP61GA_0 .reference {
+            color: #888
+        }
+
+        ._29HP61GA_0 .m-right {
+            text-align: right
+        }
+
+        ._29HP61GA_0 .m-center {
+            text-align: center;
+            display: block
+        }
+
+        ._29HP61GA_0 .m-gray {
+            color: #888
+        }
+
+        ._29HP61GA_0 .m-small {
+            font-size: 15px
+        }
+
+        ._29HP61GA_0 table.hljs-ln {
+            margin-bottom: 0;
+            border-spacing: 0;
+            border-collapse: collapse
+        }
+
+        ._29HP61GA_0 table.hljs-ln,
+        ._29HP61GA_0 table.hljs-ln tbody,
+        ._29HP61GA_0 table.hljs-ln td,
+        ._29HP61GA_0 table.hljs-ln tr {
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box
+        }
+
+        ._29HP61GA_0 table.hljs-ln td {
+            padding: 0;
+            border: 0
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-numbers {
+            min-width: 15px;
+            font-size: 12px;
+            color: rgba(27, 31, 35, .3);
+            text-align: right;
+            white-space: nowrap;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-code,
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-numbers {
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, Courier, monospace;
+            line-height: 20px;
+            vertical-align: top
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-code {
+            position: relative;
+            padding-right: 10px;
+            padding-left: 10px;
+            overflow: visible;
+            font-size: 13px;
+            color: #666;
+            word-wrap: normal;
+            white-space: pre
+        }
+
+    </style>
+</head>
+<body>
+<div class="_29HP61GA_0">
+<h1>22-强化学习：让推荐系统像智能机器人一样自主学习</h1>
+<p>你好，我是王喆。这节课我们继续来讲深度推荐模型发展的前沿趋势，来学习强化学习（Reinforcement Learning）与深度推荐模型的结合。</p><p>强化学习也被称为增强学习，它在模型实时更新、用户行为快速反馈等方向上拥有巨大的优势。自从2018年开始，它就被大量应用在了推荐系统中，短短几年时间内，<a href="http://www.personal.psu.edu/~gjz5038/paper/www2018_reinforceRec/www2018_reinforceRec.pdf">微软</a>、<a href="https://tech.meituan.com/2018/11/15/reinforcement-learning-in-mt-recommend-system.html">美团</a>、<a href="https://arxiv.org/abs/1803.00710">阿里</a>等多家一线公司都已经有了强化学习的成功应用案例。</p><p>虽然，强化学习在推荐系统中的应用是一个很复杂的工程问题，我们自己很难在单机环境下模拟，但理解它在推荐系统中的应用方法，是我们进一步改进推荐系统的关键点之一，也是推荐系统发展的趋势之一。</p><p>所以这节课，我会带你重点学习这三点内容：一是强化学习的基本概念；二是，我会以微软的DRN模型为例，帮你厘清强化学习在推荐系统的应用细节；三是帮助你搞清楚深度学习和强化学习的结合点究竟在哪。</p><h2>强化学习的基本概念</h2><p>强化学习的基本原理，简单来说，就是<strong>一个智能体通过与环境进行交互，不断学习强化自己的智力，来指导自己的下一步行动，以取得最大化的预期利益</strong>。</p><p>事实上，任何一个有智力的个体，它的学习过程都遵循强化学习所描述的原理。比如说，婴儿学走路就是通过与环境交互，不断从失败中学习，来改进自己的下一步的动作才最终成功的。再比如说，在机器人领域，一个智能机器人控制机械臂来完成一个指定的任务，或者协调全身的动作来学习跑步，本质上都符合强化学习的过程。</p><!-- [[[read_end]]] --><p>为了把强化学习技术落地，只清楚它的基本原理显然是不够的，我们需要清晰地定义出强化学习中的每个关键变量，形成一套通用的技术框架。对于一个通用的强化学习框架来说，有这么六个元素是必须要有的：</p><ul>
+<li><strong>智能体（Agent）</strong>：强化学习的主体也就是作出决定的“大脑”；</li>
+<li><strong>环境（Environment）</strong>：智能体所在的环境，智能体交互的对象；</li>
+<li><strong>行动（Action）</strong>：由智能体做出的行动；</li>
+<li><strong>奖励（Reward）</strong>：智能体作出行动后，该行动带来的奖励；</li>
+<li><strong>状态（State）</strong>：智能体自身当前所处的状态；</li>
+<li><strong>目标（Objective）</strong>：指智能体希望达成的目标。</li>
+</ul><p>为了方便记忆，我们可以用一段话把强化学习的六大要素串起来：一个<strong>智能体</strong>身处在不断变化的<strong>环境</strong>之中，为了达成某个<strong>目标</strong>，它需要不断作出<strong>行动</strong>，行动会带来好或者不好的<strong>奖励</strong>，智能体收集起这些奖励反馈进行自我学习，改变自己所处的<strong>状态</strong>，再进行下一步的行动，然后智能体会持续这个“<strong>行动-奖励-更新状态</strong>”的循环，不断优化自身，直到达成设定的目标。</p><p>这就是强化学习通用过程的描述，那么，对于推荐系统而言，我们能不能创造这样一个会自我学习、自我调整的智能体，为用户进行推荐呢？事实上，微软的DRN模型已经实现这个想法了。下面，我就以DRN模型为例，来给你讲一讲在推荐系统中，强化学习的六大要素都是什么，强化学习具体又是怎样应用在推荐系统中的。</p><h2>强化学习推荐系统框架</h2><p>强化学习推荐模型DRN（Deep Reinforcement Learning Network，深度强化学习网络）是微软在2018年提出的，它被应用在了新闻推荐的场景上，下图1是DRN的框架图。事实上，它不仅是微软DRN的框架图，也是一个经典的强化学习推荐系统技术框图。</p><p><img src="https://static001.geekbang.org/resource/image/2f/27/2ff55be8dea34e992bcb09e1f3c39a27.jpg" alt="" title="图1 深度强化学习推荐系统框架"></p><p>从这个技术框图中，我们可以清楚地看到强化学习的六大要素。接下来，我就以DRN模型的学习过程串联起所有要素，来和你详细说说这六大要素在推荐系统场景下分别指的是什么，以及每个要素的位置和作用。</p><p>在新闻的推荐系统场景下，DRN模型的第一步是初始化推荐系统，主要初始化的是推荐模型，我们可以利用离线训练好的模型作为初始化模型，其他的还包括我们之前讲过的特征存储、推荐服务器等等。</p><p>接下来，推荐系统作为智能体会根据当前已收集的用户行为数据，也就是当前的状态，对新闻进行排序这样的行动，并在新闻网站或者App这些环境中推送给用户。</p><p>用户收到新闻推荐列表之后，可能会产生点击或者忽略推荐结果的反馈。这些反馈都会作为正向或者负向奖励再反馈给推荐系统。</p><p>推荐系统收到奖励之后，会根据它改变、更新当前的状态，并进行模型训练来更新模型。接着，就是推荐系统不断重复“排序-推送-反馈”的步骤，直到达成提高新闻的整体点击率或者用户留存等目的为止。</p><p>为了方便你进行对比，我也把这六大要素在推荐系统场景下的定义整理在了下面，你可以看一看。</p><p><img src="https://static001.geekbang.org/resource/image/ea/2b/eac0fea51d5033a35332cd81f653202b.jpeg" alt=""></p><p>到这里，你有没有发现强化学习推荐系统跟传统推荐系统相比，它的主要特点是什么？其实，就在于强化学习推荐系统始终在强调“持续学习”和“实时训练”。它不断利用新学到的知识更新自己，做出最及时的调整，这也正是将强化学习应用于推荐系统的收益所在。</p><p>我们现在已经熟悉了强化学习推荐系统的框架，但其中最关键的部分“智能体”到底长什么样呢？微软又是怎么实现“实时训练”的呢？接下来，就让我们深入DRN的细节中去看一看。</p><h2>深度强化学习推荐模型DRN</h2><p>智能体是强化学习框架的核心，作为推荐系统这一智能体来说，推荐模型就是推荐系统的“大脑”。在DRN框架中，扮演“大脑”角色的是Deep Q-Network (深度Q网络，DQN)。其中，Q是Quality的简称，指通过对行动进行质量评估，得到行动的效用得分，来进行行动决策。</p><p><img src="https://static001.geekbang.org/resource/image/75/8a/75d38d425b1a72350ce85e8b676d928a.jpg" alt="" title="图2 DQN的模型架构图"></p><p>DQN的网络结构如图2所示，它就是一个典型的双塔结构。其中，用户塔的输入特征是用户特征和场景特征，物品塔的输入向量是所有的用户、环境、用户-新闻交叉特征和新闻特征。</p><p>在强化学习的框架下，用户塔特征向量因为代表了用户当前所处的状态，所以也可被视为<strong>状态向量</strong>。物品塔特征向量则代表了系统下一步要选择的新闻，我们刚才说了，这个选择新闻的过程就是智能体的“行动”，所以物品塔特征向量也被称为<strong>行动向量</strong>。</p><p>双塔模型通过对状态向量和行动向量分别进行MLP处理，再用互操作层生成了最终的行动质量得分Q(s,a)，智能体正是通过这一得分的高低，来选择到底做出哪些行动，也就是推荐哪些新闻给用户的。</p><p>其实到这里为止，我们并没有看到强化学习的优势，貌似就是套用了强化学习的概念把深度推荐模型又解释了一遍。别着急，下面我要讲的DRN学习过程才是强化学习的精髓。</p><h3>DRN的学习过程</h3><p>DRN的学习过程是整个强化学习推荐系统框架的重点，正是因为可以在线更新，才使得强化学习模型相比其他“静态”深度学习模型有了更多实时性上的优势。下面，我们就按照下图中从左至右的时间轴，来描绘一下DRN学习过程中的重要步骤。</p><p><img src="https://static001.geekbang.org/resource/image/96/2a/96509410e50e019e5077f6a2a909292a.jpg" alt="" title="图3 DRN的学习过程"></p><p>我们先来看离线部分。DRN根据历史数据训练好DQN模型，作为智能体的初始化模型。</p><p>而在线部分根据模型更新的间隔分成n个时间段，这里以t1到t5时间段为例。首先在t1到t2阶段，DRN利用初始化模型进行一段时间的推送服务，积累反馈数据。接着是在t2时间点，DRN利用t1到t2阶段积累的用户点击数据，进行模型微更新（Minor update）。</p><p>最后在t4时间点，DRN利用t1到t4阶段的用户点击数据及用户活跃度数据，进行模型的主更新（Major update）。时间线不断延长，我们就不断重复t1到t4这3个阶段的操作。</p><p>这其中，我要重点强调两个操作，一个是在t4的时间点出现的模型主更新操作，我们可以理解为利用历史数据的重新训练，用训练好的模型来替代现有模型。另一个是t2、t3时间点提到的模型微更新操作，想要搞清楚它到底是怎么回事，还真不容易，必须要牵扯到DRN使用的一种新的在线训练方法，Dueling Bandit Gradient Descent algorithm（竞争梯度下降算法）。</p><h3>DRN的在线学习方法：竞争梯度下降算法</h3><p>我先把竞争梯度下降算法的流程图放下了下面。接下来，我就结合这个流程图，来给你详细讲讲它的过程和它会涉及的模型微更新操作。</p><p><img src="https://static001.geekbang.org/resource/image/c9/14/c94b7122f71d8b7845ffca3fd239e314.jpg" alt="" title="图4 DRN的在线学习过程"></p><p>DRN的在线学习过程主要包括三步，我带你一起来看一下。</p><p>第一步，对于已经训练好的当前网络Q，对其模型参数<strong>W</strong>添加一个较小的随机扰动，得到一个新的模型参数，这里我们称对应的网络为探索网络Q~。</p><p>在这一步中，由当前网络Q生成探索网络  ，产生随机扰动的公式1如下：</p><p>$$<br>
+ΔW=α⋅rand(−1,1)⋅W <br><br>
+\Delta \mathrm{W}=\alpha \cdot \operatorname{rand}(-1,1) \cdot W 【这个感觉有问题】<br>
+$$</p><p>其中，$\alpha$是一个探索因子，决定探索力度的大小。rand(-1,1)产生的是一个[-1,1]之间的随机数。</p><p>第二步，对于当前网络Q和探索网络 Q~，分别生成推荐列表L和  L~，再将两个推荐列表用间隔穿插（Interleaving）的方式融合，组合成一个推荐列表后推送给用户。</p><p>最后一步是实时收集用户反馈。如果探索网络Q～生成内容的效果好于当前网络Q，我们就用探索网络代替当前网络，进入下一轮迭代。反之，我们就保留当前网络。</p><p>总的来说，DRN的在线学习过程利用了“探索”的思想，其调整模型的粒度可以精细到每次获得反馈之后，这一点很像随机梯度下降的思路：虽然一次样本的结果可能产生随机扰动，但只要总的下降趋势是正确的，我们就能够通过海量的尝试最终达到最优点。DRN正是通过这种方式，让模型时刻与最“新鲜”的数据保持同步，实时地把最新的奖励信息融合进模型中。模型的每次“探索”和更新也就是我们之前提到的模型“微更新”。</p><p>到这里，我们就讲完了微软的深度强化学习模型DRN。我们可以想这样一个问题：这个模型本质上到底改进了什么？从我的角度来说，它最大的改进就是把模型推断、模型更新、推荐系统工程整个一体化了，让整个模型学习的过程变得更高效，能根据用户的实时奖励学到新知识，做出最实时的反馈。但同时，也正是因为工程和模型紧紧地耦合在一起，让强化学习在推荐系统中的落地并不容易。</p><p>既然，说到了强化学习的落地，这里我还想再多说几句。因为涉及到了模型训练、线上服务、数据收集、实时模型更新等几乎推荐系统的所有工程环节，所以强化学习整个落地过程的工程量非常大。这不像我们之前学过的深度学习模型，只要重新训练一下它，我们就可以改进一个模型结构，强化学习模型需要工程和研究部门通力合作才能实现。</p><p>在这个过程中，能不能有一个架构师一样的角色来通盘协调，就成为了整个落地过程的关键点。有一个环节出错，比如说模型在做完实时训练后，模型参数更新得不及时，那整个强化学习的流程就被打乱了，整体的效果就会受到影响。</p><p>所以对我们个人来说，掌握强化学习模型的框架，也就多了一个发展的方向。那对于团队来说，如果强化学习能够成功落地，也一定证明了这个团队有着极强的合作能力，在工程和研究方向上都有着过硬的实践能力。</p><h2>小结</h2><p>强化学习是近来在学术界和业界都很火的话题，它起源于机器人领域。这节课，我们要重点掌握强化学习的通用过程，以及它在深度学习中的应用细节。</p><p>简单来说，强化学习的通用过程就是训练一个智能体，让它通过与环境进行交互，不断学习强化自己的智力，并指导自己的下一步行动，以取得最大化的预期利益。这也让强化学习在模型实时更新，用户行为快速反馈等方向上拥有巨大的优势。</p><p>但强化学习的落地并不容易，整个落地过程的工程量非常大。现阶段，我们只需要以微软的DRN模型作为参考，重点掌握强化学习在推荐系统领域的应用细节就可以了。</p><p>一个是DRN构建了双塔模型作为深度推荐模型，来得出“行动得分”。第二个是DRN的更新方式，它利用“微更新”实时地学习用户的奖励反馈，更新推荐模型，再利用阶段性的“主更新”学习全量样本，更新模型。第三个是微更新时的方法，竞争梯度下降算法，它通过比较原网络和探索网络的实时效果，来更新模型的参数。</p><p>为了方便你复习，我们把这节课的重点知识总结在了下面的表格中，你可以看看。</p><p><img src="https://static001.geekbang.org/resource/image/a6/15/a62dc5c0837f25bb8dd9bc2aa46e5c15.jpeg" alt=""></p><h2>课后思考</h2><p>DRN的微更新用到了竞争梯度下降算法，你觉得这个算法有没有弊端？你还知道哪些可以进行模型增量更新或者实时更新的方法吗？</p><p>欢迎把你的思考和疑问写在留言区，如果你的朋友们也在关注强化学习在推荐系统上的发展，那不妨也把这节课转发给他们，我们下节课见！</p><h2>精选留言：</h2>
+        <ul>
+        
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            孙晓波  2020-11-30 09:29:22
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            老师你好<br>增加实时性上采用FTRL进行在线学习和强化学习在最终结果上有什么区别，如何判断选择 [1赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-12-01 12:18:34</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">online learning其实可以看作强化学习的一个子集，或者说是子类。所以FTRL做在线学习本质上就是强化学习的一种。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            那时刻  2020-12-01 08:48:08
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            “微更新”实时地学习用户的奖励反馈，更新推荐模型，再利用阶段性的“主更新”学习全量样本，更新模型。此时主更新更新的模型，会把微更新调优的模型完全覆盖么？如此的话，会不会把微更新调优的模型参数给抹掉了，从而导致模型参数变坏呢？ 
+        </div>
+        
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            浣熊当家  2020-11-30 12:10:02
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            请问老师，非强化学习的模型，在业界一般模型参数多久更新一次呢？ 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-12-01 12:23:34</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">一般的公司天更新的居多，算力强的公司也有一小时级别更新的。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            张弛 Conor  2020-11-30 10:47:10
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            思考题：我认为这个算法相比于随机梯度下降算法的弊端是：每个参数的更新方向是随机的，而不是像随机下降算法一样，是沿着梯度更新的。随机更新可能导致的结果就是：1.收敛是缓慢的。2.很难收敛到全局最优值。<br>课后问题：<br>1.请问老师，竞争梯度下降算法需要比较探索网络和当前网络的推荐效果，但是在模型结构图中，微更新的参考只有上阶段的推荐反馈，这里的推荐反馈只有一个，那么如何去更新竞争梯度下降算法呢？探索网络和当前网络的推荐效果是在图示的哪个阶段进行实现的呢？<br>2.请问老师，主更新的训练策略使用的也是竞争梯度下降算法吗？老师在文中提到，使用历史数据重新训练，这里指的是从零训练，还是说从离线阶段输出的模型进行fine-tune呢？ 
+        </div>
+        
+    </div>
+</li>
+            </ul>
+</div>
+</body>
+</html>

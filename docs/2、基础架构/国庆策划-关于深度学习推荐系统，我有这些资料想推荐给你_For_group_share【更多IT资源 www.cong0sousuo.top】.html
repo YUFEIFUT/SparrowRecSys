@@ -1,0 +1,999 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <!--<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>-->
+    <title>国庆策划-关于深度学习推荐系统，我有这些资料想推荐给你</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <style>
+        html {
+            color: #333;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            text-rendering: optimizelegibility;
+            font-family: Helvetica Neue, PingFang SC, Verdana, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif
+        }
+
+        html.borderbox *,
+        html.borderbox :after,
+        html.borderbox :before {
+            box-sizing: border-box
+        }
+
+        article,
+        aside,
+        blockquote,
+        body,
+        button,
+        code,
+        dd,
+        details,
+        dl,
+        dt,
+        fieldset,
+        figcaption,
+        figure,
+        footer,
+        form,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        header,
+        hr,
+        input,
+        legend,
+        li,
+        menu,
+        nav,
+        ol,
+        p,
+        pre,
+        section,
+        td,
+        textarea,
+        th,
+        ul {
+            margin: 0;
+            padding: 0
+        }
+
+        article,
+        aside,
+        details,
+        figcaption,
+        figure,
+        footer,
+        header,
+        menu,
+        nav,
+        section {
+            display: block
+        }
+
+        audio,
+        canvas,
+        video {
+            display: inline-block
+        }
+
+        body,
+        button,
+        input,
+        select,
+        textarea {
+            font: 300 1em/1.8 PingFang SC, Lantinghei SC, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, Helvetica, sans-serif
+        }
+
+        button::-moz-focus-inner,
+        input::-moz-focus-inner {
+            padding: 0;
+            border: 0
+        }
+
+        table {
+            border-collapse: collapse;
+            border-spacing: 0
+        }
+
+        fieldset,
+        img {
+            border: 0
+        }
+
+        blockquote {
+            position: relative;
+            color: #999;
+            font-weight: 400;
+            border-left: 1px solid #1abc9c;
+            padding-left: 1em;
+            margin: 1em 3em 1em 2em
+        }
+
+        @media only screen and (max-width: 640px) {
+            blockquote {
+                margin: 1em 0
+            }
+        }
+
+        abbr,
+        acronym {
+            border-bottom: 1px dotted;
+            font-variant: normal
+        }
+
+        abbr {
+            cursor: help
+        }
+
+        del {
+            text-decoration: line-through
+        }
+
+        address,
+        caption,
+        cite,
+        code,
+        dfn,
+        em,
+        th,
+        var {
+            font-style: normal;
+            font-weight: 400
+        }
+
+        ol,
+        ul {
+            list-style: none
+        }
+
+        caption,
+        th {
+            text-align: left
+        }
+
+        q:after,
+        q:before {
+            content: ""
+        }
+
+        sub,
+        sup {
+            font-size: 75%;
+            line-height: 0;
+            position: relative
+        }
+
+        :root sub,
+        :root sup {
+            vertical-align: baseline
+        }
+
+        sup {
+            top: -.5em
+        }
+
+        sub {
+            bottom: -.25em
+        }
+
+        a {
+            color: #1abc9c
+        }
+
+        a:hover {
+            text-decoration: underline
+        }
+
+        .typo a {
+            border-bottom: 1px solid #1abc9c
+        }
+
+        .typo a:hover {
+            border-bottom-color: #555;
+            color: #555
+        }
+
+        .typo a:hover,
+        a,
+        ins {
+            text-decoration: none
+        }
+
+        .typo-u,
+        u {
+            text-decoration: underline
+        }
+
+        mark {
+            background: #fffdd1;
+            border-bottom: 1px solid #ffedce;
+            padding: 2px;
+            margin: 0 5px
+        }
+
+        code,
+        pre,
+        pre tt {
+            font-family: Courier, Courier New, monospace
+        }
+
+        pre {
+            background: hsla(0, 0%, 97%, .7);
+            border: 1px solid #ddd;
+            padding: 1em 1.5em;
+            display: block;
+            -webkit-overflow-scrolling: touch
+        }
+
+        hr {
+            border: none;
+            border-bottom: 1px solid #cfcfcf;
+            margin-bottom: .8em;
+            height: 10px
+        }
+
+        .typo-small,
+        figcaption,
+        small {
+            font-size: .9em;
+            color: #888
+        }
+
+        b,
+        strong {
+            font-weight: 700;
+            color: #000
+        }
+
+        [draggable] {
+            cursor: move
+        }
+
+        .clearfix:after,
+        .clearfix:before {
+            content: "";
+            display: table
+        }
+
+        .clearfix:after {
+            clear: both
+        }
+
+        .clearfix {
+            zoom: 1
+        }
+
+        .textwrap,
+        .textwrap td,
+        .textwrap th {
+            word-wrap: break-word;
+            word-break: break-all
+        }
+
+        .textwrap-table {
+            table-layout: fixed
+        }
+
+        .serif {
+            font-family: Palatino, Optima, Georgia, serif
+        }
+
+        .typo-dl,
+        .typo-form,
+        .typo-hr,
+        .typo-ol,
+        .typo-p,
+        .typo-pre,
+        .typo-table,
+        .typo-ul,
+        .typo dl,
+        .typo form,
+        .typo hr,
+        .typo ol,
+        .typo p,
+        .typo pre,
+        .typo table,
+        .typo ul,
+        blockquote {
+            margin-bottom: 1rem
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: PingFang SC, Helvetica Neue, Verdana, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif;
+            color: #000;
+            line-height: 1.35
+        }
+
+        .typo-h1,
+        .typo-h2,
+        .typo-h3,
+        .typo-h4,
+        .typo-h5,
+        .typo-h6,
+        .typo h1,
+        .typo h2,
+        .typo h3,
+        .typo h4,
+        .typo h5,
+        .typo h6 {
+            margin-top: 1.2em;
+            margin-bottom: .6em;
+            line-height: 1.35
+        }
+
+        .typo-h1,
+        .typo h1 {
+            font-size: 2em
+        }
+
+        .typo-h2,
+        .typo h2 {
+            font-size: 1.8em
+        }
+
+        .typo-h3,
+        .typo h3 {
+            font-size: 1.6em
+        }
+
+        .typo-h4,
+        .typo h4 {
+            font-size: 1.4em
+        }
+
+        .typo-h5,
+        .typo-h6,
+        .typo h5,
+        .typo h6 {
+            font-size: 1.2em
+        }
+
+        .typo-ul,
+        .typo ul {
+            margin-left: 1.3em;
+            list-style: disc
+        }
+
+        .typo-ol,
+        .typo ol {
+            list-style: decimal;
+            margin-left: 1.9em
+        }
+
+        .typo-ol ol,
+        .typo-ol ul,
+        .typo-ul ol,
+        .typo-ul ul,
+        .typo li ol,
+        .typo li ul {
+            margin-bottom: .8em;
+            margin-left: 2em
+        }
+
+        .typo-ol ul,
+        .typo-ul ul,
+        .typo li ul {
+            list-style: circle
+        }
+
+        .typo-table td,
+        .typo-table th,
+        .typo table caption,
+        .typo table td,
+        .typo table th {
+            border: 1px solid #ddd;
+            padding: .5em 1em;
+            color: #666
+        }
+
+        .typo-table th,
+        .typo table th {
+            background: #fbfbfb
+        }
+
+        .typo-table thead th,
+        .typo table thead th {
+            background: hsla(0, 0%, 95%, .7)
+        }
+
+        .typo table caption {
+            border-bottom: none
+        }
+
+        .typo-input,
+        .typo-textarea {
+            -webkit-appearance: none;
+            border-radius: 0
+        }
+
+        .typo-em,
+        .typo em,
+        caption,
+        legend {
+            color: #000;
+            font-weight: inherit
+        }
+
+        .typo-em {
+            position: relative
+        }
+
+        .typo-em:after {
+            position: absolute;
+            top: .65em;
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            content: "\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB"
+        }
+
+        .typo img {
+            max-width: 100%
+        }
+
+        .common-content {
+            font-weight: 400;
+            color: #353535;
+            line-height: 1.75rem;
+            white-space: normal;
+            word-break: normal;
+            font-size: 1rem
+        }
+
+        .common-content img {
+            display: block;
+            max-width: 100%;
+            background-color: #eee
+        }
+
+        .common-content audio,
+        .common-content video {
+            width: 100%;
+            background-color: #eee
+        }
+
+        .common-content center,
+        .common-content font {
+            margin-top: 1rem;
+            display: inline-block
+        }
+
+        .common-content center {
+            width: 100%
+        }
+
+        .common-content pre {
+            margin-top: 1rem;
+            padding-left: 0;
+            padding-right: 0;
+            position: relative;
+            overflow: hidden
+        }
+
+        .common-content pre code {
+            font-size: .8rem;
+            font-family: Consolas, Liberation Mono, Menlo, monospace, Courier;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            overflow-x: auto
+        }
+
+        .common-content hr {
+            border: none;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #f5f5f5;
+            height: 1px;
+            background: none
+        }
+
+        .common-content b,
+        .common-content h1,
+        .common-content h2,
+        .common-content h3,
+        .common-content h4,
+        .common-content h5,
+        .common-content strong {
+            font-weight: 700
+        }
+
+        .common-content h1,
+        .common-content h2 {
+            font-size: 1.125rem;
+            margin-bottom: .45rem
+        }
+
+        .common-content h3,
+        .common-content h4,
+        .common-content h5 {
+            font-size: 1rem;
+            margin-bottom: .45rem
+        }
+
+        .common-content p {
+            font-weight: 400;
+            color: #353535;
+            margin-top: .15rem
+        }
+
+        .common-content .orange {
+            color: #ff5a05
+        }
+
+        .common-content .reference {
+            font-size: 1rem;
+            color: #888
+        }
+
+        .custom-rich-content h1 {
+            margin-top: 0;
+            font-weight: 400;
+            font-size: 15.25px;
+            border-bottom: 1px solid #eee;
+            line-height: 2.8
+        }
+
+        .custom-rich-content li,
+        .custom-rich-content p {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.6
+        }
+
+        table.hljs-ln {
+            margin-bottom: 0;
+            border-spacing: 0;
+            border-collapse: collapse
+        }
+
+        table.hljs-ln,
+        table.hljs-ln tbody,
+        table.hljs-ln td,
+        table.hljs-ln tr {
+            box-sizing: border-box
+        }
+
+        table.hljs-ln td {
+            padding: 0;
+            border: 0
+        }
+
+        table.hljs-ln td.hljs-ln-numbers {
+            min-width: 15px;
+            color: rgba(27, 31, 35, .3);
+            text-align: right;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none
+        }
+
+        table.hljs-ln td.hljs-ln-code,
+        table.hljs-ln td.hljs-ln-numbers {
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, Courier, monospace;
+            font-size: 12px;
+            line-height: 20px;
+            vertical-align: top
+        }
+
+        table.hljs-ln td.hljs-ln-code {
+            position: relative;
+            padding-right: 10px;
+            padding-left: 10px;
+            overflow: visible;
+            color: #24292e;
+            word-wrap: normal;
+            white-space: pre
+        }
+
+        video::-webkit-media-controls {
+            overflow: hidden !important
+        }
+
+        video::-webkit-media-controls-enclosure {
+            width: calc(100% + 32px);
+            margin-left: auto
+        }
+
+        ._29HP61GA_0 {
+            max-width:800px;
+            margin:0 auto;
+            margin-bottom: 20px;
+            font-weight: 400;
+            color: #353535;
+            line-height: 1.76;
+            white-space: normal;
+            word-break: normal;
+            font-size: 17px;
+            -webkit-transition: background-color .3s ease;
+            transition: background-color .3s ease
+        }
+
+        ._29HP61GA_0 .MathJax_Display {
+            overflow: auto
+        }
+
+        ._29HP61GA_0 .poster {
+            position: fixed;
+            left: -10000px;
+            top: -10000px;
+            overflow: hidden;
+            padding: 1rem;
+            background: #ececec
+        }
+
+        ._29HP61GA_0 .richcontent-pre-copy {
+            font-size: 13px;
+            color: #888;
+            position: absolute;
+            right: 1em;
+            top: .5em;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none
+        }
+
+        ._29HP61GA_0 .richcontent-pre-copy .iconfont {
+            font-size: 12px;
+            margin-right: .2em
+        }
+
+        ._29HP61GA_0 a {
+            color: #fa8919;
+            border-bottom: 1px solid #fa8919
+        }
+
+        ._29HP61GA_0 img {
+            display: block;
+            max-width: 100%;
+            position: relative;
+            left: 50%;
+            -webkit-transform: translateX(-50%);
+            transform: translateX(-50%);
+            background-color: #eee;
+            vertical-align: top;
+            border-radius: 0
+        }
+
+        ._29HP61GA_0 audio,
+        ._29HP61GA_0 video {
+            width: 100%;
+            background-color: #eee
+        }
+
+        ._29HP61GA_0 pre {
+            margin-top: 16px;
+            padding: 34px 0 0;
+            margin-bottom: 30px;
+            position: relative;
+            border-radius: 6px;
+            background: rgba(246, 247, 251, .749);
+            border: 0
+        }
+
+        ._29HP61GA_0 pre code {
+            font-size: 12px;
+            font-family: Consolas, Liberation Mono, Menlo, monospace, Courier;
+            display: block;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            margin-left: 16px;
+            margin-right: 16px;
+            overflow-x: scroll
+        }
+
+        ._29HP61GA_0 pre code:after {
+            content: "";
+            height: 30px;
+            width: 100%;
+            display: block
+        }
+
+        ._29HP61GA_0 hr {
+            border: none;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #f5f5f5;
+            height: 1px;
+            background: none
+        }
+
+        ._29HP61GA_0 h1,
+        ._29HP61GA_0 h2,
+        ._29HP61GA_0 h3,
+        ._29HP61GA_0 h4,
+        ._29HP61GA_0 h5 {
+            margin-bottom: 20px;
+            margin-top: 0;
+            font-weight: 700
+        }
+
+        ._29HP61GA_0 b,
+        ._29HP61GA_0 strong {
+            font-weight: 700
+        }
+
+        ._29HP61GA_0 h1 {
+            font-size: 21px
+        }
+
+        ._29HP61GA_0 h2 {
+            font-size: 20px
+        }
+
+        ._29HP61GA_0 h3 {
+            font-size: 19px
+        }
+
+        ._29HP61GA_0 h4 {
+            font-size: 18px
+        }
+
+        ._29HP61GA_0 h5 {
+            font-size: 17px
+        }
+
+        ._29HP61GA_0 center,
+        ._29HP61GA_0 p {
+            font-weight: 400;
+            color: #353535;
+            margin-top: 0;
+            margin-bottom: 30px;
+            word-break: break-word
+        }
+
+        ._29HP61GA_0 center {
+            text-align: center
+        }
+
+        ._29HP61GA_0 blockquote {
+            margin-top: 0;
+            margin-bottom: 34px;
+            border-left: 3px solid #e8e8e8;
+            padding-left: 17px;
+            color: #353535
+        }
+
+        ._29HP61GA_0 blockquote p {
+            margin-top: 0;
+            margin-bottom: 0
+        }
+
+        ._29HP61GA_0 ol,
+        ._29HP61GA_0 ul {
+            margin-bottom: 30px
+        }
+
+        ._29HP61GA_0 ol p,
+        ._29HP61GA_0 ul p {
+            margin-top: 0;
+            margin-bottom: 0
+        }
+
+        ._29HP61GA_0 ol {
+            list-style: decimal;
+            margin-left: 20px
+        }
+
+        ._29HP61GA_0 ul li {
+            padding-left: 17px;
+            position: relative;
+            margin-bottom: 10px
+        }
+
+        ._29HP61GA_0 ul li:after {
+            content: "";
+            height: 6px;
+            width: 6px;
+            border-radius: 50%;
+            background: #353535;
+            position: absolute;
+            top: 10px;
+            left: 0
+        }
+
+        ._29HP61GA_0 .orange {
+            color: #fa8919
+        }
+
+        ._29HP61GA_0 .reference {
+            color: #888
+        }
+
+        ._29HP61GA_0 .m-right {
+            text-align: right
+        }
+
+        ._29HP61GA_0 .m-center {
+            text-align: center;
+            display: block
+        }
+
+        ._29HP61GA_0 .m-gray {
+            color: #888
+        }
+
+        ._29HP61GA_0 .m-small {
+            font-size: 15px
+        }
+
+        ._29HP61GA_0 table.hljs-ln {
+            margin-bottom: 0;
+            border-spacing: 0;
+            border-collapse: collapse
+        }
+
+        ._29HP61GA_0 table.hljs-ln,
+        ._29HP61GA_0 table.hljs-ln tbody,
+        ._29HP61GA_0 table.hljs-ln td,
+        ._29HP61GA_0 table.hljs-ln tr {
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box
+        }
+
+        ._29HP61GA_0 table.hljs-ln td {
+            padding: 0;
+            border: 0
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-numbers {
+            min-width: 15px;
+            font-size: 12px;
+            color: rgba(27, 31, 35, .3);
+            text-align: right;
+            white-space: nowrap;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-code,
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-numbers {
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, Courier, monospace;
+            line-height: 20px;
+            vertical-align: top
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-code {
+            position: relative;
+            padding-right: 10px;
+            padding-left: 10px;
+            overflow: visible;
+            font-size: 13px;
+            color: #666;
+            word-wrap: normal;
+            white-space: pre
+        }
+
+    </style>
+</head>
+<body>
+<div class="_29HP61GA_0">
+<h1>国庆策划-关于深度学习推荐系统，我有这些资料想推荐给你</h1>
+<p>你好，我是王喆。明天就是国庆和中秋假期了，这里我提前祝你节日快乐！</p><p>专栏上线以来，通过跟同学们在留言区讨论，我发现同学们的基础差别很大。有的同学已经是其他领域的资深工程师，希望借这门课丰富一下知识体系。有的同学确实是0基础的新手，可能对于机器学习的一些基本概念都不是特别清楚。</p><p>所以，我特意准备了一些适合不同阶段学习的参考书目和一些基础的实践项目，希望你能借着国庆假期查漏补缺，为我们后面的学习打好基础。</p><p>虽然这些参考书适合的学习阶段不同，但它们有两个特点，一是这些书，我都读过很多遍，它们在我学习、工作生涯的某个阶段让我受益匪浅；二是这些书都非常易读易懂，不是那种诘屈聱牙的“不适合人类阅读”的技术书。好，我们先来看看都有哪些书吧。</p><h2>技术参考书，贵精不贵多</h2><p>如果你在学习<a href="https://time.geekbang.org/column/article/291245">第3节课</a>的时候有一些困难，就说明你对机器学习的一些基础概念还不太清楚，我希望你能继续巩固机器学习的基础知识，这里我推荐三本书，你根据自己的偏好和知识基础选择一本就好啦。</p><p><strong>第一本书是南京大学周志华老师的《机器学习》。</strong></p><p><img src="https://static001.geekbang.org/resource/image/42/01/42254cfaea1cb4d1f4701d4yy5d72001.jpg" alt=""></p><p>这本书也称“西瓜书”，它的内容比较偏向传统机器学习，深度学习的内容也有，但不是重点。它的特点就是内容非常全面、详尽，语言也流畅易懂。所以，我把它推荐给机器学习基础不太好的同学，希望能够帮助你巩固基础。</p><!-- [[[read_end]]] --><p><strong>第二本书是复旦大学邱锡鹏老师的《神经网络与深度学习》。</strong></p><p><img src="https://static001.geekbang.org/resource/image/79/b0/79415dyye34a8997abf3f2bfa1f592b0.jpg" alt=""></p><p>这本书也叫“蒲公英书”，它更偏向介绍神经网络和深度学习，对深度学习的介绍非常全面、详尽，但又不故作高深，是我们入门深度学习非常好的选择。</p><p><strong>第三本书是诸葛越和hulu机器学习团队的《百面机器学习》。</strong></p><p><img src="https://static001.geekbang.org/resource/image/be/8f/bef7d9a7cf91840732ae93238dd4068f.jpg" alt=""></p><p>这本书是我在hulu时跟hulu的机器学习团队一同编写的，也称“葫芦书”。它重在讲解一些机器学习领域关键的知识点，如果你正在准备算法岗位的知识性面试，它会是你极佳的选择。这本书比较适合有一些机器学习基础，但还不够深入的同学来查漏补缺。</p><p>除此之外，如果你在学习推荐系统技术架构时还有一些疑惑的话，我再给你推荐两本推荐系统领域的书籍，你可以利用它们进一步来丰富推荐系统的知识。</p><p><img src="https://static001.geekbang.org/resource/image/34/ab/344bb940aca63yya4cd617d885a8c7ab.jpg" alt=""></p><p>在我刚工作的时候，<strong>项亮的这本《推荐系统实践》</strong>让我受益匪浅，它介绍了经典的协同过滤、矩阵分解方法，还有推荐系统可以利用的数据，以及基本的评测方法等等。时至今日，其中经典的推荐系统知识仍然可以让我们受用。如果你想了解经典的推荐系统算法、技术架构，可以尝试读一读它。</p><p><img src="https://static001.geekbang.org/resource/image/9f/91/9f74436347b19bd473dfc71e9530a291.jpg" alt=""></p><p>这里，我还想给你推荐一本我的新书，<strong>《深度学习推荐系统》</strong>，它是今年年初出版的。我也看到很多同学在留言区提问说“老师，咱们的专栏和这本书的区别在哪呀？”。这里，我统一回复一下。</p><p>这本书当然跟咱们专栏有着千丝万缕的联系，因为它们共享了同样的知识框架。不过，咱们的专栏重在实践，这本书注重介绍知识，二者呈互补的关系。在学习这门课的同时，你也可以购买这本书，进一步拓展自己在深度学习推荐系统这个领域的知识面。</p><p>除了这些和深度学习推荐系统非常相关的书籍之外，我还想给你推荐两本课外书，这两本书是我非常喜欢的计算机领域的“闲书”。如果假期有时间的话，我非常推荐你读一读，它们可以帮助我们建立更全面的计算机思维和系统设计理念。当然，如果你都读过，也欢迎在留言区和我分享你的看法。</p><p><img src="https://static001.geekbang.org/resource/image/34/1c/34585b20d15e6a4449e4ebdc69e6671c.jpg" alt=""></p><p><strong>首先是吴军老师的《数学之美》，</strong>这本书在我刚工作的时候给了我很多的灵感，书中的内容涉及了机器学习、人工智能、信息论、自然语言处理等等重要的计算机科学子领域。虽然涉及面非常广，但是讲得非常透，生动有趣的语言也让我完全没有阅读压力。所以，我把它推荐给想拓展知识面的同学。</p><p><img src="https://static001.geekbang.org/resource/image/4e/ac/4e85ea6bbdb96a025cb319019ca01aac.jpg" alt=""></p><p>计算机经典书籍有很多，但最让我感到惊喜的是这本《<strong>程序员修炼之道</strong>》。我读这本书是两年前，因为已经有了很多大项目的开发和架构经验，所以读这本书时候，很多地方我都会会心一笑，太有感触了。书里面介绍了很多重构、架构、系统设计、程序员哲学相关的经验知识。因为推荐系统毫无疑问是一个复杂的大系统，所以有些时候，我们总要以系统的眼光去看待推荐系统的问题，这本书涉及的理念就至关重要了。</p><p>更关键的是，我非常喜欢它的副标题，“通向务实的最高境界”。我认为这是“返璞归真”的程序员的最高境界，也是我们作为一名工程师应该遵循的思考方式</p><h2>初识实践工具，走好入门第一步</h2><p>咱们这门课之后的实战环节，还会涉及很多推荐系统相关的工具，比如Spark、TensorFlow、Redis、Jetty Server等等。为了在之后的学习中避免一些上手的困难，我建议你先熟悉一下Spark、TensorFlow和Redis这三个工具。如果你对这些工具完全没有概念，可以通过我在下面介绍进行初步的了解。</p><p>首先是Spark。它是业界最流行的分布式计算平台，如果你还没有相关经验的话，我建议你按照我给出的三步来学习。首先，你可以通过<a href="https://www.zhihu.com/question/27974418">这篇文章</a>（如何用形象的比喻描述大数据的技术生态？Hadoop、Hive、Spark 之间是什么关系？）来了解一下大数据的生态，然后，你可以通过Spark的<a href="https://spark.apache.org/docs/2.4.3/quick-start.html">官方教程</a>尝试写一个Spark Hello World程序（在我们的SparrowRecSys里面新建一个Scala文件就可以）。因为咱们这门课大量使用了Spark的机器学习库Spark MLlib，所以最后可以通过<a href="https://spark.apache.org/docs/2.4.3/ml-guide.html">这个官方教程</a>来做一些初步的了解。</p><p>其次是TensorFlow。它是我们这门课要使用的训练深度学习模型的平台。Keras是一套TensorFlow支持的API，因为它的易用性，我们主要利用Keras API来实现我们的推荐模型。所以，我们第一步可以先看一篇<a href="https://blog.csdn.net/li528405176/article/details/83857286">介绍TensorFlow和Keras的基本概念的文章</a>，对它们有一个初步的认识，再通过给TensorFlow的Keras接口写一个Hello World<a href="https://www.tensorflow.org/tutorials/quickstart/beginner">项目</a>做一个基本的上手实践。最后，如果你还有时间，可以通过<a href="https://www.tensorflow.org/tutorials">TensorFlow官方教程</a>进一步熟悉TensorFlow的其他功能。</p><p>最后是Redis。Redis是我们这门课要频繁使用的内存数据库，用来存储模型所需线上特征。你可以先在官网熟悉一下<a href="http://www.redis.cn/">Redis</a><a href="http://www.redis.cn/">的基本介绍</a>，然后下载安装它，最后尝试使用Redis内置客户端redis-cli，来执行几条<a href="http://www.redis.cn/download.html">基本的</a><a href="http://www.redis.cn/download.html">Redis</a><a href="http://www.redis.cn/download.html">命令</a>。</p><p>相信熟悉了深度学习的基础知识和基本工具之后，你学习起来专栏后续的课程就会更加得心应手。对于完全0基础的同学，我可以这样说，如果你能通过我列出的书单和项目列表打牢基础，学习后面的课程肯定完全没有问题！</p><p>最后，我也想问问你，你在进行推荐、广告、搜索这些领域的学习的时候，还阅读过哪些非常不错的技术书？欢迎也在留言区分享出来，我们可以一起交流读后感，也可以让更多的同学受益。最后，再次祝你假期快乐，我们国庆之后再会！</p><hr><h2>推荐阅读</h2><p>Spark：</p><p>1.<a href="https://www.zhihu.com/question/27974418">大数据生态的介绍</a></p><p>2.<a href="https://spark.apache.org/docs/2.4.3/quick-start.html">写一个Spark Hello World程序</a></p><p>3.<a href="https://spark.apache.org/docs/2.4.3/ml-guide.html">Spark的机器学习库MLlib官方文档</a></p><p>TensorFlow：</p><p>1.<a href="https://blog.csdn.net/li528405176/article/details/83857286">TensorFlow和最常用的接口Keras推荐阅读</a></p><p>2.<a href="https://www.tensorflow.org/tutorials/quickstart/beginner">利用TensorFlow的Keras接口写一个hello world</a></p><p>3.<a href="https://www.tensorflow.org/tutorials">TensorFlow官方教程</a></p><p>Redis：</p><p>1.<a href="http://www.redis.cn/">Redis官方简介</a></p><p>2.<a href="http://www.redis.cn/download.html">基本的Redis命令</a></p><h2>精选留言：</h2>
+        <ul>
+        
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            朱月俊  2020-09-30 07:48:45
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            以前搞过一段时间的搜索，特别是结构化内容搜索中的垂直行业搜索。基本的步骤与非结构化搜索差不多。<br><br>主要包括三块，建库数据引入，建库数据预处理，在线检索。<br>对于建库数据引入，就是指如何接入站点数据，涉及到爬虫操作。因此，需要了解一下爬虫如何使用。<br><br>建库数据预处理，涉及到数据解析，生成词典，索引，摘要。因为数据预处理分了多个阶段，那么还需要kafka传递，数据预处理还涉及到flink，索引涉及到类似于elasticsearch的引擎，摘要涉及到高效的kv存储系统。因此，这块需要学习。kafka,flink,elasticsearch,kv存储等。<br><br>在线检索是根据用户的query给用户返回搜索结果。首先需要通过语意识别分析出query可能搜索的类别（领域），然后对query进行分词，拿着分词在特定类别下面通过状态机命中模板（词典相关），然后拿模板中字段的值去elasticsearch提取符合条件的key，然后去摘要库获取摘要结果，最后再拿一些网页&#47;用户信息对多条返回结果进行排名，返回最精准的结果给用户。<br>这里涉及到语意分析，分词，状态机，排序等知识。<br><br>之前关注实战多了点，后续需要补充理论知识。 [4赞]
+        </div>
+        
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            野水晶体  2020-10-01 09:57:08
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            作为一个玩了推荐有几年的半老炮，王喆老师推荐的几本书差不多都看过一遍，尤其是王喆老师的深度学习推荐系统和吴军老师的数学之美，都是第一本书翻烂了，又买了第二本书在手的人，推荐系统的算法和工程在心里逐渐形成体系的过程中越来越感觉有两点困扰心里：其一是构建过程中怎么思考的问题，怎么选择算法，基于什么样的逻辑原则优化算法，不知后文有没有这方面的技巧？其二是推荐落到产品上的应用，对于公司来讲，算法毕竟无法交付，老师在构建推荐的过程中还有哪些比较有意思的应用？<br>不知这两方面内容老师后面的文章中会不会涉及，或者有哪些资料或书籍可以推荐？ [1赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-10-03 06:41:26</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">你的问题非常好，是一个senior工程师应该思考问题的方法，但说实话，这些问题的解决还是严重依赖工作上的积累和经验。因为算法落地的场景和优化的点实在太多了。<br><br>所以我一直讲不要期待magic和银弹，这门课肯定会介绍一些经验，但主要还是放在帮大家建立知识和工程上的架构。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            生命阅读  2020-09-30 03:04:50
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            老师您好，我想请您回答一下如何建立起入门推荐系统的知识体系，您能说下您的成长路线吗？还有就是希望能够科普下学习推荐系统对机器学习的各种方法和编程要掌握到何种程度？<br>学习资料：吴军老师的所有书，花书，动手学花书，统计学习方法，Python深度学习，深度学习入门，深度学习的数学。 [1赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-10-03 06:44:39</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">如果你真的认真读过你列出的这些书，那对于推荐系统工程师来说完全够了。<br><br>至于成长路线，找机会我开一个番外篇聊一聊我的学习工作经历吧。但这门课就是帮大家建立推荐系统知识体系的，相信能帮助到大家。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            🤪🤩  2020-10-01 19:43:17
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            我是一个产品，目前在自学推荐，请问老师有没有适合产品学习的书籍和课程？ 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-10-03 06:37:08</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">我觉得适合产品的和适合程序员的书不矛盾吧，只要你看的时候不要关注技术细节和公式就好了。这几本推荐的都挺合适的，并不难懂。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            w1sl1y  2020-09-30 19:03:43
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            https:&#47;&#47;tensorflow.google.cn&#47;tutorials&#47;quickstart&#47;beginner<br>老师给的tensorflow的HelloWorld的国内网址，老师给的链接国内太慢了，打不开。大家可以看这个。 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-10-03 06:42:00</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">多谢推荐，原文中我找时间也更换一下。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            辛湛  2020-09-30 09:18:39
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            如果想比较系统的学习tensorflow以及对于项目搭建 有书推荐吗 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-10-01 08:09:37</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">我感觉按照官方教程学习应该就可以。极客时间上也有tensorflow的课程，可以尝试以下。</div>
+</div>
+            
+    </div>
+</li>
+            </ul>
+</div>
+</body>
+</html>

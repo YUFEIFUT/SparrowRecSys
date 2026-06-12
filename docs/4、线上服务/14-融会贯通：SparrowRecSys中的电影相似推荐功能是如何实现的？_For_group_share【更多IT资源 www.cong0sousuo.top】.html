@@ -1,0 +1,985 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <!--<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>-->
+    <title>14-融会贯通：SparrowRecSys中的电影相似推荐功能是如何实现的？</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <style>
+        html {
+            color: #333;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            text-rendering: optimizelegibility;
+            font-family: Helvetica Neue, PingFang SC, Verdana, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif
+        }
+
+        html.borderbox *,
+        html.borderbox :after,
+        html.borderbox :before {
+            box-sizing: border-box
+        }
+
+        article,
+        aside,
+        blockquote,
+        body,
+        button,
+        code,
+        dd,
+        details,
+        dl,
+        dt,
+        fieldset,
+        figcaption,
+        figure,
+        footer,
+        form,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        header,
+        hr,
+        input,
+        legend,
+        li,
+        menu,
+        nav,
+        ol,
+        p,
+        pre,
+        section,
+        td,
+        textarea,
+        th,
+        ul {
+            margin: 0;
+            padding: 0
+        }
+
+        article,
+        aside,
+        details,
+        figcaption,
+        figure,
+        footer,
+        header,
+        menu,
+        nav,
+        section {
+            display: block
+        }
+
+        audio,
+        canvas,
+        video {
+            display: inline-block
+        }
+
+        body,
+        button,
+        input,
+        select,
+        textarea {
+            font: 300 1em/1.8 PingFang SC, Lantinghei SC, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, Helvetica, sans-serif
+        }
+
+        button::-moz-focus-inner,
+        input::-moz-focus-inner {
+            padding: 0;
+            border: 0
+        }
+
+        table {
+            border-collapse: collapse;
+            border-spacing: 0
+        }
+
+        fieldset,
+        img {
+            border: 0
+        }
+
+        blockquote {
+            position: relative;
+            color: #999;
+            font-weight: 400;
+            border-left: 1px solid #1abc9c;
+            padding-left: 1em;
+            margin: 1em 3em 1em 2em
+        }
+
+        @media only screen and (max-width: 640px) {
+            blockquote {
+                margin: 1em 0
+            }
+        }
+
+        abbr,
+        acronym {
+            border-bottom: 1px dotted;
+            font-variant: normal
+        }
+
+        abbr {
+            cursor: help
+        }
+
+        del {
+            text-decoration: line-through
+        }
+
+        address,
+        caption,
+        cite,
+        code,
+        dfn,
+        em,
+        th,
+        var {
+            font-style: normal;
+            font-weight: 400
+        }
+
+        ol,
+        ul {
+            list-style: none
+        }
+
+        caption,
+        th {
+            text-align: left
+        }
+
+        q:after,
+        q:before {
+            content: ""
+        }
+
+        sub,
+        sup {
+            font-size: 75%;
+            line-height: 0;
+            position: relative
+        }
+
+        :root sub,
+        :root sup {
+            vertical-align: baseline
+        }
+
+        sup {
+            top: -.5em
+        }
+
+        sub {
+            bottom: -.25em
+        }
+
+        a {
+            color: #1abc9c
+        }
+
+        a:hover {
+            text-decoration: underline
+        }
+
+        .typo a {
+            border-bottom: 1px solid #1abc9c
+        }
+
+        .typo a:hover {
+            border-bottom-color: #555;
+            color: #555
+        }
+
+        .typo a:hover,
+        a,
+        ins {
+            text-decoration: none
+        }
+
+        .typo-u,
+        u {
+            text-decoration: underline
+        }
+
+        mark {
+            background: #fffdd1;
+            border-bottom: 1px solid #ffedce;
+            padding: 2px;
+            margin: 0 5px
+        }
+
+        code,
+        pre,
+        pre tt {
+            font-family: Courier, Courier New, monospace
+        }
+
+        pre {
+            background: hsla(0, 0%, 97%, .7);
+            border: 1px solid #ddd;
+            padding: 1em 1.5em;
+            display: block;
+            -webkit-overflow-scrolling: touch
+        }
+
+        hr {
+            border: none;
+            border-bottom: 1px solid #cfcfcf;
+            margin-bottom: .8em;
+            height: 10px
+        }
+
+        .typo-small,
+        figcaption,
+        small {
+            font-size: .9em;
+            color: #888
+        }
+
+        b,
+        strong {
+            font-weight: 700;
+            color: #000
+        }
+
+        [draggable] {
+            cursor: move
+        }
+
+        .clearfix:after,
+        .clearfix:before {
+            content: "";
+            display: table
+        }
+
+        .clearfix:after {
+            clear: both
+        }
+
+        .clearfix {
+            zoom: 1
+        }
+
+        .textwrap,
+        .textwrap td,
+        .textwrap th {
+            word-wrap: break-word;
+            word-break: break-all
+        }
+
+        .textwrap-table {
+            table-layout: fixed
+        }
+
+        .serif {
+            font-family: Palatino, Optima, Georgia, serif
+        }
+
+        .typo-dl,
+        .typo-form,
+        .typo-hr,
+        .typo-ol,
+        .typo-p,
+        .typo-pre,
+        .typo-table,
+        .typo-ul,
+        .typo dl,
+        .typo form,
+        .typo hr,
+        .typo ol,
+        .typo p,
+        .typo pre,
+        .typo table,
+        .typo ul,
+        blockquote {
+            margin-bottom: 1rem
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: PingFang SC, Helvetica Neue, Verdana, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif;
+            color: #000;
+            line-height: 1.35
+        }
+
+        .typo-h1,
+        .typo-h2,
+        .typo-h3,
+        .typo-h4,
+        .typo-h5,
+        .typo-h6,
+        .typo h1,
+        .typo h2,
+        .typo h3,
+        .typo h4,
+        .typo h5,
+        .typo h6 {
+            margin-top: 1.2em;
+            margin-bottom: .6em;
+            line-height: 1.35
+        }
+
+        .typo-h1,
+        .typo h1 {
+            font-size: 2em
+        }
+
+        .typo-h2,
+        .typo h2 {
+            font-size: 1.8em
+        }
+
+        .typo-h3,
+        .typo h3 {
+            font-size: 1.6em
+        }
+
+        .typo-h4,
+        .typo h4 {
+            font-size: 1.4em
+        }
+
+        .typo-h5,
+        .typo-h6,
+        .typo h5,
+        .typo h6 {
+            font-size: 1.2em
+        }
+
+        .typo-ul,
+        .typo ul {
+            margin-left: 1.3em;
+            list-style: disc
+        }
+
+        .typo-ol,
+        .typo ol {
+            list-style: decimal;
+            margin-left: 1.9em
+        }
+
+        .typo-ol ol,
+        .typo-ol ul,
+        .typo-ul ol,
+        .typo-ul ul,
+        .typo li ol,
+        .typo li ul {
+            margin-bottom: .8em;
+            margin-left: 2em
+        }
+
+        .typo-ol ul,
+        .typo-ul ul,
+        .typo li ul {
+            list-style: circle
+        }
+
+        .typo-table td,
+        .typo-table th,
+        .typo table caption,
+        .typo table td,
+        .typo table th {
+            border: 1px solid #ddd;
+            padding: .5em 1em;
+            color: #666
+        }
+
+        .typo-table th,
+        .typo table th {
+            background: #fbfbfb
+        }
+
+        .typo-table thead th,
+        .typo table thead th {
+            background: hsla(0, 0%, 95%, .7)
+        }
+
+        .typo table caption {
+            border-bottom: none
+        }
+
+        .typo-input,
+        .typo-textarea {
+            -webkit-appearance: none;
+            border-radius: 0
+        }
+
+        .typo-em,
+        .typo em,
+        caption,
+        legend {
+            color: #000;
+            font-weight: inherit
+        }
+
+        .typo-em {
+            position: relative
+        }
+
+        .typo-em:after {
+            position: absolute;
+            top: .65em;
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            content: "\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB"
+        }
+
+        .typo img {
+            max-width: 100%
+        }
+
+        .common-content {
+            font-weight: 400;
+            color: #353535;
+            line-height: 1.75rem;
+            white-space: normal;
+            word-break: normal;
+            font-size: 1rem
+        }
+
+        .common-content img {
+            display: block;
+            max-width: 100%;
+            background-color: #eee
+        }
+
+        .common-content audio,
+        .common-content video {
+            width: 100%;
+            background-color: #eee
+        }
+
+        .common-content center,
+        .common-content font {
+            margin-top: 1rem;
+            display: inline-block
+        }
+
+        .common-content center {
+            width: 100%
+        }
+
+        .common-content pre {
+            margin-top: 1rem;
+            padding-left: 0;
+            padding-right: 0;
+            position: relative;
+            overflow: hidden
+        }
+
+        .common-content pre code {
+            font-size: .8rem;
+            font-family: Consolas, Liberation Mono, Menlo, monospace, Courier;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            overflow-x: auto
+        }
+
+        .common-content hr {
+            border: none;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #f5f5f5;
+            height: 1px;
+            background: none
+        }
+
+        .common-content b,
+        .common-content h1,
+        .common-content h2,
+        .common-content h3,
+        .common-content h4,
+        .common-content h5,
+        .common-content strong {
+            font-weight: 700
+        }
+
+        .common-content h1,
+        .common-content h2 {
+            font-size: 1.125rem;
+            margin-bottom: .45rem
+        }
+
+        .common-content h3,
+        .common-content h4,
+        .common-content h5 {
+            font-size: 1rem;
+            margin-bottom: .45rem
+        }
+
+        .common-content p {
+            font-weight: 400;
+            color: #353535;
+            margin-top: .15rem
+        }
+
+        .common-content .orange {
+            color: #ff5a05
+        }
+
+        .common-content .reference {
+            font-size: 1rem;
+            color: #888
+        }
+
+        .custom-rich-content h1 {
+            margin-top: 0;
+            font-weight: 400;
+            font-size: 15.25px;
+            border-bottom: 1px solid #eee;
+            line-height: 2.8
+        }
+
+        .custom-rich-content li,
+        .custom-rich-content p {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.6
+        }
+
+        table.hljs-ln {
+            margin-bottom: 0;
+            border-spacing: 0;
+            border-collapse: collapse
+        }
+
+        table.hljs-ln,
+        table.hljs-ln tbody,
+        table.hljs-ln td,
+        table.hljs-ln tr {
+            box-sizing: border-box
+        }
+
+        table.hljs-ln td {
+            padding: 0;
+            border: 0
+        }
+
+        table.hljs-ln td.hljs-ln-numbers {
+            min-width: 15px;
+            color: rgba(27, 31, 35, .3);
+            text-align: right;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none
+        }
+
+        table.hljs-ln td.hljs-ln-code,
+        table.hljs-ln td.hljs-ln-numbers {
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, Courier, monospace;
+            font-size: 12px;
+            line-height: 20px;
+            vertical-align: top
+        }
+
+        table.hljs-ln td.hljs-ln-code {
+            position: relative;
+            padding-right: 10px;
+            padding-left: 10px;
+            overflow: visible;
+            color: #24292e;
+            word-wrap: normal;
+            white-space: pre
+        }
+
+        video::-webkit-media-controls {
+            overflow: hidden !important
+        }
+
+        video::-webkit-media-controls-enclosure {
+            width: calc(100% + 32px);
+            margin-left: auto
+        }
+
+        ._29HP61GA_0 {
+            max-width:800px;
+            margin:0 auto;
+            margin-bottom: 20px;
+            font-weight: 400;
+            color: #353535;
+            line-height: 1.76;
+            white-space: normal;
+            word-break: normal;
+            font-size: 17px;
+            -webkit-transition: background-color .3s ease;
+            transition: background-color .3s ease
+        }
+
+        ._29HP61GA_0 .MathJax_Display {
+            overflow: auto
+        }
+
+        ._29HP61GA_0 .poster {
+            position: fixed;
+            left: -10000px;
+            top: -10000px;
+            overflow: hidden;
+            padding: 1rem;
+            background: #ececec
+        }
+
+        ._29HP61GA_0 .richcontent-pre-copy {
+            font-size: 13px;
+            color: #888;
+            position: absolute;
+            right: 1em;
+            top: .5em;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none
+        }
+
+        ._29HP61GA_0 .richcontent-pre-copy .iconfont {
+            font-size: 12px;
+            margin-right: .2em
+        }
+
+        ._29HP61GA_0 a {
+            color: #fa8919;
+            border-bottom: 1px solid #fa8919
+        }
+
+        ._29HP61GA_0 img {
+            display: block;
+            max-width: 100%;
+            position: relative;
+            left: 50%;
+            -webkit-transform: translateX(-50%);
+            transform: translateX(-50%);
+            background-color: #eee;
+            vertical-align: top;
+            border-radius: 0
+        }
+
+        ._29HP61GA_0 audio,
+        ._29HP61GA_0 video {
+            width: 100%;
+            background-color: #eee
+        }
+
+        ._29HP61GA_0 pre {
+            margin-top: 16px;
+            padding: 34px 0 0;
+            margin-bottom: 30px;
+            position: relative;
+            border-radius: 6px;
+            background: rgba(246, 247, 251, .749);
+            border: 0
+        }
+
+        ._29HP61GA_0 pre code {
+            font-size: 12px;
+            font-family: Consolas, Liberation Mono, Menlo, monospace, Courier;
+            display: block;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            margin-left: 16px;
+            margin-right: 16px;
+            overflow-x: scroll
+        }
+
+        ._29HP61GA_0 pre code:after {
+            content: "";
+            height: 30px;
+            width: 100%;
+            display: block
+        }
+
+        ._29HP61GA_0 hr {
+            border: none;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #f5f5f5;
+            height: 1px;
+            background: none
+        }
+
+        ._29HP61GA_0 h1,
+        ._29HP61GA_0 h2,
+        ._29HP61GA_0 h3,
+        ._29HP61GA_0 h4,
+        ._29HP61GA_0 h5 {
+            margin-bottom: 20px;
+            margin-top: 0;
+            font-weight: 700
+        }
+
+        ._29HP61GA_0 b,
+        ._29HP61GA_0 strong {
+            font-weight: 700
+        }
+
+        ._29HP61GA_0 h1 {
+            font-size: 21px
+        }
+
+        ._29HP61GA_0 h2 {
+            font-size: 20px
+        }
+
+        ._29HP61GA_0 h3 {
+            font-size: 19px
+        }
+
+        ._29HP61GA_0 h4 {
+            font-size: 18px
+        }
+
+        ._29HP61GA_0 h5 {
+            font-size: 17px
+        }
+
+        ._29HP61GA_0 center,
+        ._29HP61GA_0 p {
+            font-weight: 400;
+            color: #353535;
+            margin-top: 0;
+            margin-bottom: 30px;
+            word-break: break-word
+        }
+
+        ._29HP61GA_0 center {
+            text-align: center
+        }
+
+        ._29HP61GA_0 blockquote {
+            margin-top: 0;
+            margin-bottom: 34px;
+            border-left: 3px solid #e8e8e8;
+            padding-left: 17px;
+            color: #353535
+        }
+
+        ._29HP61GA_0 blockquote p {
+            margin-top: 0;
+            margin-bottom: 0
+        }
+
+        ._29HP61GA_0 ol,
+        ._29HP61GA_0 ul {
+            margin-bottom: 30px
+        }
+
+        ._29HP61GA_0 ol p,
+        ._29HP61GA_0 ul p {
+            margin-top: 0;
+            margin-bottom: 0
+        }
+
+        ._29HP61GA_0 ol {
+            list-style: decimal;
+            margin-left: 20px
+        }
+
+        ._29HP61GA_0 ul li {
+            padding-left: 17px;
+            position: relative;
+            margin-bottom: 10px
+        }
+
+        ._29HP61GA_0 ul li:after {
+            content: "";
+            height: 6px;
+            width: 6px;
+            border-radius: 50%;
+            background: #353535;
+            position: absolute;
+            top: 10px;
+            left: 0
+        }
+
+        ._29HP61GA_0 .orange {
+            color: #fa8919
+        }
+
+        ._29HP61GA_0 .reference {
+            color: #888
+        }
+
+        ._29HP61GA_0 .m-right {
+            text-align: right
+        }
+
+        ._29HP61GA_0 .m-center {
+            text-align: center;
+            display: block
+        }
+
+        ._29HP61GA_0 .m-gray {
+            color: #888
+        }
+
+        ._29HP61GA_0 .m-small {
+            font-size: 15px
+        }
+
+        ._29HP61GA_0 table.hljs-ln {
+            margin-bottom: 0;
+            border-spacing: 0;
+            border-collapse: collapse
+        }
+
+        ._29HP61GA_0 table.hljs-ln,
+        ._29HP61GA_0 table.hljs-ln tbody,
+        ._29HP61GA_0 table.hljs-ln td,
+        ._29HP61GA_0 table.hljs-ln tr {
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box
+        }
+
+        ._29HP61GA_0 table.hljs-ln td {
+            padding: 0;
+            border: 0
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-numbers {
+            min-width: 15px;
+            font-size: 12px;
+            color: rgba(27, 31, 35, .3);
+            text-align: right;
+            white-space: nowrap;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-code,
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-numbers {
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, Courier, monospace;
+            line-height: 20px;
+            vertical-align: top
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-code {
+            position: relative;
+            padding-right: 10px;
+            padding-left: 10px;
+            overflow: visible;
+            font-size: 13px;
+            color: #666;
+            word-wrap: normal;
+            white-space: pre
+        }
+
+    </style>
+</head>
+<body>
+<div class="_29HP61GA_0">
+<h1>14-融会贯通：SparrowRecSys中的电影相似推荐功能是如何实现的？</h1>
+<p>你好，我是王喆。</p><p>课程进行到这里，推荐系统架构的大部分知识点，包括特征工程、Embedding模型，到推荐服务的搭建，线上推荐过程的实现，我们都已经学习并且实践过了。如果你坚持跟着我一起学下来的话，可以说已经是“武功小成”了。</p><p>为了帮你巩固所学，今天，我就带你从头到尾地实现一个完整的推荐功能，<strong>相似电影推荐</strong>，来帮助你打通推荐系统的“任督二脉”。</p><h2>“清点技能库”，看看我们已有的知识储备有哪些</h2><p>在开始实现相似电影推荐功能之前，我想先带着你一起清点一下自己的技能库。我喜欢把推荐的过程比喻成做菜的过程，接下来，我就按照做菜的4个关键步骤，带你回顾一下前面学过的重点知识。</p><p><strong>第一步，准备食材。</strong> 准备食材的过程就是我们准备推荐所需特征的过程。在特征工程篇中，我们不仅学会了怎么挑选“食材”，怎么处理“食材”，而且还实践了“备菜”的高级技能Embedding技术。具体来说就是，我们能够利用物品序列数据，通过Item2vec方法训练出Embedding，也能够使用Deep Walk和Node2vec把图结构数据生成Graph Embedding。</p><p>总的来说，因为Embedding技术的本质就是利用了物品之间的相关性，所以Embedding是做好“相似推荐”这盘菜的关键。</p><!-- [[[read_end]]] --><p><strong>第二步，食材下锅。</strong> 备好了菜，在正式开炒之前，我们肯定要把食材下锅。在推荐系统中“食材下锅”的过程有两个，一是把线上推荐所用的特征存储到数据库中，在之前的课程中我们已经实践过使用Redis作为特征数据库的方法，另一个是把模型部署到模型服务模块，我们也已讲过了预训练Embedding，Embedding加轻量级线上模型，TensorFlow Serving等多种模型服务方式，这节课我们将采用预训练Embedding的方式进行模型服务。</p><p><strong>第三步，做菜技术。</strong> “做菜的技术”说的是推荐服务器线上推荐的整个流程是否合理。那回到推荐系统中就是指，召回层要快速准确，模型排序部分要精确。这些具体的实现都影响着最终的推荐效果。</p><p>对于召回层来说，我们已经学过单策略召回、多路召回和基于Embedding的召回。对于排序来说，我们会主要利用Embedding相似度来排序，后续我们还会学习基于多种推荐模型的排序。</p><p><strong>最后是菜品上桌的过程</strong> ，也就是把推荐的结果呈现给用户的过程。这节课，我会带你一起实现这个过程。提前“剧透”一下，在SparrowRecsys中，我们会先利用JavaScript异步请求推荐服务API获取推荐结果，再利用JavaScript+HTML把结果展现给用户”。因为，这一部分内容不是推荐系统的重点，所以我们这里只要做到界面清爽、逻辑清晰就可以了。</p><p>相信到这里，各位“大厨”已经准备好了所要用到的技能，下面就让我们一起来实现<strong>SparrowRecSys中的相似电影推荐功能吧！</strong></p><h2>如何实现相似电影推荐功能？</h2><p>在正式开始相似电影推荐功能之前，我们先来看看我总结的SparrowRecsys相似电影推荐功能的详细技术架构图。细心的你可能已经发现了，这个架构图就是SparrowRecsys架构的精简版。因为我们还没有学习深度学习推荐模型和模型评估的相关知识，所以把重点聚焦在已经学过的知识上就可以了。</p><p><img src="https://static001.geekbang.org/resource/image/f4/4f/f408eeeeb04bccd127a6726b8bf91d4f.jpg" alt="" title="图1 Sparrow Recsys 相似电影推荐功能的技术架构图"></p><p>接下来，我就结合这个技术架构图，带你一步步地实现其中的每一个模块。并且，我还会给你讲解一些项目中没有实现的其他业界主流方法，如果你还学有余力，希望你能抓住这个机会，来扩展一下自己的知识面。</p><h3>1.  数据和模型部分</h3><p>数据和模型部分的实现，其实和我们<a href="https://time.geekbang.org/column/article/296932">第8节课</a>讲的Embedding的实战思路是一样的，我们可以选用Item2vec、Deep Walk等不同的Embedding方法，来生成物品Embedding向量。考虑到大数据条件下，数据处理与训练的一致性，在SparrowRecsys中，我们会采用Spark进行数据处理，同时选择Spark MLlib进行Embedding的训练。这部分内容的代码，你可以参考项目中的_com.wzhe.sparrowrecsys.online.spark.embedding.Embedding_对象，它定义了所有项目中用到的Embedding方法。</p><p>对于一些比较复杂的Embedding方案，比如特征种类很多，网络结构也更多样化的Embedding模型，业界也多采用Spark进行原始数据处理，生成训练样本后交由TensorFlow、PyTorch训练的方案。</p><p>但是不论训练平台是怎样的，Embedding方法的产出都是一致的，就是物品ID对应的Embedding向量。那为了方便线上服务使用，我们还需要在生成Embedding后，把它们存入某个高可用的数据库。SparrowRecsys选择了最主流的内存数据库Redis作为实现方案，这一部分的具体实现，你可以参照com.wzhe.sparrowrecsys.offline.spark.embedding.Embedding对象中trainItem2vec函数的Redis存储操作。当然，业界也会使用Cassandra+缓存，RocksDB等不同的存储方案来实现Embedding向量的高效读取，但我们现阶段只要学会Redis存储和读取操作就够用了。</p><p>到这里，Redis成为了连接线下和线上的关键节点，那我们的线上服务部分又是怎么利用Redis中的Embedding数据进行相似电影推荐的呢？</p><h3>2. 线上服务部分</h3><p>线上服务部分是直接接收并处理用户推荐请求的部分，从架构图的最左边到最右边，我们可以看到三个主要步骤：候选物品库的建立、召回层的实现、排序层的实现。我们逐个来讲一讲。</p><p>首先是候选物品库的建立。SparrowRecsys中候选物品库的建立采用了非常简单的方式，就是直接把MovieLens数据集中的物品数据载入到内存中。但对于业界比较复杂的推荐业务来说，候选集的选取往往是有很多条件的， 比如物品可不可用，有没有过期，有没有其他过滤条件等等，所以，工业级推荐系统往往会通过比较复杂的SQL查询，或者API查询来获取候选集。</p><p>第二步是召回层的实现。我们在<a href="https://time.geekbang.org/column/article/299494">11课</a>曾经详细学习了召回层的技术，这里终于可以学以致用了。因为物品的Embedding向量已经在离线生成，所以我们可以自然而然的使用Embedding召回的方法来完成召回层的实现。同时，SparrowRecsys也实现了基于物品metadata（元信息）的多路召回方法，具体的实现你可以参照com.wzhe.sparrowrecsys.online.recprocess.SimilarMovieProcess类中的multipleRetrievalCandidates函数和retrievalCandidatesByEmbedding函数。</p><p>第三步是排序层的实现。根据Embedding相似度来进行“相似物品推荐”，是深度学习推荐系统最主流的解决方案，所以在SparrowRecsys中，我们当然也是先根据召回层过滤出候选集，再从Redis中取出相应的Embedding向量，然后计算目标物品和候选物品之间的相似度，最后进行排序就可以了。</p><p>这里“相似度”的定义是多样的，可以是余弦相似度，也可以是内积相似度，还可以根据你训练Embedding时定义的不同相似度指标来确定。因为在Word2vec中，相似度的定义是内积相似度，所以,这里我们也采用内积作为相似度的计算方法。同样，具体的实现，你可以参照com.wzhe.sparrowrecsys.online.recprocess.SimilarMovieProcess类中的ranker函数。</p><p>经历了这三个主要的线上服务步骤，SparrowRecsys就可以向用户返回推荐列表了。所以接下来，我们要解决的问题就是，怎么把这些结果通过前端页面展示给用户。</p><h3>3. 前端部分</h3><p>SparrowRecsys的前端部分采用了最简单的HTML+AJAX请求的方式。AJAX的全称是Asynchronous JavaScript and XML，异步JavaScript和XML请求。它指的是不刷新整体页面，用JavaScript异步请求服务器端，更新页面中部分元素的技术。当前流行的JavaScript前端框架React、Vue等等也大多是基于AJAX来进行数据交互的。</p><p>但前端毕竟不是我们课程的重点，你知道我在上面提到的基本原理就可以了。如果你已经在本地的6010端口运行起了SparrowRecsys，那直接点击这个链接：<a href="http://localhost:6010/movie.html?movieId=589">http://localhost:6010/movie.html?movieId=589</a> ， 就可以看到电影《终结者2》的详情页面和相似电影推荐结果了（如图2）。</p><p><img src="https://static001.geekbang.org/resource/image/a3/yy/a36a1ba15f4c464c84797fc87caf85yy.jpg" alt="" title="图2 终结者2的相似电影推荐结果"></p><h2>相似电影推荐的结果和初步分析</h2><p>到这里，我相信你已经串联起来了SparrowRecsys相似电影推荐的所有实现，看到了推荐结果。那么问题来了，推荐结果的好坏到底是如何判断的呢？关于这个问题，我们也会在后面的“模型评估篇”中进行系统性的学习。不过，这里我也想先跟你聊聊这个话题，让你对它有一个大体认识，这对你建立后续的模型评估体系是非常有帮助的。</p><p>首先提醒你的是，SparrowRecsys开源项目中自带的MovieLens数据集是经过我采样后的缩小集，所以基于这个数据集训练出的模型的准确性和稳定性是比较低的。如果你有兴趣的话可以去<a href="https://grouplens.org/datasets/movielens/">MovieLens官网</a>选择<strong>MovieLens 20M Dataset</strong>下载并重新训练，相信会得到更准确的推荐结果。</p><p>其次，针对相似物品推荐这个推荐场景，我们其实很难找到一个统一的衡量标准。比如，你能说出《功夫熊猫》这部电影是跟《玩具总动员》更相近，还是跟《飞屋环游记》更相近吗？好在，工程师们还是总结出了一些有效的评估方法。这里，我挑出了3个最常用的来给你讲讲。</p><p><strong>方法一：人肉测试（SpotCheck）。</strong> 在一种Embedding结果新鲜出炉的时候，你作为创造它们的工程师，应该第一时间做一个抽样测试，看一看基于Embedding的相似推荐结果是不是符合你自己的常识。比如说，我在Embedding训练完之后，随便在SparrowRecsys中翻了翻，看到了两个页面，一个是儿童电影《Free Willy》（《人鱼童话》）的相似电影推荐页面（图3左），另一个是著名动画电影《Toy Story》（《玩具总动员》）的相似电影推荐页面（图3右）。</p><p><img src="https://static001.geekbang.org/resource/image/43/87/43be7ebfd05yye98f9c432d4bb113987.jpg" alt="" title="图3 随机测试"></p><p>直观上来看，《Free Willy》的推荐结果就非常不错，因为你可以看到相似电影中都是适合儿童看的，甚至这些电影都和动物相关。但是《玩具总动员》就不一样了，它的相似电影里不仅有动画片，还有《真实的谎言》（《True Lies》）、《阿甘正传》这类明显偏成人的电影。这明显不是一个非常好的推荐结果。</p><p>为什么会出现这样的结果呢？我们来做一个推测。事实上，《玩具总动员》本身是一部非常流行的电影，跟它近似的也都是类似《真实的谎言》、《阿甘正传》这类很热门的电影。这就说明了一个问题，热门电影其实很容易跟其他大部分电影产生相似性，因为它们会出现在大多数用户的评分序列中。</p><p>针对这个问题，其实仅利用基于用户行为序列的Embedding方法是很难解决的。这需要我们引入更多内容型特征进行有针对性的改进，比如电影类型、海报风格，或者在训练中有意减少热门电影的样本权重，增大冷门电影的样本权重等等。总的来说，遇到推荐结果不合理的情况，我们需要做更多的调查研究，发掘这些结果出现的真实原因，才能找到改进方向。</p><p><strong>方法二：指定Ground truth（可以理解为标准答案）。</strong> 虽然我们说，相似影片的Ground truth因人而异。但如果只是为了进行初步评估，我们也可以指定一些比较权威的验证集。比如，对于相似影片来说，我们可以利用IMDB的more like this的结果去做验证我们的相似电影结果。当然要补充说明的是，要注意有些Ground truth数据集的可用范围，不能随意在商业用途中使用未经许可的数据集。</p><p><strong>方法三：利用商业指标进行评估。</strong> 既然相似影片比较难以直接衡量，那我们不如换一个角度，来思考一下做相似影片这个功能的目的是什么。对于一个商业网站来说，无非是提高点击率，播放量等等。因此，我们完全可以跃过评估相似度这样一个过程，直接去评估它的终极商业指标。</p><p>举个例子，我们可以通过上线一个新的相似电影模型，让相似电影这个功能模块的点击率提高，假设提高了5%，那这就是一个成功的模型改进。至于相似电影到底有没有那么“相似”，我们反而不用那么纠结了。</p><h2>小结</h2><p>这节课，我们使用Embedding方法准备好了食材，使用Redis把食材下锅，做菜的步骤稍微复杂一点，分为建立候选集、实现召回层、实现排序层这3个步骤。最后我们用HTML+Ajax的方式把相似电影推荐这盘菜呈现出来。</p><p>既然有做菜的过程，当然也有品菜的阶段。针对相似物品推荐这一常见的功能，我们可以使用人肉测试、Ground truth和商业指标评估这三种方法对得到的结果进行评估。也希望你能够在实际的业务场景中活学活用，用评估结果指导模型的下一步改进。</p><p>我希望，通过这节课的总结和实战，能让你融会贯通的厘清我们学过的知识。所以我把你需要掌握的重要知识点，总结在了一张图里，你可以利用它复习巩固。</p><p><img src="https://static001.geekbang.org/resource/image/dc/9f/dcbb6cf20283ee362235255841b00c9f.jpg" alt=""></p><p>好了，那到这里，我们线上服务篇的内容就全部结束了。通过这一篇的学习，我相信你已经清楚了推荐系统的全部技术架构，以及深度学习核心技术Embedding的运用方法。</p><p>但我要说的是，盛宴还未开始，下一篇我们将进入深度推荐模型的学习和实践。我曾经说过，深度推荐模型是深度学习推荐系统这个王冠上的明珠，正是它对推荐模型的革命，让深度学习的浪潮席卷推荐系统领域。希望你再接再厉，让我们一起把这颗明珠摘下吧！</p><h2>课后思考</h2><p>刚才我说到，《玩具总动员》的相似电影推荐结果并不好，我认为可能是因为热门电影的头部效应造成的。你认同这一观点吗？你觉得还有其他可能的原因吗？如果让你去做一些Embedding方法上的改进，你还有什么好的想法吗？</p><p>欢迎把你的成果和优化想法分享到留言区，也欢迎你能把这节课转发出去，让更多人从我们的实践中受益，我们下节课见！</p><h2>精选留言：</h2>
+        <ul>
+        
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            金鹏  2020-11-05 10:33:55
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            在小视频行业，基于CTR或播放量的商业逻辑进行推荐策略的调整，在实际过程中往往会变成大量推荐低俗、擦边内容，短期各个指标会上涨，但从长远来看，其实是损害了整个商业收益。所以在短视频一般会以播放时长ts做为商业指标。 [1赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-11-05 11:51:41</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">非常好的insight。CTR对一些标题党、低俗预览图之类的确实有偏好。也可以在正样本的定义上下功夫，把真正播放超过一定时长的作为正样本，算是可以在CTR模型的框架上继续做改进。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            InfoQ_ea311a6b3a82  2020-11-04 20:47:24
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            计算相似度的时候考虑电影的内容信息，如利用描述等生成内容Embedding，和之前训练得到的Embedding连接起来，再进行相似度的计算。 [1赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-11-05 06:37:47</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">非常好的解决方案。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            JustBuyIt  2020-11-04 00:47:37
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            在推荐最终展示前在加一层简单的规则过滤，例如利用电影类别把非儿童的电影剔除掉。 [1赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-11-04 12:34:39</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">其实是很好的重排层的策略性方法，没问题。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            Wiiki  2020-11-05 10:08:41
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            王老师，请教一下关于Embedding的问题。如果我有这样的一个需求，需要融合时序，位置空间，还有内容等信息到一个Embedding，通常针对这种情况都是怎么生成Embedding的？是不是说Embedding的出现，代表着传统手动，凭经验生成特征的方式已经没有应用场景了？谢谢~ 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-11-05 11:53:48</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">感觉位置空间这种类似context特征的不太好整合，Embedding可以整合物品侧或者用户侧的全部特征。具体的整合方法还是推荐参考阿里的EGES。算是一个比较经典的案例了。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            那时刻  2020-11-04 10:04:29
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            我觉得除了热门电影头部推荐之外，还有用户对电影的评论，以及用户观影行为，比如很多人看电影是把热门电影轮流看一遍。<br> 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-11-04 12:36:16</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">是这样，这导致热门电影的个性化程度不高。所以一般使用tfidf等方法给训练样本一个权重之类的方法来降低热门电影的影响。</div>
+</div>
+            
+    </div>
+</li>
+            </ul>
+</div>
+</body>
+</html>

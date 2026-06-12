@@ -1,0 +1,1013 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <title>03-深度学习基础：你打牢深度学习知识的地基了吗？</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <style>
+        html {
+            color: #333;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            text-rendering: optimizelegibility;
+            font-family: Helvetica Neue, PingFang SC, Verdana, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif
+        }
+
+        html.borderbox *,
+        html.borderbox :after,
+        html.borderbox :before {
+            box-sizing: border-box
+        }
+
+        article,
+        aside,
+        blockquote,
+        body,
+        button,
+        code,
+        dd,
+        details,
+        dl,
+        dt,
+        fieldset,
+        figcaption,
+        figure,
+        footer,
+        form,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        header,
+        hr,
+        input,
+        legend,
+        li,
+        menu,
+        nav,
+        ol,
+        p,
+        pre,
+        section,
+        td,
+        textarea,
+        th,
+        ul {
+            margin: 0;
+            padding: 0
+        }
+
+        article,
+        aside,
+        details,
+        figcaption,
+        figure,
+        footer,
+        header,
+        menu,
+        nav,
+        section {
+            display: block
+        }
+
+        audio,
+        canvas,
+        video {
+            display: inline-block
+        }
+
+        body,
+        button,
+        input,
+        select,
+        textarea {
+            font: 300 1em/1.8 PingFang SC, Lantinghei SC, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, Helvetica, sans-serif
+        }
+
+        button::-moz-focus-inner,
+        input::-moz-focus-inner {
+            padding: 0;
+            border: 0
+        }
+
+        table {
+            border-collapse: collapse;
+            border-spacing: 0
+        }
+
+        fieldset,
+        img {
+            border: 0
+        }
+
+        blockquote {
+            position: relative;
+            color: #999;
+            font-weight: 400;
+            border-left: 1px solid #1abc9c;
+            padding-left: 1em;
+            margin: 1em 3em 1em 2em
+        }
+
+        @media only screen and (max-width: 640px) {
+            blockquote {
+                margin: 1em 0
+            }
+        }
+
+        abbr,
+        acronym {
+            border-bottom: 1px dotted;
+            font-variant: normal
+        }
+
+        abbr {
+            cursor: help
+        }
+
+        del {
+            text-decoration: line-through
+        }
+
+        address,
+        caption,
+        cite,
+        code,
+        dfn,
+        em,
+        th,
+        var {
+            font-style: normal;
+            font-weight: 400
+        }
+
+        ol,
+        ul {
+            list-style: none
+        }
+
+        caption,
+        th {
+            text-align: left
+        }
+
+        q:after,
+        q:before {
+            content: ""
+        }
+
+        sub,
+        sup {
+            font-size: 75%;
+            line-height: 0;
+            position: relative
+        }
+
+        :root sub,
+        :root sup {
+            vertical-align: baseline
+        }
+
+        sup {
+            top: -.5em
+        }
+
+        sub {
+            bottom: -.25em
+        }
+
+        a {
+            color: #1abc9c
+        }
+
+        a:hover {
+            text-decoration: underline
+        }
+
+        .typo a {
+            border-bottom: 1px solid #1abc9c
+        }
+
+        .typo a:hover {
+            border-bottom-color: #555;
+            color: #555
+        }
+
+        .typo a:hover,
+        a,
+        ins {
+            text-decoration: none
+        }
+
+        .typo-u,
+        u {
+            text-decoration: underline
+        }
+
+        mark {
+            background: #fffdd1;
+            border-bottom: 1px solid #ffedce;
+            padding: 2px;
+            margin: 0 5px
+        }
+
+        code,
+        pre,
+        pre tt {
+            font-family: Courier, Courier New, monospace
+        }
+
+        pre {
+            background: hsla(0, 0%, 97%, .7);
+            border: 1px solid #ddd;
+            padding: 1em 1.5em;
+            display: block;
+            -webkit-overflow-scrolling: touch
+        }
+
+        hr {
+            border: none;
+            border-bottom: 1px solid #cfcfcf;
+            margin-bottom: .8em;
+            height: 10px
+        }
+
+        .typo-small,
+        figcaption,
+        small {
+            font-size: .9em;
+            color: #888
+        }
+
+        b,
+        strong {
+            font-weight: 700;
+            color: #000
+        }
+
+        [draggable] {
+            cursor: move
+        }
+
+        .clearfix:after,
+        .clearfix:before {
+            content: "";
+            display: table
+        }
+
+        .clearfix:after {
+            clear: both
+        }
+
+        .clearfix {
+            zoom: 1
+        }
+
+        .textwrap,
+        .textwrap td,
+        .textwrap th {
+            word-wrap: break-word;
+            word-break: break-all
+        }
+
+        .textwrap-table {
+            table-layout: fixed
+        }
+
+        .serif {
+            font-family: Palatino, Optima, Georgia, serif
+        }
+
+        .typo-dl,
+        .typo-form,
+        .typo-hr,
+        .typo-ol,
+        .typo-p,
+        .typo-pre,
+        .typo-table,
+        .typo-ul,
+        .typo dl,
+        .typo form,
+        .typo hr,
+        .typo ol,
+        .typo p,
+        .typo pre,
+        .typo table,
+        .typo ul,
+        blockquote {
+            margin-bottom: 1rem
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: PingFang SC, Helvetica Neue, Verdana, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif;
+            color: #000;
+            line-height: 1.35
+        }
+
+        .typo-h1,
+        .typo-h2,
+        .typo-h3,
+        .typo-h4,
+        .typo-h5,
+        .typo-h6,
+        .typo h1,
+        .typo h2,
+        .typo h3,
+        .typo h4,
+        .typo h5,
+        .typo h6 {
+            margin-top: 1.2em;
+            margin-bottom: .6em;
+            line-height: 1.35
+        }
+
+        .typo-h1,
+        .typo h1 {
+            font-size: 2em
+        }
+
+        .typo-h2,
+        .typo h2 {
+            font-size: 1.8em
+        }
+
+        .typo-h3,
+        .typo h3 {
+            font-size: 1.6em
+        }
+
+        .typo-h4,
+        .typo h4 {
+            font-size: 1.4em
+        }
+
+        .typo-h5,
+        .typo-h6,
+        .typo h5,
+        .typo h6 {
+            font-size: 1.2em
+        }
+
+        .typo-ul,
+        .typo ul {
+            margin-left: 1.3em;
+            list-style: disc
+        }
+
+        .typo-ol,
+        .typo ol {
+            list-style: decimal;
+            margin-left: 1.9em
+        }
+
+        .typo-ol ol,
+        .typo-ol ul,
+        .typo-ul ol,
+        .typo-ul ul,
+        .typo li ol,
+        .typo li ul {
+            margin-bottom: .8em;
+            margin-left: 2em
+        }
+
+        .typo-ol ul,
+        .typo-ul ul,
+        .typo li ul {
+            list-style: circle
+        }
+
+        .typo-table td,
+        .typo-table th,
+        .typo table caption,
+        .typo table td,
+        .typo table th {
+            border: 1px solid #ddd;
+            padding: .5em 1em;
+            color: #666
+        }
+
+        .typo-table th,
+        .typo table th {
+            background: #fbfbfb
+        }
+
+        .typo-table thead th,
+        .typo table thead th {
+            background: hsla(0, 0%, 95%, .7)
+        }
+
+        .typo table caption {
+            border-bottom: none
+        }
+
+        .typo-input,
+        .typo-textarea {
+            -webkit-appearance: none;
+            border-radius: 0
+        }
+
+        .typo-em,
+        .typo em,
+        caption,
+        legend {
+            color: #000;
+            font-weight: inherit
+        }
+
+        .typo-em {
+            position: relative
+        }
+
+        .typo-em:after {
+            position: absolute;
+            top: .65em;
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            content: "\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB"
+        }
+
+        .typo img {
+            max-width: 100%
+        }
+
+        .common-content {
+            font-weight: 400;
+            color: #353535;
+            line-height: 1.75rem;
+            white-space: normal;
+            word-break: normal;
+            font-size: 1rem
+        }
+
+        .common-content img {
+            display: block;
+            max-width: 100%;
+            background-color: #eee
+        }
+
+        .common-content audio,
+        .common-content video {
+            width: 100%;
+            background-color: #eee
+        }
+
+        .common-content center,
+        .common-content font {
+            margin-top: 1rem;
+            display: inline-block
+        }
+
+        .common-content center {
+            width: 100%
+        }
+
+        .common-content pre {
+            margin-top: 1rem;
+            padding-left: 0;
+            padding-right: 0;
+            position: relative;
+            overflow: hidden
+        }
+
+        .common-content pre code {
+            font-size: .8rem;
+            font-family: Consolas, Liberation Mono, Menlo, monospace, Courier;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            overflow-x: auto
+        }
+
+        .common-content hr {
+            border: none;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #f5f5f5;
+            height: 1px;
+            background: none
+        }
+
+        .common-content b,
+        .common-content h1,
+        .common-content h2,
+        .common-content h3,
+        .common-content h4,
+        .common-content h5,
+        .common-content strong {
+            font-weight: 700
+        }
+
+        .common-content h1,
+        .common-content h2 {
+            font-size: 1.125rem;
+            margin-bottom: .45rem
+        }
+
+        .common-content h3,
+        .common-content h4,
+        .common-content h5 {
+            font-size: 1rem;
+            margin-bottom: .45rem
+        }
+
+        .common-content p {
+            font-weight: 400;
+            color: #353535;
+            margin-top: .15rem
+        }
+
+        .common-content .orange {
+            color: #ff5a05
+        }
+
+        .common-content .reference {
+            font-size: 1rem;
+            color: #888
+        }
+
+        .custom-rich-content h1 {
+            margin-top: 0;
+            font-weight: 400;
+            font-size: 15.25px;
+            border-bottom: 1px solid #eee;
+            line-height: 2.8
+        }
+
+        .custom-rich-content li,
+        .custom-rich-content p {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.6
+        }
+
+        table.hljs-ln {
+            margin-bottom: 0;
+            border-spacing: 0;
+            border-collapse: collapse
+        }
+
+        table.hljs-ln,
+        table.hljs-ln tbody,
+        table.hljs-ln td,
+        table.hljs-ln tr {
+            box-sizing: border-box
+        }
+
+        table.hljs-ln td {
+            padding: 0;
+            border: 0
+        }
+
+        table.hljs-ln td.hljs-ln-numbers {
+            min-width: 15px;
+            color: rgba(27, 31, 35, .3);
+            text-align: right;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none
+        }
+
+        table.hljs-ln td.hljs-ln-code,
+        table.hljs-ln td.hljs-ln-numbers {
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, Courier, monospace;
+            font-size: 12px;
+            line-height: 20px;
+            vertical-align: top
+        }
+
+        table.hljs-ln td.hljs-ln-code {
+            position: relative;
+            padding-right: 10px;
+            padding-left: 10px;
+            overflow: visible;
+            color: #24292e;
+            word-wrap: normal;
+            white-space: pre
+        }
+
+        video::-webkit-media-controls {
+            overflow: hidden !important
+        }
+
+        video::-webkit-media-controls-enclosure {
+            width: calc(100% + 32px);
+            margin-left: auto
+        }
+
+        ._29HP61GA_0 {
+            max-width:800px;
+            margin:0 auto;
+            margin-bottom: 20px;
+            font-weight: 400;
+            color: #353535;
+            line-height: 1.76;
+            white-space: normal;
+            word-break: normal;
+            font-size: 17px;
+            -webkit-transition: background-color .3s ease;
+            transition: background-color .3s ease
+        }
+
+        ._29HP61GA_0 .MathJax_Display {
+            overflow: auto
+        }
+
+        ._29HP61GA_0 .poster {
+            position: fixed;
+            left: -10000px;
+            top: -10000px;
+            overflow: hidden;
+            padding: 1rem;
+            background: #ececec
+        }
+
+        ._29HP61GA_0 .richcontent-pre-copy {
+            font-size: 13px;
+            color: #888;
+            position: absolute;
+            right: 1em;
+            top: .5em;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none
+        }
+
+        ._29HP61GA_0 .richcontent-pre-copy .iconfont {
+            font-size: 12px;
+            margin-right: .2em
+        }
+
+        ._29HP61GA_0 a {
+            color: #fa8919;
+            border-bottom: 1px solid #fa8919
+        }
+
+        ._29HP61GA_0 img {
+            display: block;
+            max-width: 100%;
+            position: relative;
+            left: 50%;
+            -webkit-transform: translateX(-50%);
+            transform: translateX(-50%);
+            background-color: #eee;
+            vertical-align: top;
+            border-radius: 0
+        }
+
+        ._29HP61GA_0 audio,
+        ._29HP61GA_0 video {
+            width: 100%;
+            background-color: #eee
+        }
+
+        ._29HP61GA_0 pre {
+            margin-top: 16px;
+            padding: 34px 0 0;
+            margin-bottom: 30px;
+            position: relative;
+            border-radius: 6px;
+            background: rgba(246, 247, 251, .749);
+            border: 0
+        }
+
+        ._29HP61GA_0 pre code {
+            font-size: 12px;
+            font-family: Consolas, Liberation Mono, Menlo, monospace, Courier;
+            display: block;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            margin-left: 16px;
+            margin-right: 16px;
+            overflow-x: scroll
+        }
+
+        ._29HP61GA_0 pre code:after {
+            content: "";
+            height: 30px;
+            width: 100%;
+            display: block
+        }
+
+        ._29HP61GA_0 hr {
+            border: none;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #f5f5f5;
+            height: 1px;
+            background: none
+        }
+
+        ._29HP61GA_0 h1,
+        ._29HP61GA_0 h2,
+        ._29HP61GA_0 h3,
+        ._29HP61GA_0 h4,
+        ._29HP61GA_0 h5 {
+            margin-bottom: 20px;
+            margin-top: 0;
+            font-weight: 700
+        }
+
+        ._29HP61GA_0 b,
+        ._29HP61GA_0 strong {
+            font-weight: 700
+        }
+
+        ._29HP61GA_0 h1 {
+            font-size: 21px
+        }
+
+        ._29HP61GA_0 h2 {
+            font-size: 20px
+        }
+
+        ._29HP61GA_0 h3 {
+            font-size: 19px
+        }
+
+        ._29HP61GA_0 h4 {
+            font-size: 18px
+        }
+
+        ._29HP61GA_0 h5 {
+            font-size: 17px
+        }
+
+        ._29HP61GA_0 center,
+        ._29HP61GA_0 p {
+            font-weight: 400;
+            color: #353535;
+            margin-top: 0;
+            margin-bottom: 30px;
+            word-break: break-word
+        }
+
+        ._29HP61GA_0 center {
+            text-align: center
+        }
+
+        ._29HP61GA_0 blockquote {
+            margin-top: 0;
+            margin-bottom: 34px;
+            border-left: 3px solid #e8e8e8;
+            padding-left: 17px;
+            color: #353535
+        }
+
+        ._29HP61GA_0 blockquote p {
+            margin-top: 0;
+            margin-bottom: 0
+        }
+
+        ._29HP61GA_0 ol,
+        ._29HP61GA_0 ul {
+            margin-bottom: 30px
+        }
+
+        ._29HP61GA_0 ol p,
+        ._29HP61GA_0 ul p {
+            margin-top: 0;
+            margin-bottom: 0
+        }
+
+        ._29HP61GA_0 ol {
+            list-style: decimal;
+            margin-left: 20px
+        }
+
+        ._29HP61GA_0 ul li {
+            padding-left: 17px;
+            position: relative;
+            margin-bottom: 10px
+        }
+
+        ._29HP61GA_0 ul li:after {
+            content: "";
+            height: 6px;
+            width: 6px;
+            border-radius: 50%;
+            background: #353535;
+            position: absolute;
+            top: 10px;
+            left: 0
+        }
+
+        ._29HP61GA_0 .orange {
+            color: #fa8919
+        }
+
+        ._29HP61GA_0 .reference {
+            color: #888
+        }
+
+        ._29HP61GA_0 .m-right {
+            text-align: right
+        }
+
+        ._29HP61GA_0 .m-center {
+            text-align: center;
+            display: block
+        }
+
+        ._29HP61GA_0 .m-gray {
+            color: #888
+        }
+
+        ._29HP61GA_0 .m-small {
+            font-size: 15px
+        }
+
+        ._29HP61GA_0 table.hljs-ln {
+            margin-bottom: 0;
+            border-spacing: 0;
+            border-collapse: collapse
+        }
+
+        ._29HP61GA_0 table.hljs-ln,
+        ._29HP61GA_0 table.hljs-ln tbody,
+        ._29HP61GA_0 table.hljs-ln td,
+        ._29HP61GA_0 table.hljs-ln tr {
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box
+        }
+
+        ._29HP61GA_0 table.hljs-ln td {
+            padding: 0;
+            border: 0
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-numbers {
+            min-width: 15px;
+            font-size: 12px;
+            color: rgba(27, 31, 35, .3);
+            text-align: right;
+            white-space: nowrap;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-code,
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-numbers {
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, Courier, monospace;
+            line-height: 20px;
+            vertical-align: top
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-code {
+            position: relative;
+            padding-right: 10px;
+            padding-left: 10px;
+            overflow: visible;
+            font-size: 13px;
+            color: #666;
+            word-wrap: normal;
+            white-space: pre
+        }
+
+    </style>
+</head>
+<body>
+<div class="_29HP61GA_0">
+<h1>03-深度学习基础：你打牢深度学习知识的地基了吗？</h1>
+<p>你好，我是王喆。</p><p>今天，我想用一节课的时间，带你梳理巩固一下深度学习的相关基础知识。打好基础之后，我们再去学习深度学习推荐系统的技术细节，就能更加得心应手了。</p><p>具体来说，我会从一个基本的神经元开始，讲到多神经元组成的神经网络，再到结构各异的深度学习网络，最后再讲一讲深度学习和推荐系统是怎么结合的。这样，从0到1带你体会深度学习网络生长的整个过程。</p><p>是不是已经迫不及待想要开始今天的课程啦？接下来，我们就一起“钻”进一个神经元里面，跟它一起成长吧。</p><h2>一切要从一个神经元开始</h2><p>上中学的时候，你肯定在生物课上学到过，神经元是我们神经系统的最基本单元，我们的大脑、小脑、脊髓都是由神经元组成的。比如，大脑大概包含了1000亿个神经元！正是这些小小的神经元之间互相连接合作，让大脑能够完成非常复杂的学习任务，这是一个多么神奇的过程！</p><p>于是，计算机科学家们就有一个设想，是不是我们也能从神经元出发，创造出一个人造大脑，来帮我们完成各种不同的任务呢？这其中当然也包括我们课程要讲的推荐任务。事实上，随着近十年深度学习网络的快速发展，这个设想已经被成功应用到图像识别、语音处理、推荐搜索等多个领域了！那组成这个“人造大脑”的基础，也就是神经元到底是什么样子的呢？</p><!-- [[[read_end]]] --><p>下面这张图就是一个神经元的结构示意图，它大致由<strong>树突</strong>、<strong>细胞体</strong>（图中细胞核和周围的部分）、<strong>轴突、轴突末梢</strong>等几部分组成。<strong>树突</strong>是神经元的输入信号通道，它的功能是将其他神经元的动作电位（可以当作一种信号）传递至细胞体。</p><p><img src="https://static001.geekbang.org/resource/image/44/88/44fdd3c092815518f750ecf8fe4e7c88.jpeg" alt="" title="图1 神经元示意图"></p><p>在接收到其他神经元的信号后，<strong>细胞体</strong>会根据这些信号改变自己的状态，变成“激活态”还是“未激活态”。具体的状态取决于输入信号，也取决于神经细胞本身的性质（抑制或加强）。当信号量超过某个阈值时，细胞体就会被激活，产生电脉冲。电脉冲会沿着<strong>轴突</strong>传播，并通过<strong>轴突末梢</strong>传递到其它神经元。</p><p>我上面讲的这些是神经元工作的生物学过程，那如果要用一个神经元来解决推荐问题，具体又该怎么做呢？举个例子，我们可以假设其他神经元通过树突传递过来的信号就是推荐系统用到的特征，有的信号可能是“用户性别是男是女”，有的信号可能是“用户之前有没有点击过这个物品”等等。细胞体在接收到这些信号的时候，会做一个简单的判断，然后通过轴突输出一个信号，这个输出信号大小代表了用户对这个物品的感兴趣程度。这样一来，我们就可以用这个输出信号给用户做推荐啦。</p><p>看起来用神经元来完成推荐任务还是很有希望的，但在实际应用里面，我们还得把生物结构的神经元抽象成一个数学形式，这样我们才能用程序来实现它。图2就是这样的一个抽象结构，这个神经元的结构很简单，只有两个传递输入信号的树突。</p><p><img src="https://static001.geekbang.org/resource/image/0f/5b/0f7c70c5e7d31a9263df0e18290a725b.jpeg" alt="" title="图2 神经元的抽象结构"></p><p>我们可以看到，图2中的x<sub>1</sub>、x<sub>2</sub>就相当于两个树突传递的输入信号，蓝圈内的结构相当于神经元的细胞体，细胞体用某种方式处理好输入信号之后，就通过右面的轴突输出信号y。因为输入输出都很简单，所以我想现在你的疑问，肯定聚焦在细胞体对输入信号的处理方式上了，我们可以把细胞体的数学结构放大一点看看。</p><p><img src="https://static001.geekbang.org/resource/image/d1/07/d17c34f1d8ec98e1a8ebbb80b81e2d07.jpeg" alt="" title="图3 基于Sigmoid激活函数的神经元"></p><p>其实细胞体中的计算就做了两件事情，一件事情是把输入信号x<sub>1</sub>、x<sub>2</sub>各自乘以一个权重w<sub>1</sub>、w<sub>2</sub>，再把各自的乘积加起来之后输入到一个叫“激活函数”的结构里。</p><p>图3中的激活函数是sigmoid激活函数，它的数学定义是：$$f(z)=\frac{1}{1+\mathrm{e}^{-z}}$$ 。它的函数图像就是图3中的S型曲线，它的作用是把输入信号从（-∞，+∞）的定义域映射到（0，1）的值域（因为在点击率预测，推荐问题中，往往是要预测一个从0到1的概率）。再加上sigmoid函数有处处可导的优良数学形式，方便之后的梯度下降学习过程，所以它成为了经常使用的激活函数。</p><p>当然，激活函数的种类有很多种，比较流行的还有tanh、ReLU等，在训练神经元或者神经网络的时候，我们可以尝试多种激活函数，根据效果来做最终的决定。</p><h2>什么是神经网络？</h2><p>不过，单神经元由于受到简单结构的限制，预测能力并不强，因此在解决复杂问题时，我们经常会用多神经元组成一个网络，这样它就具有更强的拟合数据的能力了，这也就是我们常说的<strong>神经网络</strong>。比如说，下图就向我们展示了一个由输入层、两神经元隐层和单神经元输出层组成的简单神经网络。</p><p><img src="https://static001.geekbang.org/resource/image/a2/5a/a2feb9eccdae4c5747ec0dd4e7eb155a.jpeg" alt="" title="图4 简单神经网络示意图"></p><p>其中，每个蓝色神经元的构造都和刚才的单神经元构造相同，h<sub>1</sub>和h<sub>2</sub>神经元的输入是由x<sub>1</sub>和x<sub>2</sub>组成的特征向量，而神经元o<sub>1</sub>的输入则是由h<sub>1</sub>和h<sub>2</sub>输出组成的输入向量。这是一个最简单的三层神经网络，在深度学习的发展过程中，正是因为研究人员对神经元不同的连接方式的探索，才衍生出各种不同特性的深度学习网络，让深度学习模型的家族树枝繁叶茂。在后面课程的学习中，我们也会深入讲解各种不同的网络结构，相信你对这句话的理解也会随着学习的推进而更加深刻。</p><h2>神经网络是怎么学习的？</h2><p>清楚了神经网络的结构之后，更重要的问题是我们该如何训练一个神经网络。也就是说，我们怎么得到图5中x<sub>1</sub>到h<sub>1</sub>、h<sub>2</sub>的权重w<sub>1</sub>、w<sub>3</sub>，以及图中其他的权重呢？</p><p><img src="https://static001.geekbang.org/resource/image/23/59/2304c2c6e6e9d6ce4e966beyy2892c59.jpeg" alt="" title="图5 神经网络中的权重"></p><p>这里需要用到神经网络的重要训练方法，<strong>前向传播（Forward Propagation）<strong>和</strong>反向传播（Back Propagation）</strong>。前向传播的目的是在当前网络参数的基础上得到模型对输入的预估值，也就是我们常说的模型推断过程。比如说，我们要通过一位同学的体重、身高预测TA的性别，前向传播的过程就是给定体重值71，身高值178，经过神经元h<sub>1</sub>、h<sub>2</sub>和o<sub>1</sub>的计算，得到一个性别概率值，比如说0.87，这就是TA可能为男性的概率。</p><p>在得到预估值之后，我们就可以利用损失函数（Loss Function）计算模型的损失。比如我们采用绝对值误差（Absolute Loss）作为我们的损失函数，如果这位同学的真实性别是男，那真实的概率值就是1，根据公式2的绝对值误差定义，这次预测的损失就是|1-0.87| = 0.13。</p><p>$$l_{1}\left(y_{i}, \hat{y}_{i}\right)=\left|y_{i}-\hat{y}_{i}\right|$$</p><p>我们常说“知错能改，善莫大焉”，神经网络的学习更是践行了这句话。发现了预测值和真实值之间的误差（Loss），我们就要用这个误差来指导权重的更新，让整个神经网络在下次预测时变得更准确。最常见的权重更新方式就是梯度下降法，它是通过求取偏导的形式来更新权重的。比如，我们要更新权重w<sub>5</sub>，就要先求取损失函数到w5的偏导$$\frac{\partial L_{o 1}}{\partial w_{5}}$$。从数学角度来看，梯度的方向是函数增长速度最快的方向，那么梯度的反方向就是函数下降最快的方向，所以让损失函数减小最快的方向就是我们希望梯度w5更新的方向。这里我们再引入一个超参数α，它代表了梯度更新的力度，也称为学习率。好，现在我们可以写出梯度更新的公式了：$$w_{5}^{t+1}=w_{5}^{t}-\alpha * \frac{\partial L_{o 1}}{\partial w_{5}}$$。公式中的w<sub>5</sub>当然可以换成其他要更新的参数，公式中的t代表着更新的次数。</p><p>对输出层神经元来说（图中的 o<sub>1</sub>），我们可以直接利用梯度下降法计算神经元相关权重（即图5中的权重w<sub>5</sub>和w<sub>6</sub>）的梯度，从而进行权重更新，但对隐层神经元的相关参数（比如w<sub>1</sub>），我们又该如何利用输出层的损失进行梯度下降呢？</p><p>答案是“利用求导过程中的链式法则（Chain Rule）”。通过链式法则我们可以解决梯度逐层反向传播的问题。最终的损失函数到权重w<sub>1</sub>的梯度是由损失函数到神经元h<sub>1</sub>输出的偏导，以及神经元h<sub>1</sub>输出到权重<em>w<sub>1</sub>的偏导相乘而来的。也就是说，最终的梯度逐层传导回来，“指导”权重</em>w<sub>1</sub>的更新。</p><p>$$\frac{\partial L_{o 1}}{\partial w_{1}}=\frac{\partial L_{o 1}}{\partial h_{1}} \cdot \frac{\partial h_{1}}{\partial w_{1}}$$</p><p>具体在计算的时候，我们需要根据具体的问题明确最终损失函数的形式，以及每层神经元激活函数的形式，再根据具体的函数形式进行偏导的计算。这部分的学习需要一定的微积分基础，如果你觉得不是很好理解，也不用担心，因为对于大部分的机器学习库来说，梯度反向传播的过程已经被实现并且封装好了，直接调用就可以了，但是原理我们还是有必要了解的。</p><p>到这里，神经网络相关的基本知识我们就讲完了，前面讲了这么多，我想再带你做个总结。<strong>神经元是神经网络中的基础结构，它参照生物学中的神经元构造，抽象出带有输入输出和激活函数的数学结构。而神经网络是通过将多个神经元以串行、并行、全连接等方式连接起来形成的网络，神经网络的训练方法是基于链式法则的梯度反向传播。</strong></p><p>但是细心的你可能会问了，搭建深度学习推荐系统跟神经网络到底有什么关系呢？</p><h2>神经网络与深度学习的关系是什么？</h2><p>想要搞清楚这个问题，我得先给你讲点儿神经网络和深度学习的历史。</p><p>其实学术界对于人工神经网络的研究非常早，可以追溯上世纪60年代，但由于计算机发展本身的限制，我们没有办法完成神经网络学习所需的大量计算。直到上世纪80年代，Hinton等人提出了反向传播算法（BP算法），神经网络才能够完成类似字母识别的简单任务。</p><p>时间到了2012年，Hinton的学生Alex Krizhevsky提出了一个用于图像识别的深度神经网络结构AlexNet，在当年著名的图像识别大赛ImageNet上，它以碾压第二名的成绩荣获桂冠。也正是从那时起，人们突然意识到，原来用深层的神经网络可以完成这么复杂的任务。深度学习的浪潮从此被正式引爆了！</p><p><img src="https://static001.geekbang.org/resource/image/93/3e/9399bb223f60eec8b2fd9fc32d09303e.jpg" alt="" title="图6 著名的深度学习模型AlexNet"></p><p>结合上图你可以看到，跟我们刚才讲的简单神经网络相比，AlexNet无论从深度，还是每一层的神经元数量来说，都大大增加了，并且神经元的连接方式和种类也更加丰富。</p><p>那知道了这些，我们就可以回答刚才提出的问题了。深度学习可以说是神经网络的延伸和发展，它极大地丰富神经网络的结构种类，让它能够处理各类复杂问题。</p><p>这个时候，你可能又会问：好像深度学习相比传统的神经网络没什么革命性的创新呀，为啥到了2012年才取得这么大的突破呢？这是个好问题，我觉得主要有三个原因。</p><p><strong>一是算力的极大提高。</strong> 到了2012年，随着GPU大量应用于机器学习领域，神经网络的训练速度也有了量级上的提高，时至今日，OpenAI刚发布的语言模型GPT-3居然有高达1750亿个参数，这放在十年前是完全不可想像的。</p><p><strong>二是数据的极大丰富。</strong> 之前神经网络面临的一大问题是，在训练数据量较小的情况下，模型难以收敛。但随着越来越多成熟的大数据开源平台，以及越来越多丰富的开源数据集的出现，即使神经网络的结构变得越来越复杂，我们也完全可以凭借海量的训练数据使它完全收敛。</p><p><strong>三是深度学习理论的进一步发展。</strong> 虽然深度学习是站在“神经网络”这一巨人的肩膀上发展起来的，但专家们也取得了非常多的理论创新，就比如，pooling层的加入和成功应用，各类更适合深度学习的梯度下降方法的提出等等，这些都让深度学习的应用成为了可能。</p><h2>深度学习是如何应用在推荐系统中的？</h2><p>前面我们介绍的都是通用的深度学习知识，但深度学习又是如何应用在推荐系统中的呢？下面，我就着重来说说这一点。</p><p>在刚才讲解神经元原理的时候，我讲到用单个神经元可以预测用户对物品感兴趣的程度。事实上，无论是单个神经元，还是结构非常复杂的深度学习网络，它们在推荐系统场景下要解决的问题都是一样的，就是<strong>预测用户对某个物品的感兴趣程度，这个感兴趣程度往往是一个概率，最典型的就是点击率、播放率、购买概率等</strong>。</p><p>所以在深度学习时代，我们使用深度学习模型替代了传统的推荐模型，目的就是让它作出更准确的推荐。但像上节课提出的，深度学习的革命要求我们对算力、数据都作出大幅度的调整，而这些调整因为涉及到分布式计算平台、深度学习平台，以及线上的模型服务部分，所以我们需要在推荐系统的整体架构上都作出不小的改造，让它适应深度学习时代的需求。这也是我们学习这门课的目的所在。</p><h2>小结</h2><p>今天，我带你学习了深度学习的基础知识。我们从神经元学到了神经网络，再到训练神经网络的方法，以及神经网络和深度学习的关系。今天的知识点比较密集，而且每个知识点之间都是层层递进的。为了方便你记忆，我把本节课的重点整理成了一张表格，帮你巩固所学。</p><p><img src="https://static001.geekbang.org/resource/image/b0/22/b04815474a0c6242a491633c3914ee22.jpg" alt=""></p><p>这些知识是未来我们搭建深度学习推荐系统的基础。我希望你能够在动手实践之前完全掌握它。从下节课开始，我们就会进入深度学习推荐系统技术细节和实战环节，你准备好了吗？</p><h2>课后问题</h2><p>你觉得都有哪些因素影响着深度学习网络的结构？深度学习模型是越深越好吗？为什么？</p><p>欢迎在留言区分享你的答案和疑惑，如果你的朋友也想了解神经网络和深度学习的基本知识，也欢迎你把这节课分享给他。好了，今天的内容就到这里了，我们下节课见！</p><h2>精选留言：</h2>
+        <ul>
+        
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            Chris  2020-09-28 10:36:11
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            希望老师更新快一些，一周只等来了一节课，有点慢啊。 [2赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-09-28 10:56:21</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">因为国庆假期快到了所以没有按正常速度更新。国庆后会按照一周三节的速度更新。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            李@君  2020-09-28 20:02:50
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            不同应用领域(图片分类，NLP)的模型结构会有所不同。模型深度越深，就需要更多的训练数据，和更强大的算力。但是深度和预测结果是否成正相关呢。现在的模型是结构越来越复杂，参数越来越多。 [1赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-09-29 03:12:01</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">非常好的insight。应该根据问题类型、数据规模来决定模型的结构和复杂度。<br>通常来说，模型结构跟要解决的业务问题强相关，数据规模决定了模型能够支持的复杂程度。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            何去何从  2020-09-28 15:08:29
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            请问老师画图使用什么工具？谢谢 [1赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-09-29 03:16:17</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">用了一个线上工具 https:&#47;&#47;app.diagrams.net&#47;<br>不知道国内能不能访问，可以试一下。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            大土豆  2020-09-28 14:49:51
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            老师，我想问下，您有见过服务端或者客户端的同学，转型AI开发成功的例子吗？可不可以分享下，我们的订阅听众可能大多数都不是AI出身，都是服务端或者客户端半路出家AI的 [1赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-09-29 04:28:52</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">还是有一些的。我在中国和美国公司都分别见到过一位这样的同事的。<br>他们有共同点，就是之前从事后端开发的工作，对java jvm非常熟悉，另外对spark有一定经验，然后转到推荐或者广告团队。现在做的都非常出色。<br><br>我觉得只要不是纯算法的工作，工程能力就是首要的能力，大家不要被AI、算法工程师这些title吓到，认为传统工程师和算法工程师之间的gap非常大。其实算法团队对工程能力非常好的同学永远都有需求。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            w1sl1y  2020-09-29 16:14:58
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            https:&#47;&#47;github.com&#47;w1sl1y&#47;bpnn<br>之前用java写的一个BPNN的demo，新手可以看一下代码，加深反向神经网络的了解 
+        </div>
+        
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            咸  2020-09-29 10:38:02
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            老师好，我看文章内有很多数学，算法知识，有没有什么途径可以快速切入的，否则听起来有点跟不上节奏 
+        </div>
+        
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            想听家乡话  2020-09-28 23:38:14
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            老师，做推荐平台的不生产数据，只是数据的搬运工。推荐数据由算法同事去生产。做推荐系统平台的，有必要学习这门课吗？ 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-09-29 03:08:06</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">这个还是要看自己的需求，如果你想了解更全面的推荐系统知识，工作中寻求更多的团队配合，推进更大的项目，建议丰富一下自己的整体知识储备。</div>
+</div>
+            
+    </div>
+</li>
+            </ul>
+</div>
+</body>
+</html>

@@ -1,0 +1,1161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <!--<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>-->
+    <title>结束语-深度学习时代需要什么样的推荐工程师？</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <style>
+        html {
+            color: #333;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            text-rendering: optimizelegibility;
+            font-family: Helvetica Neue, PingFang SC, Verdana, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif
+        }
+
+        html.borderbox *,
+        html.borderbox :after,
+        html.borderbox :before {
+            box-sizing: border-box
+        }
+
+        article,
+        aside,
+        blockquote,
+        body,
+        button,
+        code,
+        dd,
+        details,
+        dl,
+        dt,
+        fieldset,
+        figcaption,
+        figure,
+        footer,
+        form,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        header,
+        hr,
+        input,
+        legend,
+        li,
+        menu,
+        nav,
+        ol,
+        p,
+        pre,
+        section,
+        td,
+        textarea,
+        th,
+        ul {
+            margin: 0;
+            padding: 0
+        }
+
+        article,
+        aside,
+        details,
+        figcaption,
+        figure,
+        footer,
+        header,
+        menu,
+        nav,
+        section {
+            display: block
+        }
+
+        audio,
+        canvas,
+        video {
+            display: inline-block
+        }
+
+        body,
+        button,
+        input,
+        select,
+        textarea {
+            font: 300 1em/1.8 PingFang SC, Lantinghei SC, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, Helvetica, sans-serif
+        }
+
+        button::-moz-focus-inner,
+        input::-moz-focus-inner {
+            padding: 0;
+            border: 0
+        }
+
+        table {
+            border-collapse: collapse;
+            border-spacing: 0
+        }
+
+        fieldset,
+        img {
+            border: 0
+        }
+
+        blockquote {
+            position: relative;
+            color: #999;
+            font-weight: 400;
+            border-left: 1px solid #1abc9c;
+            padding-left: 1em;
+            margin: 1em 3em 1em 2em
+        }
+
+        @media only screen and (max-width: 640px) {
+            blockquote {
+                margin: 1em 0
+            }
+        }
+
+        abbr,
+        acronym {
+            border-bottom: 1px dotted;
+            font-variant: normal
+        }
+
+        abbr {
+            cursor: help
+        }
+
+        del {
+            text-decoration: line-through
+        }
+
+        address,
+        caption,
+        cite,
+        code,
+        dfn,
+        em,
+        th,
+        var {
+            font-style: normal;
+            font-weight: 400
+        }
+
+        ol,
+        ul {
+            list-style: none
+        }
+
+        caption,
+        th {
+            text-align: left
+        }
+
+        q:after,
+        q:before {
+            content: ""
+        }
+
+        sub,
+        sup {
+            font-size: 75%;
+            line-height: 0;
+            position: relative
+        }
+
+        :root sub,
+        :root sup {
+            vertical-align: baseline
+        }
+
+        sup {
+            top: -.5em
+        }
+
+        sub {
+            bottom: -.25em
+        }
+
+        a {
+            color: #1abc9c
+        }
+
+        a:hover {
+            text-decoration: underline
+        }
+
+        .typo a {
+            border-bottom: 1px solid #1abc9c
+        }
+
+        .typo a:hover {
+            border-bottom-color: #555;
+            color: #555
+        }
+
+        .typo a:hover,
+        a,
+        ins {
+            text-decoration: none
+        }
+
+        .typo-u,
+        u {
+            text-decoration: underline
+        }
+
+        mark {
+            background: #fffdd1;
+            border-bottom: 1px solid #ffedce;
+            padding: 2px;
+            margin: 0 5px
+        }
+
+        code,
+        pre,
+        pre tt {
+            font-family: Courier, Courier New, monospace
+        }
+
+        pre {
+            background: hsla(0, 0%, 97%, .7);
+            border: 1px solid #ddd;
+            padding: 1em 1.5em;
+            display: block;
+            -webkit-overflow-scrolling: touch
+        }
+
+        hr {
+            border: none;
+            border-bottom: 1px solid #cfcfcf;
+            margin-bottom: .8em;
+            height: 10px
+        }
+
+        .typo-small,
+        figcaption,
+        small {
+            font-size: .9em;
+            color: #888
+        }
+
+        b,
+        strong {
+            font-weight: 700;
+            color: #000
+        }
+
+        [draggable] {
+            cursor: move
+        }
+
+        .clearfix:after,
+        .clearfix:before {
+            content: "";
+            display: table
+        }
+
+        .clearfix:after {
+            clear: both
+        }
+
+        .clearfix {
+            zoom: 1
+        }
+
+        .textwrap,
+        .textwrap td,
+        .textwrap th {
+            word-wrap: break-word;
+            word-break: break-all
+        }
+
+        .textwrap-table {
+            table-layout: fixed
+        }
+
+        .serif {
+            font-family: Palatino, Optima, Georgia, serif
+        }
+
+        .typo-dl,
+        .typo-form,
+        .typo-hr,
+        .typo-ol,
+        .typo-p,
+        .typo-pre,
+        .typo-table,
+        .typo-ul,
+        .typo dl,
+        .typo form,
+        .typo hr,
+        .typo ol,
+        .typo p,
+        .typo pre,
+        .typo table,
+        .typo ul,
+        blockquote {
+            margin-bottom: 1rem
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: PingFang SC, Helvetica Neue, Verdana, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif;
+            color: #000;
+            line-height: 1.35
+        }
+
+        .typo-h1,
+        .typo-h2,
+        .typo-h3,
+        .typo-h4,
+        .typo-h5,
+        .typo-h6,
+        .typo h1,
+        .typo h2,
+        .typo h3,
+        .typo h4,
+        .typo h5,
+        .typo h6 {
+            margin-top: 1.2em;
+            margin-bottom: .6em;
+            line-height: 1.35
+        }
+
+        .typo-h1,
+        .typo h1 {
+            font-size: 2em
+        }
+
+        .typo-h2,
+        .typo h2 {
+            font-size: 1.8em
+        }
+
+        .typo-h3,
+        .typo h3 {
+            font-size: 1.6em
+        }
+
+        .typo-h4,
+        .typo h4 {
+            font-size: 1.4em
+        }
+
+        .typo-h5,
+        .typo-h6,
+        .typo h5,
+        .typo h6 {
+            font-size: 1.2em
+        }
+
+        .typo-ul,
+        .typo ul {
+            margin-left: 1.3em;
+            list-style: disc
+        }
+
+        .typo-ol,
+        .typo ol {
+            list-style: decimal;
+            margin-left: 1.9em
+        }
+
+        .typo-ol ol,
+        .typo-ol ul,
+        .typo-ul ol,
+        .typo-ul ul,
+        .typo li ol,
+        .typo li ul {
+            margin-bottom: .8em;
+            margin-left: 2em
+        }
+
+        .typo-ol ul,
+        .typo-ul ul,
+        .typo li ul {
+            list-style: circle
+        }
+
+        .typo-table td,
+        .typo-table th,
+        .typo table caption,
+        .typo table td,
+        .typo table th {
+            border: 1px solid #ddd;
+            padding: .5em 1em;
+            color: #666
+        }
+
+        .typo-table th,
+        .typo table th {
+            background: #fbfbfb
+        }
+
+        .typo-table thead th,
+        .typo table thead th {
+            background: hsla(0, 0%, 95%, .7)
+        }
+
+        .typo table caption {
+            border-bottom: none
+        }
+
+        .typo-input,
+        .typo-textarea {
+            -webkit-appearance: none;
+            border-radius: 0
+        }
+
+        .typo-em,
+        .typo em,
+        caption,
+        legend {
+            color: #000;
+            font-weight: inherit
+        }
+
+        .typo-em {
+            position: relative
+        }
+
+        .typo-em:after {
+            position: absolute;
+            top: .65em;
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            content: "\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB"
+        }
+
+        .typo img {
+            max-width: 100%
+        }
+
+        .common-content {
+            font-weight: 400;
+            color: #353535;
+            line-height: 1.75rem;
+            white-space: normal;
+            word-break: normal;
+            font-size: 1rem
+        }
+
+        .common-content img {
+            display: block;
+            max-width: 100%;
+            background-color: #eee
+        }
+
+        .common-content audio,
+        .common-content video {
+            width: 100%;
+            background-color: #eee
+        }
+
+        .common-content center,
+        .common-content font {
+            margin-top: 1rem;
+            display: inline-block
+        }
+
+        .common-content center {
+            width: 100%
+        }
+
+        .common-content pre {
+            margin-top: 1rem;
+            padding-left: 0;
+            padding-right: 0;
+            position: relative;
+            overflow: hidden
+        }
+
+        .common-content pre code {
+            font-size: .8rem;
+            font-family: Consolas, Liberation Mono, Menlo, monospace, Courier;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            overflow-x: auto
+        }
+
+        .common-content hr {
+            border: none;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #f5f5f5;
+            height: 1px;
+            background: none
+        }
+
+        .common-content b,
+        .common-content h1,
+        .common-content h2,
+        .common-content h3,
+        .common-content h4,
+        .common-content h5,
+        .common-content strong {
+            font-weight: 700
+        }
+
+        .common-content h1,
+        .common-content h2 {
+            font-size: 1.125rem;
+            margin-bottom: .45rem
+        }
+
+        .common-content h3,
+        .common-content h4,
+        .common-content h5 {
+            font-size: 1rem;
+            margin-bottom: .45rem
+        }
+
+        .common-content p {
+            font-weight: 400;
+            color: #353535;
+            margin-top: .15rem
+        }
+
+        .common-content .orange {
+            color: #ff5a05
+        }
+
+        .common-content .reference {
+            font-size: 1rem;
+            color: #888
+        }
+
+        .custom-rich-content h1 {
+            margin-top: 0;
+            font-weight: 400;
+            font-size: 15.25px;
+            border-bottom: 1px solid #eee;
+            line-height: 2.8
+        }
+
+        .custom-rich-content li,
+        .custom-rich-content p {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.6
+        }
+
+        table.hljs-ln {
+            margin-bottom: 0;
+            border-spacing: 0;
+            border-collapse: collapse
+        }
+
+        table.hljs-ln,
+        table.hljs-ln tbody,
+        table.hljs-ln td,
+        table.hljs-ln tr {
+            box-sizing: border-box
+        }
+
+        table.hljs-ln td {
+            padding: 0;
+            border: 0
+        }
+
+        table.hljs-ln td.hljs-ln-numbers {
+            min-width: 15px;
+            color: rgba(27, 31, 35, .3);
+            text-align: right;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none
+        }
+
+        table.hljs-ln td.hljs-ln-code,
+        table.hljs-ln td.hljs-ln-numbers {
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, Courier, monospace;
+            font-size: 12px;
+            line-height: 20px;
+            vertical-align: top
+        }
+
+        table.hljs-ln td.hljs-ln-code {
+            position: relative;
+            padding-right: 10px;
+            padding-left: 10px;
+            overflow: visible;
+            color: #24292e;
+            word-wrap: normal;
+            white-space: pre
+        }
+
+        video::-webkit-media-controls {
+            overflow: hidden !important
+        }
+
+        video::-webkit-media-controls-enclosure {
+            width: calc(100% + 32px);
+            margin-left: auto
+        }
+
+        ._29HP61GA_0 {
+            max-width:800px;
+            margin:0 auto;
+            margin-bottom: 20px;
+            font-weight: 400;
+            color: #353535;
+            line-height: 1.76;
+            white-space: normal;
+            word-break: normal;
+            font-size: 17px;
+            -webkit-transition: background-color .3s ease;
+            transition: background-color .3s ease
+        }
+
+        ._29HP61GA_0 .MathJax_Display {
+            overflow: auto
+        }
+
+        ._29HP61GA_0 .poster {
+            position: fixed;
+            left: -10000px;
+            top: -10000px;
+            overflow: hidden;
+            padding: 1rem;
+            background: #ececec
+        }
+
+        ._29HP61GA_0 .richcontent-pre-copy {
+            font-size: 13px;
+            color: #888;
+            position: absolute;
+            right: 1em;
+            top: .5em;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none
+        }
+
+        ._29HP61GA_0 .richcontent-pre-copy .iconfont {
+            font-size: 12px;
+            margin-right: .2em
+        }
+
+        ._29HP61GA_0 a {
+            color: #fa8919;
+            border-bottom: 1px solid #fa8919
+        }
+
+        ._29HP61GA_0 img {
+            display: block;
+            max-width: 100%;
+            position: relative;
+            left: 50%;
+            -webkit-transform: translateX(-50%);
+            transform: translateX(-50%);
+            background-color: #eee;
+            vertical-align: top;
+            border-radius: 0
+        }
+
+        ._29HP61GA_0 audio,
+        ._29HP61GA_0 video {
+            width: 100%;
+            background-color: #eee
+        }
+
+        ._29HP61GA_0 pre {
+            margin-top: 16px;
+            padding: 34px 0 0;
+            margin-bottom: 30px;
+            position: relative;
+            border-radius: 6px;
+            background: rgba(246, 247, 251, .749);
+            border: 0
+        }
+
+        ._29HP61GA_0 pre code {
+            font-size: 12px;
+            font-family: Consolas, Liberation Mono, Menlo, monospace, Courier;
+            display: block;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            margin-left: 16px;
+            margin-right: 16px;
+            overflow-x: scroll
+        }
+
+        ._29HP61GA_0 pre code:after {
+            content: "";
+            height: 30px;
+            width: 100%;
+            display: block
+        }
+
+        ._29HP61GA_0 hr {
+            border: none;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #f5f5f5;
+            height: 1px;
+            background: none
+        }
+
+        ._29HP61GA_0 h1,
+        ._29HP61GA_0 h2,
+        ._29HP61GA_0 h3,
+        ._29HP61GA_0 h4,
+        ._29HP61GA_0 h5 {
+            margin-bottom: 20px;
+            margin-top: 0;
+            font-weight: 700
+        }
+
+        ._29HP61GA_0 b,
+        ._29HP61GA_0 strong {
+            font-weight: 700
+        }
+
+        ._29HP61GA_0 h1 {
+            font-size: 21px
+        }
+
+        ._29HP61GA_0 h2 {
+            font-size: 20px
+        }
+
+        ._29HP61GA_0 h3 {
+            font-size: 19px
+        }
+
+        ._29HP61GA_0 h4 {
+            font-size: 18px
+        }
+
+        ._29HP61GA_0 h5 {
+            font-size: 17px
+        }
+
+        ._29HP61GA_0 center,
+        ._29HP61GA_0 p {
+            font-weight: 400;
+            color: #353535;
+            margin-top: 0;
+            margin-bottom: 30px;
+            word-break: break-word
+        }
+
+        ._29HP61GA_0 center {
+            text-align: center
+        }
+
+        ._29HP61GA_0 blockquote {
+            margin-top: 0;
+            margin-bottom: 34px;
+            border-left: 3px solid #e8e8e8;
+            padding-left: 17px;
+            color: #353535
+        }
+
+        ._29HP61GA_0 blockquote p {
+            margin-top: 0;
+            margin-bottom: 0
+        }
+
+        ._29HP61GA_0 ol,
+        ._29HP61GA_0 ul {
+            margin-bottom: 30px
+        }
+
+        ._29HP61GA_0 ol p,
+        ._29HP61GA_0 ul p {
+            margin-top: 0;
+            margin-bottom: 0
+        }
+
+        ._29HP61GA_0 ol {
+            list-style: decimal;
+            margin-left: 20px
+        }
+
+        ._29HP61GA_0 ul li {
+            padding-left: 17px;
+            position: relative;
+            margin-bottom: 10px
+        }
+
+        ._29HP61GA_0 ul li:after {
+            content: "";
+            height: 6px;
+            width: 6px;
+            border-radius: 50%;
+            background: #353535;
+            position: absolute;
+            top: 10px;
+            left: 0
+        }
+
+        ._29HP61GA_0 .orange {
+            color: #fa8919
+        }
+
+        ._29HP61GA_0 .reference {
+            color: #888
+        }
+
+        ._29HP61GA_0 .m-right {
+            text-align: right
+        }
+
+        ._29HP61GA_0 .m-center {
+            text-align: center;
+            display: block
+        }
+
+        ._29HP61GA_0 .m-gray {
+            color: #888
+        }
+
+        ._29HP61GA_0 .m-small {
+            font-size: 15px
+        }
+
+        ._29HP61GA_0 table.hljs-ln {
+            margin-bottom: 0;
+            border-spacing: 0;
+            border-collapse: collapse
+        }
+
+        ._29HP61GA_0 table.hljs-ln,
+        ._29HP61GA_0 table.hljs-ln tbody,
+        ._29HP61GA_0 table.hljs-ln td,
+        ._29HP61GA_0 table.hljs-ln tr {
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box
+        }
+
+        ._29HP61GA_0 table.hljs-ln td {
+            padding: 0;
+            border: 0
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-numbers {
+            min-width: 15px;
+            font-size: 12px;
+            color: rgba(27, 31, 35, .3);
+            text-align: right;
+            white-space: nowrap;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-code,
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-numbers {
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, Courier, monospace;
+            line-height: 20px;
+            vertical-align: top
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-code {
+            position: relative;
+            padding-right: 10px;
+            padding-left: 10px;
+            overflow: visible;
+            font-size: 13px;
+            color: #666;
+            word-wrap: normal;
+            white-space: pre
+        }
+
+    </style>
+</head>
+<body>
+<div class="_29HP61GA_0">
+<h1>结束语-深度学习时代需要什么样的推荐工程师？</h1>
+<p>你好，我是王喆。</p><p>今天是2021年的第一天，也是咱们课程的最后一讲，课程开始前，我要对你说一句，很荣幸能陪你一起度过这几个月的学习时间。</p><p>我相信，在这门课中，只要你认真学习、亲手实践，就一定能够搭建起深度学习推荐系统的知识框架，并且收获一套亲手实现的、包含工业级推荐系统各个模块的开源项目SparrowRecSys。这是咱们这门课的目标，也是你作为推荐工程师对深度学习方向的一次探索。</p><p>但要想成为一名优秀的推荐工程师，这一路上，包括我自己，也还在不断地学习和前行着。虽然我不能给你一张魔法船票，让你直接到达技术专家的彼岸，但我希望能通过这门课给你一个坚实的基础和宽广的视野。</p><p>在这最后一课，我想结合自己近十年的从业经验，包括国内和硅谷互联网公司的工作经历，跟你谈一谈，<strong>这个时代到底需要什么样的推荐工程师，我们应该继续朝什么方向持续努力</strong>。</p><h2>一名推荐工程师的“自我修养”</h2><p>在我刚进入推荐系统这个行业的时候，我心中对这个行业的初步印象是，认为这个行业就是一群搞机器学习的研究者在不断地改进模型、训练模型和提高效果，所以，我卯足了劲要成为那个能提出新的模型架构，让全公司都采用我模型的“年轻人”。</p><p>当我工作了三年之后，我终于明白，模型的工作固然重要，但它仅仅是推荐系统的一个部分，还有其他很多重要的子系统、子模块可以进行深入研究。当我工作了五年之后，我又意识到，原来能够全盘考虑推荐系统的模型、工程、业务，对它们进行整体优化的工程师才是最优秀的那一拨人。</p><!-- [[[read_end]]] --><p>工作八年后，我开始思考一个优秀推荐工程师的“自我修养”到底是什么，换句话说就是他该具备什么能力。下面我就把我的思考分享给你。</p><p>我认为一名推荐工程师的技术能力基本可以拆解成4个维度：知识、工具、逻辑、业务。我们一一来看。</p><p>“知识”代表了推荐工程师应该具备的推荐系统和机器学习领域的相关知识，比如我在推荐模型篇中就强调过，我们一定要建立起自己的推荐模型演化框架，厘清各个模型之间的关系，从整体上建立起推荐系统的知识体系。</p><p>而“工具”指的是我们的工程实践能力，掌握推荐系统相关的工程实践工具的使用方法。我在这门课程中讲了很多推荐系统相关的工具、平台，包括Spark、TensorFlow、Flink、Redis等等，就是希望你能够具备推荐系统知识的落地能力，把脑海中的专业领域知识转化成实际的能够支持公司业务的推荐系统。</p><p>“逻辑”指的是我们作为一名程序员的基本功，包括算法和数据结构基础，以及梳理高质量系统框架的能力。像是我们在第一课中总结过的深度学习推荐系统架构图，以及在第14课、23课这些实践章节中总结过的各种架构图，就是逻辑设计能力的体现。</p><p>至于“业务”，我想是推荐工程师跟其他后端工程师区别最大的地方了。在业务维度，推荐工程师需要把自己当成半个产品经理，从业务场景的角度来思考用户到底喜欢什么，他们的习惯到底什么样。只有这样，我们才能够不断发现改进模型的动机，持续地迭代模型。这一点，我想你通过32课中阿里模型的演进过程，肯定也有所体会。</p><p><img src="https://static001.geekbang.org/resource/image/f8/80/f895cb9a1b686b98bf19b5f958968880.jpg" alt="" title="推荐工程师能力模型"></p><h2>推荐工程师职位的面试要求</h2><p>除了推荐工程师的能力维度，我还想跟你聊一聊推荐工程师职位的面试要求，因为这也是很多在校同学和刚入行的工程师们非常感兴趣的话题。</p><p>虽然，不同的招聘职位和职级对面试者的能力要求有所不同，但各个公司也不外乎是从“知识”、“工具”、“逻辑”、“业务”，这四个维度对面试者进行考察。接下来，我们就依次来看一看面试官都是怎么考察这四项能力的。</p><h3>1. 对知识的考察</h3><p>面试官最关心的就是你对这个领域的知识储备，以及你对一些技术细节的理解。一般来说，他们会按照由广入深，层层递进地方式来考察你的掌握程度。</p><p>比如说，在知识广度方面，面试官可能会让你说说主流的推荐模型有哪些，主流的Embedding方法有哪些，然后，再根据你的回答挑一到两点继续深入。</p><p>假设，你有提到你对DIN模型比较熟悉，那么接下来的问题可能是：</p><ul>
+<li>注意力机制具体指的是什么？</li>
+<li>DIN中注意力单元的具体结构是什么？</li>
+<li>能否写出注意力单元的形式化定义，并推导它的梯度下降更新过程？</li>
+</ul><p>所以，<strong>在面试之前，对于你自己熟悉的领域，一定要深入理解每一个细节，切忌浅尝辄止，临时抱佛脚</strong>。</p><h3>2. 对逻辑的考察</h3><p>面试官对“逻辑思维能力”的考察方法就是做题，一般来说也会用两种方式。</p><p>一种是直接出算法面试题，让你写一种排序算法，完成二叉树的构建、遍历、反转等等操作，或者任意类似的LeetCode面试题。这是所有CS相关职位都会检查的，因为一名推荐工程师首先需要是一名合格的、基础牢固的工程师。</p><p>第二种方式是让你去设计一个推荐系统的工程架构，可能是根据某个推荐场景，设计一套合适的特征工程和推荐模型等等。这类系统设计题更能检查你严谨、全面的逻辑思考能力。</p><p>对于逻辑能力的积累是一个长期的过程，不仅要求你在学生阶段打牢自己CS相关的知识基础，而且最好能在工作中面临实际问题的时候，多思考系统设计的问题，即使这部分功能不属于你的工作范畴，你也可以多想一想有哪些可行的设计方案，不断锻炼自己系统设计的能力。</p><h3>3.  对“工具”使用能力的考察</h3><p>其实，对工具的考察跟公司职位的实际需求最相关，特别是一些比较高级的职位。</p><p>如果这个职位要求更强的大数据处理能力，面试官可能会考察你对Spark的运用情况，以及对Spark背后Map Reduce过程原理的理解情况；如果这个职位希望招一位对TensorFlow，XGBoost等建模工具应用熟练的同学，面试官就会重点考察你TensorFlow的基本概念，以及怎么处理训练过程中遇到的主要问题。</p><p>对于这部分，我的建议是，<strong>你在了解所有工具基本使用方法的同时，一定要注意一到两个工具的深入实践和积累，争取成为一两个方向的专家。这样，你才能在一些高级职位的竞争中脱颖而出</strong>。</p><h3>4.  对“业务”理解能力的考察</h3><p>如果说前三项能力是一名合格推荐工程师的必备条件，那么业务能力则是你在合格基础上变得优秀的宝贵素质。只有对业务有深刻理解，我们才能够从完成项目的阶段进化到发现项目、领导项目的阶段，所以越高的职位，对业务理解能力的考察就越深刻。</p><p>比如：对于DIN来说，最关键的点其实并不是用注意力机制来解决这个问题，而是发现用户行为历史和目标商品的相关性。对于Wide&amp;Deep来说，最重要的也并不是这个模型结构，而是如何设计Deep特征和Wide特征，从而发挥出这个模型最大的“功力”；对于模型服务的部分，最重要的是如何设计它才既能满足业务需求，又能实现工程上的要求。</p><p>除此之外，推荐系统中遇到的一些常见问题，如冷启动、多目标优化、探索与利用，也是面试常问的业务问题，你必须能说出自己的思考，充分地分析具体问题，提出有针对性的解决方案。</p><p>“业务”方面的提高，虽然是一个长期的过程，但我还是要建议你，在平时的工作中，不要总是想着完成一个个工程任务，按部就班的执行上级的命令，而是多思考任务背后的逻辑，多提出自己的见解，这样才能真正的提高自己解决业务问题的能力。</p><p>总的来说，“知识”和“逻辑”是一名推荐工程师的基本素质，“工具”和“业务”是影响你能不能获得高端职位的关键。但不管你处于职业生涯的任何阶段，都要注意平时的不断思考和持续学习，从“广度”和“深度”两个方面，不断提升自己的综合能力，这样才能在职业生涯的阶梯上不断前行。</p><h2>什么样的机器学习人才最紧缺？</h2><p>清楚了能力要求，了解了面试形式，最后我们再展望一下未来，让我们预测一下接下来这几年，业界最需要怎样的机器学习人才。</p><p>说是预测，其实也不能说是十分准确，因为我跟业界的很多非常资深的工程师，技术leader探讨的过程中发现，大家对于这个问题的看法其实是惊人一致的。下面，让我们先来看看业界的技术专家们都是怎么说的。</p><p>首先是阿里的资深技术专家朱小强给我的书写序时的总结，他说：</p><blockquote>
+<p>技术发展将从依赖深度学习算法单点突破收割技术红利，开始转向更为复杂的、系统性的技术体系推进，进一步创造技术红利。这里，关键性的技术破局点是算法与系统架构的协同设计（algo-system co-design）。</p>
+</blockquote><p>所以朱小强的观点是，单纯依靠深度学习模型改进就能大幅提高效果的时代已经过去了，现在我们只有把算法和工程协同设计，才能取得进一步的突破。</p><p>第二位是前Google、Facebook高级工程师，现在的新浪微博广告核心技术负责人詹盈，他对这个问题的看法是：</p><blockquote>
+<p>成熟的算法工程师不应仅满足于基本的建模和调参，他们对于业务和产品有较为深刻的理解，并且在实践中能够拥有足够的数据分析能力去指导建模方案的完善，并确确实实地带来客观的业务收益。这一类高端的算法人才是真的稀缺，还远达不到“内卷”的程度。</p>
+</blockquote><p>可以说，詹盈的看法和我对算法工程师能力的总结高度一致：只有综合了算法能力、业务能力、工程能力，你才能成为一名高端的算法工程师。</p><p>最后是我的前老板，Hulu的全球副总裁诸葛越的话，她说：</p><blockquote>
+<p>算法工程师这个群体普遍都会遇到的是，算法研究能力和工程能力的权衡问题。在其中任何一个方向上成为专家都没有问题，企业都会有合适的位置给到你。但如果你想走到更高的职级，就需要不断拓宽与现有工作相关的技术栈。随着近两年算法岗位的成熟，有一种说法重新被大家认同，那就是“算法工程师首先是一名工程师”，可见对算法工程师工程能力的重视已经是普遍的观点了。</p>
+</blockquote><p>越姐从一个技术管理者的角度表达了自己的观点，结论也和前几位工程师一样：只有算法研究能力和工程能力都突出的人，才会在现在愈加成熟的业界环境下取得更高的职位。</p><p>最后，我想用自己说的话再给这个问题做一个总结：<strong>未来3-5年业界最需要的是：能够站在机器学习“工程体系”的高度之上，综合考虑“业务特点”、“模型结构”、“工程限制”、“问题目标”的算法工程师。在算法工程师的发展之路上，切忌“好高骛远”，只追求“好看好听”的先进技术的学生思维，回到工程师思维上来，回到解决问题的本质上来，才能够逐渐成为一名优秀的算法工程师。</strong></p><h2>写在最后</h2><p>好了，如果你学习到这里，我要告诉你，这是本门课程的最后一段话。这门课程，我们一直在聊技术、学实践，一直没有机会跟你聊一聊内心的话，所以借着最后的机会我想跟你“谈谈心”。</p><p>说实话，推荐工程师这条职业道路并不是一条容易的道路，同行们常说这是一个时刻处在淘汰边缘的职业，我们时刻面临着这样那样的挑战。比如说，当你在谈一个流行的技术点时，它已经进入了过时的倒计时；当你coding一天回家，还是勉为其难再多看一篇paper的时候，也许你也曾和我一样觉得不如就随波逐流算了；当你苦心作出一个模型的尝试却没有效果的时候，感觉自己的工作几乎是要从零开始。</p><p>但我还要说，这是一个充满魅力和激情的工作，它不是在简单地完成一个机械式的任务，而是用在你的观察、你的思考、你的智力，以及你的经验去实现一个个目标，当你真正突破这些目标的时候，我相信你会体会到比一道编程题AC大100倍的成就感，毫无疑问，它值得你为之付出一个长长的职业生涯。</p><p>这几个月里，你可能是在晚上回家打开笔记本继续学习，或者是在上班的路上听我的录音，又或者是在周末通过咱们的课程为自己充电，不管是用哪种方式学习，我都要说一声：“谢谢你的支持和信任”，能陪伴你走过这几个月的学习历程是我的荣幸。</p><p>今天的最后没有思考题，但如果你对这门课、这个职业，对未来和前途，有任何的感悟，我都欢迎你写下来，总结给自己看，也与这门课一同走过的同学们共勉。</p><p>好了，同学们，虽然我们的课程结束了，但我相信你的职业生涯从这里开始会更加精彩！</p><p>最后的最后，我还为你准备了一份毕业调查问卷，题目不多，希望你能花两分钟的时间填一下。一起走过了这些时间，期待听到你对我和这个课程的反馈和建议！</p><p><a href="https://jinshuju.net/f/Fstsjz"><img src="https://static001.geekbang.org/resource/image/a6/28/a687f6da2e4a405af0b83c82932a9a28.jpg" alt=""></a></p><h2>精选留言：</h2>
+        <ul>
+        
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            浣熊当家  2021-01-02 09:25:53
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            听着最后的结束语，我居然感觉要哭了┭┮﹏┭┮<br><br>不知不觉课程居然结束了，有太多的不舍，这几个月感觉就像身边多了一个优秀的一线算法工程师的朋友，特别耐心，系统，务实的， 从浅入深，从理论到实践的， 从开始到前沿的全方位，毫无保留的讲解业界顶尖的推荐系统。 <br><br>我的收获很大，总结一下，技术方面 1）对于系统设计有了big picture 2） 对主流的深度学习模型的类型有了了解 3）对于spark， redis， TensorFlow， Docker， Flink这些技术栈有了认识 4）对模型的设计，评估标准有了了解。 但是由于本人知识储备太少了，对于后来的深度学习模型部分理解起来有点困难。但是仅仅是通过对Word2Vec的学习，就让我能够在工作对公司网站的搜索词进行分析， 成功的发掘了用户痛点，得到了部门广泛的肯定，深切感受到了知识就是力量。<br><br>除了对技术上的学习，让我收获更大的是老师务实的态度， 老师的“学生思维”这个概念特别的点醒，让我意识到了长久以来的思维误区， 老师对于推荐系统要解决的问题的总结，还有上节课如何权衡的总结，可以用到平时生活和工作中的各种问题上， 时时想起感觉受益匪浅。<br><br>感谢老师的每一条用心的回复，给我很大的鼓励。希望以后还能看到老师其他的课程。<br><br>最后想问老师一个问题， 我觉得深度学习有三个主要应用领域 推荐，NLP， CV， （游戏？）我打算从NLP入手进行学习，目的是有效的找到MLE的工作。 您觉得这个方向可行吗？ 您有什么建议吗？ [7赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2021-01-02 12:22:48</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">能帮助到大家我也很开心，非常感谢这么走心的评价。<br><br>最后一个问题，我觉得推荐&#47;广告是业界落地比较充分的方向，NLP和推荐结合的其实非常紧密，也是需求量比较大的，CV目前稍微有点落地和变现困难，不是非常推荐。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            王喆  2021-01-02 17:03:33
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            各位同学好，我在知乎创建了一个问题 “如何评价极客时间的「深度学习推荐系统实战」课程？”<br>https:&#47;&#47;www.zhihu.com&#47;question&#47;437552262<br>欢迎大家在那里给这门课进行反馈，评价，勘误。<br>我个人从课程报酬中抽出了5000元作为反馈奖励，到时候会不定期选出优质的反馈和有价值的勘误，到时候私信大家我的微信号，然后红包奖励50元，钱不在多，略表心意，欢迎拍砖、好评和错误指正：） [3赞]
+        </div>
+        
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            胡译匀  2021-01-01 08:45:39
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            新年好！感谢王喆老师的几个月的指导，正因为你的《深度学习推荐系统》和这门课，让我入门了推荐系统，期待你的其他课程，我也希望能和王老师一起把Sparrow培养成Eagle！ [4赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2021-01-01 12:21:13</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">哈哈，这个留言我喜欢，期待以后Sparrow能变成Eagle！</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            wYang  2021-01-01 01:35:31
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            老师，您好！我是推荐系统小白，舍不得老师结束这门课程，课程对我来说宏观学习所需各种工具，然后接下来对一、两个工具精通，我本人喜欢数学，所以我选择Tensorflow这个一个工具精通，会不会太单一了？？还是得加多一个Spark？期待老师的回答^ - ^ [3赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2021-01-01 12:25:01</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">如果是在校的话，可以重点加深Tensorflow的使用经验，毕竟一些开源数据集不难找。如果在公司，可以多补一补spark和flink，这几乎是工作必须的。<br><br>另外不用舍不得，可以在知乎，极客时间，我的公众号多交流！</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            fsc2016  2021-01-05 21:58:23
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            课程结束啦，完结撒花！这一个季度在王喆老师的教导下，从0到1搭建起推荐系统知识框架，不管是理论讲解还是实战操作，老师都讲的非常细致，耐心回答每一个学员的问题，在这里给老师鞠一个90度躬，王老师，您辛苦了！<br>这一个季度以来，每到周1,3,5早上，上班的路上听着老师的课程，下班回来复习实践，即使现在结束了，也是反复听着以前的章节，每次都会感觉有新收获。认真揣摩老师讲的每一句话，都是自己多年来真实的工作体验精华总结，有些可能我现在感受不到，相信会在以后学习工作中，体会会越来越深刻。这是目前我在极客时间学过最好课程，当之无愧！<br>课程虽然结束了，但是自己在推荐系统这条路还刚刚开始，正如老师文中所述‘这是一个充满魅力和激情的工作’，在以后时间里，在老师帮忙搭建起知识框架里继续添枝加叶，细化知识要点，努力为之付出一个长长的职业生涯！ [2赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2021-01-06 02:21:55</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">赞，希望在工作中越做越好。有新的感悟还可以继续留言讨论，我还会跟大家交流。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            张弛 Conor  2021-01-04 10:30:44
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            很幸运能在自己对职业规划迷茫的时候遇到王喆老师的这门课程。“推荐工程师这条职业道路并不是一条容易的道路”，可是王喆老师让我们骑上了一只Sparrow，从天空快速领略了一遍这条道路的风景。我想我会因为这一次旅程，即便在道路中途迷路也不会迷失方向，即便看到了美景也不会沾沾自喜久久驻留。路漫漫其修远兮，吾将上下而求索！愿新的一年，我们都能在这条道路上收获更丰富的体验！ [1赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2021-01-04 15:03:39</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">谢谢张弛同学，我看到你的很多留言和思考，如果这门课有优秀毕业生的话，你肯定是其中之一。<br><br>如果可以的话也欢迎把对这门课的评价、感悟分享到知乎，让更多同学看到，我建立了一个小的奖励基金，奖励好的反馈和勘误。https:&#47;&#47;www.zhihu.com&#47;question&#47;437552262<br>欢迎继续交流：）</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            SecooHR  2021-01-04 09:47:42
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            多谢老师，这么课让我受益匪浅，对推荐系统有了更深度的理解。<br><br>非常希望老师后续再开一些 推荐 或者 广告相关的 高级课程，重点介绍在 实际场景的业务落地的思考，设计及实际的填坑历程。 [1赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2021-01-04 15:04:46</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">感谢反馈，会考虑，可能会休息一段时间，工作之余每天熬夜给大家录课确实有点吃不消：）</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            Jun  2021-01-02 16:28:47
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            结束啦！非常感谢老师的这门课！今年有幸接触到推荐系统这个行业，刷了两遍老师的《深度学习推荐系统》这本书，跟着老师认真上完了这门课，也追着老师的公众号读了一些经典paper，让我不管从技术蓝图、主流模型、评估方法、相关工具等等各方面都有了些许的进步，也在实际的工作中有了一些让自己满意的尝试。感谢老师的指导，也非常期待以后继续跟随老师学习，在推荐系统这条道路上更加精进~ [1赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2021-01-04 15:01:53</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">非常荣幸能帮助到大家。如果可以的话也欢迎把对这门可的评价、感悟分享到知乎，让更多同学看到，我建立了一个小的奖励基金，奖励好的反馈和勘误。https:&#47;&#47;www.zhihu.com&#47;question&#47;437552262<br>欢迎继续交流：）</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            浩浩  2021-01-01 09:41:47
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            新年伊始，过去的一年一直在折腾大数据和算法，但是因为项目经验少一直在努力找寻方向，将目标定在了推荐算法方向。看过老师的专栏也购买了那本书，更有幸能聆听到王老师的声音，感谢一路走来王老师的辛勤付出和答疑解惑，感恩的心感谢有你，会多刷两边老师的课的。 [1赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2021-01-01 12:22:08</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">加油！相信一定可以有回报！</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            若如意  2021-01-01 01:39:39
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            跟着全部学完了一遍，打算重新再看一遍，第一遍看的比较浅，后面自己跟着老师的内容再把整个项目重新从头写一遍，争取了解更多的细节，导师不让实习，只能把这个项目吃透然后在简历上写成自己的项目，多谢老师的分享，学到了很多新东西 [1赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2021-01-01 12:32:18</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">多实践，多积攒相关工具的使用经验，相信会找到满意的工作。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            Michael_Wang  2021-01-06 09:36:07
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            感谢王喆老师精彩的讲解，之前积累了深度学习推荐算法的知识，但一直未有机会再深入研究。听了这个课程，解开了心里的不少疑惑，推荐领域因为有王老师这样的传道者变得更加精彩了！！ 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2021-01-06 14:36:06</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">感谢，加油！</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            那时刻  2021-01-05 10:26:10
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            感谢老师的分享与细致的讲解，尤其是老师连留言回复也认真看了，并且回复，感谢老师的辛勤付出。印象深刻的是，我把embedding那一节看了至少三遍，把之前自己理解不到位的地方搞清楚了。遗憾的是课程的最后部分跟进的比较少，接下来找时间一定补上。 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2021-01-05 15:43:24</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">其实讨论和回复的价值甚至超过课程本身。有机会继续交流，加油。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            二叔的涵涵数  2021-01-04 19:40:49
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            谢谢老师 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2021-01-05 09:11:19</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">谢谢</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            Wiiki  2021-01-04 15:46:15
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            结束是一段路程的最后一程，又是新梦想的开始。感谢王喆老师在2020这个普遍大家都不好过，厚积薄发的日子送给我们工作和生活上的冬日暖阳，多的是激动和不舍~ 这一季度走来，跟着王老师的节奏，我们建立了推荐系统知识体系和工程经验，领悟更多的是对待工程上需要灵活机动，游刃有余，集思广益，不能陷入局部，在思想上钻牛角尖以至于无法到达目标的彼岸~  我相信，课程的结束是另一个开始，在之后的工作当中，带着疑惑和新的感悟找到课程相应的章节找解决思路，不断完善和更新对知识的理解~  在这里，还要给王喆老师一个大大的赞~  谢谢啦    
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2021-01-05 09:12:10</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">谢谢你们的鼓励，非常开心能给大家带来价值，以后有机会继续交流。</div>
+</div>
+            
+    </div>
+</li>
+            </ul>
+</div>
+</body>
+</html>

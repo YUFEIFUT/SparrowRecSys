@@ -1,0 +1,1000 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <!--<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>-->
+    <title>10-存储模块：如何用Redis解决推荐系统特征的存储问题？</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <style>
+        html {
+            color: #333;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            text-rendering: optimizelegibility;
+            font-family: Helvetica Neue, PingFang SC, Verdana, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif
+        }
+
+        html.borderbox *,
+        html.borderbox :after,
+        html.borderbox :before {
+            box-sizing: border-box
+        }
+
+        article,
+        aside,
+        blockquote,
+        body,
+        button,
+        code,
+        dd,
+        details,
+        dl,
+        dt,
+        fieldset,
+        figcaption,
+        figure,
+        footer,
+        form,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        header,
+        hr,
+        input,
+        legend,
+        li,
+        menu,
+        nav,
+        ol,
+        p,
+        pre,
+        section,
+        td,
+        textarea,
+        th,
+        ul {
+            margin: 0;
+            padding: 0
+        }
+
+        article,
+        aside,
+        details,
+        figcaption,
+        figure,
+        footer,
+        header,
+        menu,
+        nav,
+        section {
+            display: block
+        }
+
+        audio,
+        canvas,
+        video {
+            display: inline-block
+        }
+
+        body,
+        button,
+        input,
+        select,
+        textarea {
+            font: 300 1em/1.8 PingFang SC, Lantinghei SC, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, Helvetica, sans-serif
+        }
+
+        button::-moz-focus-inner,
+        input::-moz-focus-inner {
+            padding: 0;
+            border: 0
+        }
+
+        table {
+            border-collapse: collapse;
+            border-spacing: 0
+        }
+
+        fieldset,
+        img {
+            border: 0
+        }
+
+        blockquote {
+            position: relative;
+            color: #999;
+            font-weight: 400;
+            border-left: 1px solid #1abc9c;
+            padding-left: 1em;
+            margin: 1em 3em 1em 2em
+        }
+
+        @media only screen and (max-width: 640px) {
+            blockquote {
+                margin: 1em 0
+            }
+        }
+
+        abbr,
+        acronym {
+            border-bottom: 1px dotted;
+            font-variant: normal
+        }
+
+        abbr {
+            cursor: help
+        }
+
+        del {
+            text-decoration: line-through
+        }
+
+        address,
+        caption,
+        cite,
+        code,
+        dfn,
+        em,
+        th,
+        var {
+            font-style: normal;
+            font-weight: 400
+        }
+
+        ol,
+        ul {
+            list-style: none
+        }
+
+        caption,
+        th {
+            text-align: left
+        }
+
+        q:after,
+        q:before {
+            content: ""
+        }
+
+        sub,
+        sup {
+            font-size: 75%;
+            line-height: 0;
+            position: relative
+        }
+
+        :root sub,
+        :root sup {
+            vertical-align: baseline
+        }
+
+        sup {
+            top: -.5em
+        }
+
+        sub {
+            bottom: -.25em
+        }
+
+        a {
+            color: #1abc9c
+        }
+
+        a:hover {
+            text-decoration: underline
+        }
+
+        .typo a {
+            border-bottom: 1px solid #1abc9c
+        }
+
+        .typo a:hover {
+            border-bottom-color: #555;
+            color: #555
+        }
+
+        .typo a:hover,
+        a,
+        ins {
+            text-decoration: none
+        }
+
+        .typo-u,
+        u {
+            text-decoration: underline
+        }
+
+        mark {
+            background: #fffdd1;
+            border-bottom: 1px solid #ffedce;
+            padding: 2px;
+            margin: 0 5px
+        }
+
+        code,
+        pre,
+        pre tt {
+            font-family: Courier, Courier New, monospace
+        }
+
+        pre {
+            background: hsla(0, 0%, 97%, .7);
+            border: 1px solid #ddd;
+            padding: 1em 1.5em;
+            display: block;
+            -webkit-overflow-scrolling: touch
+        }
+
+        hr {
+            border: none;
+            border-bottom: 1px solid #cfcfcf;
+            margin-bottom: .8em;
+            height: 10px
+        }
+
+        .typo-small,
+        figcaption,
+        small {
+            font-size: .9em;
+            color: #888
+        }
+
+        b,
+        strong {
+            font-weight: 700;
+            color: #000
+        }
+
+        [draggable] {
+            cursor: move
+        }
+
+        .clearfix:after,
+        .clearfix:before {
+            content: "";
+            display: table
+        }
+
+        .clearfix:after {
+            clear: both
+        }
+
+        .clearfix {
+            zoom: 1
+        }
+
+        .textwrap,
+        .textwrap td,
+        .textwrap th {
+            word-wrap: break-word;
+            word-break: break-all
+        }
+
+        .textwrap-table {
+            table-layout: fixed
+        }
+
+        .serif {
+            font-family: Palatino, Optima, Georgia, serif
+        }
+
+        .typo-dl,
+        .typo-form,
+        .typo-hr,
+        .typo-ol,
+        .typo-p,
+        .typo-pre,
+        .typo-table,
+        .typo-ul,
+        .typo dl,
+        .typo form,
+        .typo hr,
+        .typo ol,
+        .typo p,
+        .typo pre,
+        .typo table,
+        .typo ul,
+        blockquote {
+            margin-bottom: 1rem
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: PingFang SC, Helvetica Neue, Verdana, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif;
+            color: #000;
+            line-height: 1.35
+        }
+
+        .typo-h1,
+        .typo-h2,
+        .typo-h3,
+        .typo-h4,
+        .typo-h5,
+        .typo-h6,
+        .typo h1,
+        .typo h2,
+        .typo h3,
+        .typo h4,
+        .typo h5,
+        .typo h6 {
+            margin-top: 1.2em;
+            margin-bottom: .6em;
+            line-height: 1.35
+        }
+
+        .typo-h1,
+        .typo h1 {
+            font-size: 2em
+        }
+
+        .typo-h2,
+        .typo h2 {
+            font-size: 1.8em
+        }
+
+        .typo-h3,
+        .typo h3 {
+            font-size: 1.6em
+        }
+
+        .typo-h4,
+        .typo h4 {
+            font-size: 1.4em
+        }
+
+        .typo-h5,
+        .typo-h6,
+        .typo h5,
+        .typo h6 {
+            font-size: 1.2em
+        }
+
+        .typo-ul,
+        .typo ul {
+            margin-left: 1.3em;
+            list-style: disc
+        }
+
+        .typo-ol,
+        .typo ol {
+            list-style: decimal;
+            margin-left: 1.9em
+        }
+
+        .typo-ol ol,
+        .typo-ol ul,
+        .typo-ul ol,
+        .typo-ul ul,
+        .typo li ol,
+        .typo li ul {
+            margin-bottom: .8em;
+            margin-left: 2em
+        }
+
+        .typo-ol ul,
+        .typo-ul ul,
+        .typo li ul {
+            list-style: circle
+        }
+
+        .typo-table td,
+        .typo-table th,
+        .typo table caption,
+        .typo table td,
+        .typo table th {
+            border: 1px solid #ddd;
+            padding: .5em 1em;
+            color: #666
+        }
+
+        .typo-table th,
+        .typo table th {
+            background: #fbfbfb
+        }
+
+        .typo-table thead th,
+        .typo table thead th {
+            background: hsla(0, 0%, 95%, .7)
+        }
+
+        .typo table caption {
+            border-bottom: none
+        }
+
+        .typo-input,
+        .typo-textarea {
+            -webkit-appearance: none;
+            border-radius: 0
+        }
+
+        .typo-em,
+        .typo em,
+        caption,
+        legend {
+            color: #000;
+            font-weight: inherit
+        }
+
+        .typo-em {
+            position: relative
+        }
+
+        .typo-em:after {
+            position: absolute;
+            top: .65em;
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            content: "\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB\30FB"
+        }
+
+        .typo img {
+            max-width: 100%
+        }
+
+        .common-content {
+            font-weight: 400;
+            color: #353535;
+            line-height: 1.75rem;
+            white-space: normal;
+            word-break: normal;
+            font-size: 1rem
+        }
+
+        .common-content img {
+            display: block;
+            max-width: 100%;
+            background-color: #eee
+        }
+
+        .common-content audio,
+        .common-content video {
+            width: 100%;
+            background-color: #eee
+        }
+
+        .common-content center,
+        .common-content font {
+            margin-top: 1rem;
+            display: inline-block
+        }
+
+        .common-content center {
+            width: 100%
+        }
+
+        .common-content pre {
+            margin-top: 1rem;
+            padding-left: 0;
+            padding-right: 0;
+            position: relative;
+            overflow: hidden
+        }
+
+        .common-content pre code {
+            font-size: .8rem;
+            font-family: Consolas, Liberation Mono, Menlo, monospace, Courier;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            overflow-x: auto
+        }
+
+        .common-content hr {
+            border: none;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #f5f5f5;
+            height: 1px;
+            background: none
+        }
+
+        .common-content b,
+        .common-content h1,
+        .common-content h2,
+        .common-content h3,
+        .common-content h4,
+        .common-content h5,
+        .common-content strong {
+            font-weight: 700
+        }
+
+        .common-content h1,
+        .common-content h2 {
+            font-size: 1.125rem;
+            margin-bottom: .45rem
+        }
+
+        .common-content h3,
+        .common-content h4,
+        .common-content h5 {
+            font-size: 1rem;
+            margin-bottom: .45rem
+        }
+
+        .common-content p {
+            font-weight: 400;
+            color: #353535;
+            margin-top: .15rem
+        }
+
+        .common-content .orange {
+            color: #ff5a05
+        }
+
+        .common-content .reference {
+            font-size: 1rem;
+            color: #888
+        }
+
+        .custom-rich-content h1 {
+            margin-top: 0;
+            font-weight: 400;
+            font-size: 15.25px;
+            border-bottom: 1px solid #eee;
+            line-height: 2.8
+        }
+
+        .custom-rich-content li,
+        .custom-rich-content p {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.6
+        }
+
+        table.hljs-ln {
+            margin-bottom: 0;
+            border-spacing: 0;
+            border-collapse: collapse
+        }
+
+        table.hljs-ln,
+        table.hljs-ln tbody,
+        table.hljs-ln td,
+        table.hljs-ln tr {
+            box-sizing: border-box
+        }
+
+        table.hljs-ln td {
+            padding: 0;
+            border: 0
+        }
+
+        table.hljs-ln td.hljs-ln-numbers {
+            min-width: 15px;
+            color: rgba(27, 31, 35, .3);
+            text-align: right;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none
+        }
+
+        table.hljs-ln td.hljs-ln-code,
+        table.hljs-ln td.hljs-ln-numbers {
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, Courier, monospace;
+            font-size: 12px;
+            line-height: 20px;
+            vertical-align: top
+        }
+
+        table.hljs-ln td.hljs-ln-code {
+            position: relative;
+            padding-right: 10px;
+            padding-left: 10px;
+            overflow: visible;
+            color: #24292e;
+            word-wrap: normal;
+            white-space: pre
+        }
+
+        video::-webkit-media-controls {
+            overflow: hidden !important
+        }
+
+        video::-webkit-media-controls-enclosure {
+            width: calc(100% + 32px);
+            margin-left: auto
+        }
+
+        ._29HP61GA_0 {
+            max-width:800px;
+            margin:0 auto;
+            margin-bottom: 20px;
+            font-weight: 400;
+            color: #353535;
+            line-height: 1.76;
+            white-space: normal;
+            word-break: normal;
+            font-size: 17px;
+            -webkit-transition: background-color .3s ease;
+            transition: background-color .3s ease
+        }
+
+        ._29HP61GA_0 .MathJax_Display {
+            overflow: auto
+        }
+
+        ._29HP61GA_0 .poster {
+            position: fixed;
+            left: -10000px;
+            top: -10000px;
+            overflow: hidden;
+            padding: 1rem;
+            background: #ececec
+        }
+
+        ._29HP61GA_0 .richcontent-pre-copy {
+            font-size: 13px;
+            color: #888;
+            position: absolute;
+            right: 1em;
+            top: .5em;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none
+        }
+
+        ._29HP61GA_0 .richcontent-pre-copy .iconfont {
+            font-size: 12px;
+            margin-right: .2em
+        }
+
+        ._29HP61GA_0 a {
+            color: #fa8919;
+            border-bottom: 1px solid #fa8919
+        }
+
+        ._29HP61GA_0 img {
+            display: block;
+            max-width: 100%;
+            position: relative;
+            left: 50%;
+            -webkit-transform: translateX(-50%);
+            transform: translateX(-50%);
+            background-color: #eee;
+            vertical-align: top;
+            border-radius: 0
+        }
+
+        ._29HP61GA_0 audio,
+        ._29HP61GA_0 video {
+            width: 100%;
+            background-color: #eee
+        }
+
+        ._29HP61GA_0 pre {
+            margin-top: 16px;
+            padding: 34px 0 0;
+            margin-bottom: 30px;
+            position: relative;
+            border-radius: 6px;
+            background: rgba(246, 247, 251, .749);
+            border: 0
+        }
+
+        ._29HP61GA_0 pre code {
+            font-size: 12px;
+            font-family: Consolas, Liberation Mono, Menlo, monospace, Courier;
+            display: block;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            margin-left: 16px;
+            margin-right: 16px;
+            overflow-x: scroll
+        }
+
+        ._29HP61GA_0 pre code:after {
+            content: "";
+            height: 30px;
+            width: 100%;
+            display: block
+        }
+
+        ._29HP61GA_0 hr {
+            border: none;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #f5f5f5;
+            height: 1px;
+            background: none
+        }
+
+        ._29HP61GA_0 h1,
+        ._29HP61GA_0 h2,
+        ._29HP61GA_0 h3,
+        ._29HP61GA_0 h4,
+        ._29HP61GA_0 h5 {
+            margin-bottom: 20px;
+            margin-top: 0;
+            font-weight: 700
+        }
+
+        ._29HP61GA_0 b,
+        ._29HP61GA_0 strong {
+            font-weight: 700
+        }
+
+        ._29HP61GA_0 h1 {
+            font-size: 21px
+        }
+
+        ._29HP61GA_0 h2 {
+            font-size: 20px
+        }
+
+        ._29HP61GA_0 h3 {
+            font-size: 19px
+        }
+
+        ._29HP61GA_0 h4 {
+            font-size: 18px
+        }
+
+        ._29HP61GA_0 h5 {
+            font-size: 17px
+        }
+
+        ._29HP61GA_0 center,
+        ._29HP61GA_0 p {
+            font-weight: 400;
+            color: #353535;
+            margin-top: 0;
+            margin-bottom: 30px;
+            word-break: break-word
+        }
+
+        ._29HP61GA_0 center {
+            text-align: center
+        }
+
+        ._29HP61GA_0 blockquote {
+            margin-top: 0;
+            margin-bottom: 34px;
+            border-left: 3px solid #e8e8e8;
+            padding-left: 17px;
+            color: #353535
+        }
+
+        ._29HP61GA_0 blockquote p {
+            margin-top: 0;
+            margin-bottom: 0
+        }
+
+        ._29HP61GA_0 ol,
+        ._29HP61GA_0 ul {
+            margin-bottom: 30px
+        }
+
+        ._29HP61GA_0 ol p,
+        ._29HP61GA_0 ul p {
+            margin-top: 0;
+            margin-bottom: 0
+        }
+
+        ._29HP61GA_0 ol {
+            list-style: decimal;
+            margin-left: 20px
+        }
+
+        ._29HP61GA_0 ul li {
+            padding-left: 17px;
+            position: relative;
+            margin-bottom: 10px
+        }
+
+        ._29HP61GA_0 ul li:after {
+            content: "";
+            height: 6px;
+            width: 6px;
+            border-radius: 50%;
+            background: #353535;
+            position: absolute;
+            top: 10px;
+            left: 0
+        }
+
+        ._29HP61GA_0 .orange {
+            color: #fa8919
+        }
+
+        ._29HP61GA_0 .reference {
+            color: #888
+        }
+
+        ._29HP61GA_0 .m-right {
+            text-align: right
+        }
+
+        ._29HP61GA_0 .m-center {
+            text-align: center;
+            display: block
+        }
+
+        ._29HP61GA_0 .m-gray {
+            color: #888
+        }
+
+        ._29HP61GA_0 .m-small {
+            font-size: 15px
+        }
+
+        ._29HP61GA_0 table.hljs-ln {
+            margin-bottom: 0;
+            border-spacing: 0;
+            border-collapse: collapse
+        }
+
+        ._29HP61GA_0 table.hljs-ln,
+        ._29HP61GA_0 table.hljs-ln tbody,
+        ._29HP61GA_0 table.hljs-ln td,
+        ._29HP61GA_0 table.hljs-ln tr {
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box
+        }
+
+        ._29HP61GA_0 table.hljs-ln td {
+            padding: 0;
+            border: 0
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-numbers {
+            min-width: 15px;
+            font-size: 12px;
+            color: rgba(27, 31, 35, .3);
+            text-align: right;
+            white-space: nowrap;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-code,
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-numbers {
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, Courier, monospace;
+            line-height: 20px;
+            vertical-align: top
+        }
+
+        ._29HP61GA_0 table.hljs-ln td.hljs-ln-code {
+            position: relative;
+            padding-right: 10px;
+            padding-left: 10px;
+            overflow: visible;
+            font-size: 13px;
+            color: #666;
+            word-wrap: normal;
+            white-space: pre
+        }
+
+    </style>
+</head>
+<body>
+<div class="_29HP61GA_0">
+<h1>10-存储模块：如何用Redis解决推荐系统特征的存储问题？</h1>
+<p>你好，我是王喆。今天，我们来解决系统特征的存储问题。</p><p>在特征工程篇我们说过，在推荐系统这个大饭馆中，特征工程就是负责配料和食材的厨师，那我们上堂课搭建的推荐服务器就是准备做菜的大厨。配料和食材准备好了，做菜的大厨也已经开火热锅了，这时候我们得把食材及时传到大厨那啊。这个传菜的过程就是推荐系统特征的存储和获取过程。</p><p>可是我们知道，类似Embedding这样的特征是在离线环境下生成的，而推荐服务器是在线上环境中运行的，那这些<strong>离线的特征数据是如何导入到线上让推荐服务器使用的呢？</strong></p><p>今天，我们先以Netflix的推荐系统架构为例，来讲一讲存储模块在整个系统中的位置，再详细来讲推荐系统存储方案的设计原则，最后以Redis为核心搭建起SparrowRecsys的存储模块。</p><h2>推荐系统存储模块的设计原则</h2><p>你还记得，我曾在<a href="https://time.geekbang.org/column/article/288917">第1节的课后题</a>中贴出过Netflix推荐系统的架构图（如图1）吗？Netflix采用了非常经典的Offline、Nearline、Online三层推荐系统架构。架构图中最核心的位置就是我在图中用红框标出的部分，它们是三个数据库Cassandra、MySQL和EVcache，这三个数据库就是Netflix解决特征和模型参数存储问题的钥匙。</p><!-- [[[read_end]]] --><p><img src="https://static001.geekbang.org/resource/image/bc/ca/bc6d770cb20dfc90cc07168d626fd7ca.jpg" alt="" title="图1 Netflix推荐系统架构中的特征与模型数据库"></p><p>你可能会觉得，存储推荐特征和模型这件事情一点儿都不难啊。不就是找一个数据库把离线的特征存起来，然后再给推荐服务器写几个SQL让它取出来用不就行了吗？为什么还要像Netflix这样兴师动众地搞三个数据库呢？</p><p>想要搞明白这个问题，我们就得搞清楚设计推荐系统存储模块的原则。对于推荐服务器来说，由于线上的QPS压力巨大，每次有推荐请求到来，推荐服务器都需要把相关的特征取出。这就要求推荐服务器一定要“快”。</p><p>不仅如此，对于一个成熟的互联网应用来说，它的用户数和物品数一定是巨大的，几千万上亿的规模是十分常见的。所以对于存储模块来说，这么多用户和物品特征所需的存储量会特别大。这个时候，事情就很难办了，又要存储量大，又要查询快，还要面对高QPS的压力。很不幸，没有一个独立的数据库能<strong>经济又高效</strong>地单独完成这样复杂的任务。</p><p>因此，几乎所有的工业级推荐系统都会做一件事情，就是把特征的存储做成分级存储，把越频繁访问的数据放到越快的数据库甚至缓存中，把海量的全量数据放到便宜但是查询速度较慢的数据库中。</p><p>举个不恰当的例子，如果你把特征数据放到基于HDFS的HBase中，虽然你可以轻松放下所有的特征数据，但要让你的推荐服务器直接访问HBase进行特征查询，等到查询完成，这边用户的请求早就超时中断了。而Netflix的三个数据库正好满足了这样分级存储的需求。</p><p><img src="https://static001.geekbang.org/resource/image/3a/9d/3a17b013ccccdefd68e84d98cf33d69d.jpeg" alt="" title="图2 分级存储的设计"></p><p>比如说，Netflix使用的Cassandra，它作为流行的NoSQL数据库，具备大数据存储的能力，但为支持推荐服务器高QPS的需求，我们还需要把最常用的特征和模型参数存入EVcache这类内存数据库。而对于更常用的数据，我们可以把它们存储在Guava Cache等服务器内部缓存，甚至是服务器的内存中。总之，对于一个工程师来说，我们经常需要做出技术上的权衡，达成一个在花销和效果上平衡最优的技术方案。</p><p>而对于MySQL来说，由于它是一个强一致性的关系型数据库，一般存储的是比较关键的要求强一致性的信息，比如物品是否可以被推荐这种控制类的信息，物品分类的层级关系，用户的注册信息等等。这类信息一般是由推荐服务器进行阶段性的拉取，或者利用分级缓存进行阶段性的更新，避免因为过于频繁的访问压垮MySQL。</p><p>总的来说，推荐系统存储模块的设计原则就是“<strong>分级存储，把越频繁访问的数据放到越快的数据库甚至缓存中，把海量的全量数据放到廉价但是查询速度较慢的数据库中</strong>”。</p><h2>SparrowRecsys的存储系统方案</h2><p>那在我们要实现的SparrowRecsys中，存储模块的设计原则又是怎么应用的呢？</p><p>在SparrowRecsys中，我们把存储模块的设计问题进行了一些简化，避免由于系统设计得过于复杂导致你不易上手。</p><p>我们使用基础的文件系统保存全量的离线特征和模型数据，用Redis保存线上所需特征和模型数据，使用服务器内存缓存频繁访问的特征。</p><p>在实现技术方案之前，对于问题的整体分析永远都是重要的。我们需要先确定具体的存储方案，这个方案必须精确到哪级存储对应哪些具体特征和模型数据。</p><p>存储的工具已经知道了，那特征和模型数据分别是什么呢？这里，我们直接应用特征工程篇为SparrowRecsys准备好的一些特征就可以了。我把它们的具体含义和数据量级整理成了表格，如下：</p><p><img src="https://static001.geekbang.org/resource/image/e0/a3/e01c0c23157013785b3269289b8ea1a3.jpeg" alt="" title="图3 特征和模型数据"></p><p>根据上面的特征数据，我们一起做一个初步的分析。首先，用户特征的总数比较大，它们很难全部载入到服务器内存中，所以我们把用户特征载入到Redis之类的内存数据库中是合理的。其次，物品特征的总数比较小，而且每次用户请求，一般只会用到一个用户的特征，但为了物品排序，推荐服务器需要访问几乎所有候选物品的特征。针对这个特点，我们完全可以把所有物品特征阶段性地载入到服务器内存中，大大减少Redis的线上压力。</p><p>最后，我们还要找一个地方去存储特征历史数据、样本数据等体量比较大，但不要求实时获取的数据。这个时候分布式文件系统（单机环境下以本机文件系统为例）往往是最好的选择，由于类似HDFS之类的分布式文件系统具有近乎无限的存储空间，我们可以把每次处理的全量特征，每次训练的Embedding全部保存到分布式文件系统中，方便离线评估时使用。</p><p>经过上面的分析，我们就得到了具体的存储方案，如下表：</p><p><img src="https://static001.geekbang.org/resource/image/66/94/667608cf1a9872a24528cd7474567894.jpeg" alt="" title="图4 SparrowRecsys的存储方案"></p><p>此外，文件系统的存储操作非常简单，在SparrowRecsys中就是利用Spark的输出功能实现的，我们就不再重点介绍了。而服务器内部的存储操作主要是跟Redis进行交互，所以接下来我们重点介绍Redis的特性以及写入和读取方法。</p><h2>你需要知道的Redis基础知识</h2><p>Redis是当今业界最主流的内存数据库，那在使用它之前，我们应该清楚Redis的两个主要特点。</p><p><strong>一是所有的数据都以Key-value的形式存储。</strong> 其中，Key只能是字符串，value可支持的数据结构包括string(字符串)、list(链表)、set(集合)、zset(有序集合)和hash(哈希)。这个特点决定了Redis的使用方式，无论是存储还是获取，都应该以键值对的形式进行，并且根据你的数据特点，设计值的数据结构。</p><p><strong>二是所有的数据都存储在内存中，磁盘只在持久化备份或恢复数据时起作用</strong>。这个特点决定了Redis的特性，一是QPS峰值可以很高，二是数据易丢失，所以我们在维护Redis时要充分考虑数据的备份问题，或者说，不应该把关键的业务数据唯一地放到Redis中。但对于可恢复，不关乎关键业务逻辑的推荐特征数据，就非常适合利用Redis提供高效的存储和查询服务。</p><p>在实际的SparrowRecsys的Redis部分中，我们用到了Redis最基本的操作，SET、GET和KEYS，value的数据类型用到了string。</p><h2>SparrowRecsys中的Redis部分的实践流程</h2><p>Redis的实践流程还是符合我们“把大象装冰箱”的三部曲，只不过，这三步变成了安装Redis，把数据写进去，把数据读出来。下面，我们来逐一来讲。</p><p><strong>首先是安装Redis。</strong> Redis的安装过程在linux/Unix环境下非常简单，你参照<a href="http://www.redis.cn/download.html">官方网站的步骤</a>依次执行就好。而Windows环境下的安装过程稍复杂一些，你可以参考<a href="https://www.cnblogs.com/liuqingzheng/p/9831331.html">这篇文章</a>进行安装。</p><p>在启动Redis之后，如果没有特殊的设置，Redis服务会默认运行在6379端口，没有特殊情况保留这个默认的设置就可以了，因为我们的SparrowRecSys也是默认从6379端口存储和读取Redis数据的。</p><p><strong>然后是运行离线程序，通过jedis客户端写入Redis。</strong> 在Redis运行起来之后，我们就可以在离线Spark环境下把特征数据写入Redis。这里我们以第8节课中生成的Embedding数据为例，来实现Redis的特征存储过程。</p><p>实际的过程非常简单，首先我们利用最常用的Redis Java客户端Jedis生成redisClient，然后遍历训练好的Embedding向量，将Embedding向量以字符串的形式存入Redis，并设置过期时间（ttl）。具体实现请参考下面的代码（代码参考com.wzhe.sparrowrecsys.offline.spark.featureeng.Embedding 中的trainItem2vec函数）：</p><pre><code>if (saveToRedis) {
+  //创建redis client
+  val redisClient = new Jedis(redisEndpoint, redisPort)
+  val params = SetParams.setParams()
+  //设置ttl为24小时
+  params.ex(60 * 60 * 24)
+  //遍历存储embedding向量
+  for (movieId &lt;- model.getVectors.keys) {
+    //key的形式为前缀+movieId，例如i2vEmb:361
+    //value的形式是由Embedding向量生成的字符串，例如 &quot;0.1693846 0.2964318 -0.13044095 0.37574086 0.55175656 0.03217995 1.327348 -0.81346786 0.45146862 0.49406642&quot;
+    redisClient.set(redisKeyPrefix + &quot;:&quot; + movieId, model.getVectors(movieId).mkString(&quot; &quot;), params)
+  }
+  //关闭客户端连接
+  redisClient.close()
+}
+
+</code></pre><p><strong>最后是在推荐服务器中把Redis数据读取出来。</strong></p><p>在服务器端，根据刚才梳理出的存储方案，我们希望服务器能够把所有物品Embedding阶段性地全部缓存在服务器内部，用户Embedding则进行实时查询。这里，我把缓存物品Embedding的代码放在了下面。</p><p>你可以看到，它的实现的过程也并不复杂，就是先用keys操作把所有物品Embedding前缀的键找出，然后依次将Embedding载入内存。</p><pre><code>//创建redis client
+Jedis redisClient = new Jedis(REDIS_END_POINT, REDIS_PORT);
+//查询出所有以embKey为前缀的数据
+Set&lt;String&gt; movieEmbKeys = redisClient.keys(embKey + &quot;*&quot;);
+int validEmbCount = 0;
+//遍历查出的key
+for (String movieEmbKey : movieEmbKeys){
+    String movieId = movieEmbKey.split(&quot;:&quot;)[1];
+    Movie m = getMovieById(Integer.parseInt(movieId));
+    if (null == m) {
+        continue;
+    }
+    //用redisClient的get方法查询出key对应的value，再set到内存中的movie结构中
+    m.setEmb(parseEmbStr(redisClient.get(movieEmbKey)));
+    validEmbCount++;
+}
+redisClient.close();
+
+</code></pre><p>这样一来，在具体为用户推荐的过程中，我们再利用相似的接口查询出用户的Embedding，与内存中的Embedding进行相似度的计算，就可以得到最终的推荐列表了。</p><p>如果你已经安装好了Redis，我非常推荐你运行SparrowRecsys中offline部分Embedding主函数，先把物品和用户Embedding生成并且插入Redis（注意把saveToRedis变量改为true）。然后再运行online部分的RecSysServer，看一下推荐服务器有没有正确地从Redis中读出物品和用户Embedding并产生正确的推荐结果（注意，记得要把util.Config中的EMB_DATA_SOURCE配置改为DATA_SOURCE_REDIS）。</p><p>当然，除了Redis，我们还提到了多种不同的缓存和数据库，如Cassandra、EVcache、GuavaCache等等，它们都是业界非常流行的存储特征的工具，你有兴趣的话也可以在课后查阅相关资料进行进一步的学习。在掌握了我们特征存储的基本原则之后，你也可以在业余时间尝试思考一下每个数据库的不同和它们最合适的应用场景。</p><h2>小结</h2><p>今天我们学习了推荐系统存储模块的设计原则和具体的解决方案，并且利用SparrowRecsys进行了实战。</p><p>在设计推荐系统存储方案时，我们一般要遵循“分级存储”的原则，在开销和性能之间取得权衡。在SparrowRecsys的实战中，我们安装并操作了内存数据库Redis，你要记住Redis的特点“Key-value形式存储”和“纯内存数据库”。在具体的特征存取过程中，我们应该熟悉利用jedis执行SET，GET等Redis常用操作的方法。</p><p>最后，我也把重要的知识点总结在了文稿中，你可以再回顾一下。</p><p><img src="https://static001.geekbang.org/resource/image/9b/48/9ba62608ea3a96742cbacff98fc61a48.jpeg" alt=""></p><p>对于搭建一套完整的推荐服务来说，我们已经迈过了两大难关，分别是用Jetty Server搭建推荐服务器问题，以及用Redis解决特征存储的问题。下节课，我们会一起来挑战线上服务召回层的设计。</p><h2>课后思考</h2><p>你觉得课程中存储Embedding的方式还有优化的空间吗？除了string，我们是不是还可以用其他Redis value的数据结构存储Embedding数据，那从效率的角度考虑，使用string和使用其他数据结构的优缺点有哪些？为什么？</p><p>欢迎把你的思考和答案写在留言区，也欢迎你把这节课分享给你的朋友，我们下节课见！</p><h2>精选留言：</h2>
+        <ul>
+        
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            An  2020-10-26 09:02:36
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            redis keys命令不能用在生产环境中，如果数量过大效率十分低，导致redis长时间堵塞在keys上。 [4赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-10-26 14:09:18</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">非常好的点。生产环境我们一般选择提前载入一些warm up物品id的方式载入物品embedding。这里做了一个简化，推荐大家参考这条评论，多谢！</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            AIGeek  2020-10-26 13:05:39
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            Redis value 可以用pb格式存储, 存储上节省空间. 解析起来相比string, cpu的效率也应该会更高 [2赞]
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-10-26 14:17:02</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">生产环境确实经常使用protobuf进行压缩，非常好的经验。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            浣熊当家  2020-10-26 10:49:50
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            有个很小白的问题请问老师， 我们在IntelliJ的Maven porject里用到的工具比如spark， redis， 这些需要我们额外下载安装到电脑上吗？还是说在Maven项目中已经通过代码添加依赖，就已经完成了安装？ 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-10-26 14:14:17</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">spark本质上是一个java lib，所以可以被maven安装依赖。<br><br>redis是一个数据库，需要按照文中的方式安装到电脑上。</div>
+</div>
+            
+    </div>
+</li>
+            
+<br/>
+
+<li>
+    <div>
+        <div style="color: #888;font-size:15.25px;font-weight:400;            line-height:1.2">
+            浣熊当家  2020-10-26 10:37:50
+        </div>
+        <div style="color:#353535;font-weight:400;white-space:normal;            word-break:break-all;line-height:1.6">
+            请问老师，文中的两部分redis相关的代码，可以在Maven项目中找到吗？老师可不可以提供以下路径信息方便找到？ 
+        </div>
+        <br/>
+<div>
+    <div style="color:#888;font-size:15.25px;font-weight:400;        line-height:1.2">作者回复2020-10-26 14:13:12</div>
+    <div style="color:#353535;font-weight:400;white-space:normal;        word-break:break-all;line-height:1.6">可以，请参照 com.wzhe.sparrowrecsys.offline.spark.embedding.Embedding中的trainItem2vec函数<br><br>以及com.wzhe.sparrowrecsys.online.datamanager.DataManager中的loadMovieEmb函数</div>
+</div>
+            
+    </div>
+</li>
+            </ul>
+</div>
+</body>
+</html>
