@@ -26,6 +26,12 @@
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
+                    <!-- IDEA 2026 的 Scala 插件 SBT 编译器会向 javac 注入 -proc:full 参数，
+                         但 JDK 8 不支持该参数，导致编译报错 "无效的标记: -proc:full"。
+                         加 -proc:none 禁用注解处理，绕过此问题。 -->
+                    <compilerArgs>
+                        <arg>-proc:none</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
 
