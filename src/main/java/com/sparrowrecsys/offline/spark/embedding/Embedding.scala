@@ -24,13 +24,26 @@ object Embedding {
   val redisEndpoint = "localhost"
   val redisPort = 6379
 
+  /**
+   * 处理用户评分数据，生成每个用户的物品（电影）行为序列，用于后续Item2Vec等Embedding训练。
+   *
+   * 处理流程：
+   * 1. 读取用户评分CSV数据
+   * 2. 过滤掉低分评分（< 3.5），只保留用户感兴趣的电影
+   * 3. 按用户分组，将每个用户的评分记录按时间戳排序
+   * 4. 将每个用户的电影观看序列拼接为字符串，最终返回RDD[Seq[String]]
+   *
+   * @param sparkSession      Spark会话
+   * @param rawSampleDataPath 评分数据的资源路径
+   * @return 每个用户对应的电影ID序列（按时间排序）
+   */
   def processItemSequence(sparkSession: SparkSession, rawSampleDataPath: String): RDD[Seq[String]] ={
 
-    //path of rating data
+    // 读取评分数据CSV文件
     val ratingsResourcesPath = this.getClass.getResource(rawSampleDataPath)
     val ratingSamples = sparkSession.read.format("csv").option("header", "true").load(ratingsResourcesPath.getPath)
 
-    //sort by timestamp udf
+    // 自定义UDF：将每个用户的多条评分记录按时间戳排序，提取电影ID列表
     val sortUdf: UserDefinedFunction = udf((rows: Seq[Row]) => {
       rows.map { case Row(movieId: String, timestamp: String) => (movieId, timestamp) }
         .sortBy { case (_, timestamp) => timestamp }
@@ -39,7 +52,7 @@ object Embedding {
 
     ratingSamples.printSchema()
 
-    //process rating data then generate rating movie sequence data
+    // 过滤评分>=3.5的记录，按userId分组，收集电影ID并按时间排序，最后用空格拼接成字符串
     val userSeq = ratingSamples
       .where(col("rating") >= 3.5)
       .groupBy("userId")
@@ -47,6 +60,7 @@ object Embedding {
       .withColumn("movieIdStr", array_join(col("movieIds"), " "))
 
     userSeq.select("userId", "movieIdStr").show(10, truncate = false)
+    // 将字符串形式的电影序列转为Seq[String]，作为Word2Vec的输入
     userSeq.select("movieIdStr").rdd.map(r => r.getAs[String]("movieIdStr").split(" ").toSeq)
   }
 
@@ -100,20 +114,41 @@ object Embedding {
     }
   }
 
+  /**
+   * 基于用户行为序列训练Item2Vec模型，生成电影Embedding向量。
+   *
+   * 处理流程：
+   * 1. 使用Word2Vec对输入的电影序列进行训练，得到每个电影的Embedding向量
+   * 2. 打印指定电影的相似电影，用于验证Embedding质量
+   * 3. 将所有电影的Embedding写入文件（格式：movieId:emb1 emb2 ...）
+   * 4. 可选：将Embedding写入Redis，供线上服务使用
+   * 5. 使用LSH对Embedding建立索引，支持近似最近邻检索
+   *
+   * @param sparkSession      Spark会话
+   * @param samples           用户电影行为序列（每个元素为一个用户的电影ID列表）
+   * @param embLength         Embedding向量维度
+   * @param embOutputFilename 输出文件名
+   * @param saveToRedis       是否保存到Redis
+   * @param redisKeyPrefix    Redis key前缀
+   * @return 训练好的Word2Vec模型
+   */
   def trainItem2vec(sparkSession: SparkSession, samples : RDD[Seq[String]], embLength:Int, embOutputFilename:String, saveToRedis:Boolean, redisKeyPrefix:String): Word2VecModel = {
+    // 配置Word2Vec参数：向量维度、滑动窗口大小、迭代次数
     val word2vec = new Word2Vec()
       .setVectorSize(embLength)
       .setWindowSize(5)
       .setNumIterations(10)
 
+    // 训练Word2Vec模型
     val model = word2vec.fit(samples)
 
-
+    // 验证：找出与电影"158"最相似的20部电影，打印余弦相似度
     val synonyms = model.findSynonyms("158", 20)
     for ((synonym, cosineSimilarity) <- synonyms) {
       println(s"$synonym $cosineSimilarity")
     }
 
+    // 将Embedding写入文件，格式为 movieId:emb1 emb2 ...
     val embFolderPath = this.getClass.getResource("/webroot/modeldata/")
     val file = new File(embFolderPath.getPath + embOutputFilename)
     val bw = new BufferedWriter(new FileWriter(file))
@@ -122,6 +157,7 @@ object Embedding {
     }
     bw.close()
 
+    // 可选：将Embedding写入Redis，设置24小时过期时间
     if (saveToRedis) {
       val redisClient = new Jedis(redisEndpoint, redisPort)
       val params = SetParams.setParams()
@@ -133,6 +169,7 @@ object Embedding {
       redisClient.close()
     }
 
+    // 对Embedding建立LSH索引，支持近似最近邻检索（用于线上相似电影推荐）
     embeddingLSH(sparkSession, model.getVectors)
     model
   }
@@ -227,18 +264,32 @@ object Embedding {
     (transitionMatrix, itemDistribution)
   }
 
+  /**
+   * 使用局部敏感哈希（LSH）对电影Embedding建立索引，支持近似最近邻检索。
+   *
+   * 处理流程：
+   * 1. 将电影Embedding从Map转换为Spark DataFrame
+   * 2. 使用BucketedRandomProjectionLSH建立哈希桶模型，将高维向量映射到哈希桶
+   * 3. 打印分桶结果，验证模型是否正常工作
+   * 4. 使用示例向量进行近似最近邻查询，演示如何找到相似电影
+   *
+   * @param spark        Spark会话
+   * @param movieEmbMap  电影Embedding映射（movieId -> 向量）
+   */
   def embeddingLSH(spark:SparkSession, movieEmbMap:Map[String, Array[Float]]): Unit ={
 
+    // 将Map转换为DataFrame，列名为movieId和emb
     val movieEmbSeq = movieEmbMap.toSeq.map(item => (item._1, Vectors.dense(item._2.map(f => f.toDouble))))
     val movieEmbDF = spark.createDataFrame(movieEmbSeq).toDF("movieId", "emb")
 
-    //LSH bucket model
+    // 配置LSH模型：桶长度0.1控制精度，哈希表数量3提高召回率
     val bucketProjectionLSH = new BucketedRandomProjectionLSH()
       .setBucketLength(0.1)
       .setNumHashTables(3)
       .setInputCol("emb")
       .setOutputCol("bucketId")
 
+    // 训练LSH模型，为每个电影生成哈希桶ID
     val bucketModel = bucketProjectionLSH.fit(movieEmbDF)
     val embBucketResult = bucketModel.transform(movieEmbDF)
     println("movieId, emb, bucketId schema:")
@@ -246,6 +297,7 @@ object Embedding {
     println("movieId, emb, bucketId data result:")
     embBucketResult.show(10, truncate = false)
 
+    // 演示：用一个示例Embedding向量查找5个最近邻电影
     println("Approximately searching for 5 nearest neighbors of the sample embedding:")
     val sampleEmb = Vectors.dense(0.795,0.583,1.120,0.850,0.174,-0.839,-0.0633,0.249,0.673,-0.237)
     bucketModel.approxNearestNeighbors(movieEmbDF, sampleEmb, 5).show(truncate = false)
@@ -268,6 +320,9 @@ object Embedding {
   def main(args: Array[String]): Unit = {
     Logger.getLogger("org").setLevel(Level.ERROR)
 
+    // 为了去掉讨厌的报错
+    sys.props("hadoop.home.dir") = "D:\\dev_software\\hadoop"
+
     val conf = new SparkConf()
       .setMaster("local")
       .setAppName("ctrModel")
@@ -279,7 +334,7 @@ object Embedding {
     val embLength = 10
 
     val samples = processItemSequence(spark, rawSampleDataPath)
-    val model = trainItem2vec(spark, samples, embLength, "item2vecEmb.csv", saveToRedis = false, "i2vEmb")
+    val model = trainItem2vec(spark, samples, embLength, "jeff2_item2vecEmb.csv", saveToRedis = false, "i2vEmb")
     //graphEmb(samples, spark, embLength, "itemGraphEmb.csv", saveToRedis = true, "graphEmb")
     //generateUserEmb(spark, rawSampleDataPath, model, embLength, "userEmb.csv", saveToRedis = false, "uEmb")
   }
