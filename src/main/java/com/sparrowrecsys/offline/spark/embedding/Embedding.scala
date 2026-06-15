@@ -267,11 +267,32 @@ object Embedding {
   /**
    * 使用局部敏感哈希（LSH）对电影Embedding建立索引，支持近似最近邻检索。
    *
+   * LSH核心原理：让相似的向量落入同一个"桶"，查询时只需在桶内搜索，将时间复杂度从O(n)降至O(1)
+   *
+   * 关键参数说明：
+   *
+   *   - BucketLength（桶长度）：桶的"松紧度"，是距离阈值，非容量！
+   *     值越小 → 桶越紧，只有距离小于BucketLength的向量才会同桶，精度高但召回率可能低
+   *     值越大 → 桶越松，更多向量会同桶，召回率高但计算量增加
+   *     此处设为0.1，表示投影后差值小于0.1的向量才会被分到同一桶
+   *
+   *   - NumHashTables（哈希表数量）：使用的独立哈希函数数量（筛子数量）
+   *     值越小 → 计算快，但假阳性率高
+   *     值越大 → 假阳性率指数级下降（总体假阳性率 = p的numHashTables次方），但计算开销增加
+   *     此处设为3，表示向量需通过3个独立哈希函数的考验
+   *
+   * 多桶策略：Spark MLlib默认使用"AND"策略，即向量必须在ALL哈希表中都落入同一个桶，才会被视为候选相似对。
+   *   AND策略优点：最大程度减少候选集，提高计算效率
+   *   AND策略缺点：可能漏掉部分相似点（可通过增加NumHashTables弥补）
+   *   对比OR策略：在任一哈希表同桶即可，召回率高但候选集大
+   *
    * 处理流程：
-   * 1. 将电影Embedding从Map转换为Spark DataFrame
-   * 2. 使用BucketedRandomProjectionLSH建立哈希桶模型，将高维向量映射到哈希桶
-   * 3. 打印分桶结果，验证模型是否正常工作
-   * 4. 使用示例向量进行近似最近邻查询，演示如何找到相似电影
+   *
+   *   1. 将电影Embedding从Map转换为Spark DataFrame
+   *   2. 使用BucketedRandomProjectionLSH建立哈希桶模型，将高维向量映射到哈希桶
+   *   3. 每个向量得到NumHashTables个桶ID（如[[-2.0], [14.0], [8.0]]）
+   *   4. 打印分桶结果，验证模型是否正常工作
+   *   5. 使用示例向量进行近似最近邻查询，演示如何找到相似电影
    *
    * @param spark        Spark会话
    * @param movieEmbMap  电影Embedding映射（movieId -> 向量）
@@ -282,14 +303,18 @@ object Embedding {
     val movieEmbSeq = movieEmbMap.toSeq.map(item => (item._1, Vectors.dense(item._2.map(f => f.toDouble))))
     val movieEmbDF = spark.createDataFrame(movieEmbSeq).toDF("movieId", "emb")
 
-    // 配置LSH模型：桶长度0.1控制精度，哈希表数量3提高召回率
+    // 配置LSH模型：
+    // - setBucketLength(0.1): 桶长度为0.1，控制分桶精度
+    // - setNumHashTables(3): 使用3个哈希表，降低假阳性率
+    // - setInputCol("emb"): 指定输入向量列
+    // - setOutputCol("bucketId"): 指定输出桶ID列
     val bucketProjectionLSH = new BucketedRandomProjectionLSH()
       .setBucketLength(0.1)
       .setNumHashTables(3)
       .setInputCol("emb")
       .setOutputCol("bucketId")
 
-    // 训练LSH模型，为每个电影生成哈希桶ID
+    // 训练LSH模型，为每个电影生成哈希桶ID（每个向量得到NumHashTables个桶ID）
     val bucketModel = bucketProjectionLSH.fit(movieEmbDF)
     val embBucketResult = bucketModel.transform(movieEmbDF)
     println("movieId, emb, bucketId schema:")
@@ -298,6 +323,8 @@ object Embedding {
     embBucketResult.show(10, truncate = false)
 
     // 演示：用一个示例Embedding向量查找5个最近邻电影
+    // approxNearestNeighbors内部使用AND策略：向量必须在所有哈希表中同桶才会成为候选
+    // 然后对候选集计算真实距离，返回Top-K最近邻
     println("Approximately searching for 5 nearest neighbors of the sample embedding:")
     val sampleEmb = Vectors.dense(0.795,0.583,1.120,0.850,0.174,-0.839,-0.0633,0.249,0.673,-0.237)
     bucketModel.approxNearestNeighbors(movieEmbDF, sampleEmb, 5).show(truncate = false)
