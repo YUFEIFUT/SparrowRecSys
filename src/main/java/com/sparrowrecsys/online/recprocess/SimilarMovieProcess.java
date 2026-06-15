@@ -33,12 +33,14 @@ public class SimilarMovieProcess {
 
     /**
      * generate candidates for similar movies recommendation
+     * 单策略召回
      * @param movie input movie object
      * @return  movie candidates
      */
     public static List<Movie> candidateGenerator(Movie movie){
         HashMap<Integer, Movie> candidateMap = new HashMap<>();
         for (String genre : movie.getGenres()){
+            // 按电影类型召回，每类取100部高分电影
             List<Movie> oneCandidates = DataManager.getInstance().getMoviesByGenre(genre, 100, "rating");
             for (Movie candidate : oneCandidates){
                 candidateMap.put(candidate.getMovieId(), candidate);
@@ -49,7 +51,7 @@ public class SimilarMovieProcess {
     }
 
     /**
-     * multiple-retrieval candidate generation method
+     * multiple-retrieval candidate generation method：多路召回
      * @param movie input movie object
      * @return movie candidates
      */
@@ -61,6 +63,7 @@ public class SimilarMovieProcess {
         HashSet<String> genres = new HashSet<>(movie.getGenres());
 
         HashMap<Integer, Movie> candidateMap = new HashMap<>();
+        // 第一路：按类型召回（每类20部）
         for (String genre : genres){
             List<Movie> oneCandidates = DataManager.getInstance().getMoviesByGenre(genre, 20, "rating");
             for (Movie candidate : oneCandidates){
@@ -68,11 +71,13 @@ public class SimilarMovieProcess {
             }
         }
 
+        // 第二路：高分电影召回（100部）
         List<Movie> highRatingCandidates = DataManager.getInstance().getMovies(100, "rating");
         for (Movie candidate : highRatingCandidates){
             candidateMap.put(candidate.getMovieId(), candidate);
         }
 
+        // 第三路：最新电影召回（100部）
         List<Movie> latestCandidates = DataManager.getInstance().getMovies(100, "releaseYear");
         for (Movie candidate : latestCandidates){
             candidateMap.put(candidate.getMovieId(), candidate);
@@ -83,7 +88,7 @@ public class SimilarMovieProcess {
     }
 
     /**
-     * embedding based candidate generation method
+     * embedding based candidate generation method：Embedding 召回
      * @param movie input movie
      * @param size  size of candidate pool
      * @return  movie candidates
@@ -93,13 +98,16 @@ public class SimilarMovieProcess {
             return null;
         }
 
+        // 获取所有候选电影（10000部）
         List<Movie> allCandidates = DataManager.getInstance().getMovies(10000, "rating");
         HashMap<Movie,Double> movieScoreMap = new HashMap<>();
+        // 计算每部电影的 Embedding 相似度
         for (Movie candidate : allCandidates){
             double similarity = calculateEmbSimilarScore(movie, candidate);
             movieScoreMap.put(candidate, similarity);
         }
 
+        // 按相似度排序，返回 Top-K
         List<Map.Entry<Movie,Double>> movieScoreList = new ArrayList<>(movieScoreMap.entrySet());
         movieScoreList.sort(Map.Entry.comparingByValue());
 
