@@ -64,6 +64,33 @@ object Embedding {
     userSeq.select("movieIdStr").rdd.map(r => r.getAs[String]("movieIdStr").split(" ").toSeq)
   }
 
+  /**
+   * 基于用户历史行为生成用户Embedding向量，用于用户兴趣表示和相似用户推荐。
+   *
+   * 核心思想：将用户评分过的所有电影的Embedding向量进行平均，作为用户的兴趣向量表示。
+   * 这种方法能够捕捉用户的整体偏好，适用于用户画像、相似用户发现等场景。
+   *
+   * 处理流程：
+   * 1. 读取用户评分数据（CSV格式，包含userId、movieId、rating、timestamp等字段）
+   * 2. 将评分数据按用户ID进行分组
+   * 3. 对于每个用户，遍历其评分过的所有电影，获取电影的Embedding向量
+   * 4. 将所有电影的Embedding向量进行累加，最后除以电影数量得到平均值，即用户Embedding
+   * 5. 将用户Embedding写入文件，格式为：userId:emb1 emb2 ... embN
+   * 6. 可选：将用户Embedding写入Redis，设置24小时过期时间，供线上服务使用
+   *
+   * 注意事项：
+   * - 用户的Embedding质量取决于其历史行为数量，行为越少的用户Embedding质量越差
+   * - 该方法对所有电影的Embedding进行等权平均，未考虑评分高低的差异
+   * - 如果需要更精细的用户表示，可以考虑加权平均（如按评分加权）
+   *
+   * @param sparkSession       Spark会话
+   * @param rawSampleDataPath  评分数据的资源路径（相对于classpath）
+   * @param word2VecModel      训练好的Word2Vec模型，用于获取电影的Embedding向量
+   * @param embLength          Embedding向量维度
+   * @param embOutputFilename  输出文件名，保存用户Embedding到本地文件
+   * @param saveToRedis        是否保存到Redis，供线上服务使用
+   * @param redisKeyPrefix     Redis key前缀，格式为：prefix:userId
+   */
   def generateUserEmb(sparkSession: SparkSession, rawSampleDataPath: String, word2VecModel: Word2VecModel, embLength:Int, embOutputFilename:String, saveToRedis:Boolean, redisKeyPrefix:String): Unit ={
     val ratingsResourcesPath = this.getClass.getResource(rawSampleDataPath)
     val ratingSamples = sparkSession.read.format("csv").option("header", "true").load(ratingsResourcesPath.getPath)
@@ -77,16 +104,18 @@ object Embedding {
         var userEmb = new Array[Float](embLength)
 
         var movieCount = 0
+        // 使用foldRight遍历用户的电影评分记录，累加每个电影的Embedding向量
         userEmb = user._2.foldRight[Array[Float]](userEmb)((row, newEmb) => {
           val movieId = row.getAs[String]("movieId")
           val movieEmb = word2VecModel.getVectors.get(movieId)
           movieCount += 1
           if(movieEmb.isDefined){
+            // 向量逐元素相加：将当前电影的Embedding累加到用户Embedding中
             newEmb.zip(movieEmb.get).map { case (x, y) => x + y }
           }else{
             newEmb
           }
-        }).map((x: Float) => x / movieCount)
+        }).map((x: Float) => x / movieCount) // 计算平均值：总和除以电影数量得到用户Embedding
         userEmbeddings.append((userId,userEmb))
       })
 
