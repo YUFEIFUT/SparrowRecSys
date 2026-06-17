@@ -145,24 +145,45 @@ public class SimilarMovieProcess {
     }
 
     /**
-     * function to calculate similarity score
-     * @param movie     input movie
-     * @param candidate candidate movie
-     * @return  similarity score
+     * 计算候选电影与输入电影之间的相似度评分。
+     * <p>
+     * 评分由两部分加权组成：
+     * 1. 类型相似度（权重 0.7）：衡量两部电影共有类型的比例，采用 Jaccard 系数形式，
+     * 2. 评分分数（权重 0.3）：将候选电影的平均评分归一化到 [0, 1] 区间（满分 5 分）。
+     * <p>
+     * 最终得分 = genreSimilarity × 0.7 + ratingScore × 0.3
+     *
+     * @param movie     输入电影，作为比较的基准
+     * @param candidate 候选电影，待评估的推荐对象
+     * @return 相似度评分
      */
     public static double calculateSimilarScore(Movie movie, Movie candidate){
+        // 统计两部电影共同拥有的类型数量
         int sameGenreCount = 0;
         for (String genre : movie.getGenres()){
             if (candidate.getGenres().contains(genre)){
                 sameGenreCount++;
             }
         }
+
+        // 计算类型相似度：共有类型数 / 两部电影类型总数之和 / 2
+        // 计算类型相似度：相同类型数 / (两部电影类型总数)
+        // 注意：这里 "/ 2" 的运算优先级有问题，实际等价于 sameGenreCount / (A + B) / 2
+        // 两部电影类型完全相同时，最大值也只能到 0.25，导致 genreSimilarity 权重被大幅压缩
+        //
+        // 如果本意是 Jaccard 相似度，应为：
+        //   genreSimilarity = (double)sameGenreCount / (movie.getGenres().size() + candidate.getGenres().size() - sameGenreCount);
+        // 如果本意是按平均类型数归一化，应为：
+        //   genreSimilarity = (double)sameGenreCount / ((movie.getGenres().size() + candidate.getGenres().size()) / 2.0);
         double genreSimilarity = (double)sameGenreCount / (movie.getGenres().size() + candidate.getGenres().size()) / 2;
+        // 将候选电影的平均评分（满分 5 分）归一化到 [0, 1] 区间
         double ratingScore = candidate.getAverageRating() / 5;
 
+        // 定义两个指标的权重：类型相似度占 70%，评分质量占 30%
         double similarityWeight = 0.7;
         double ratingScoreWeight = 0.3;
 
+        // 返回加权综合得分
         return genreSimilarity * similarityWeight + ratingScore * ratingScoreWeight;
     }
 
