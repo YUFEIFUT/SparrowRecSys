@@ -154,7 +154,8 @@ public class SimilarMovieProcess {
 
     /**
      * retrieve the candidate pool by the offline-generated LSH buckets, using the "OR" multi-bucket
-     * strategy. Fall back to a full scan when the bucket data is missing or returns too few candidates.
+     * strategy with multi-probe (neighbouring buckets). Fall back to a full scan only when the bucket
+     * data is missing or even multi-probe still returns too few candidates.
      * @param movie input movie
      * @return movie candidates (pre-rank pool)
      */

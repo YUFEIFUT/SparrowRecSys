@@ -20,6 +20,11 @@ public class DataManager {
     //LSH bucket reverse index, key is "hashTableIndex_bucketValue", value is the list of movieIds in that bucket
     HashMap<String, List<Integer>> lshBucketReverseIndexMap;
 
+    //multi-probe LSH tuning: keep widening the probe radius until at least this many candidates are gathered
+    private static final int LSH_MIN_CANDIDATE_SIZE = 10;
+    //the largest neighbouring-bucket distance to probe on each hash-table axis before giving up
+    private static final int LSH_MAX_PROBE_RADIUS = 2;
+
     private DataManager(){
         this.movieMap = new HashMap<>();
         this.userMap = new HashMap<>();
@@ -189,21 +194,46 @@ public class DataManager {
         movie.setEmbBuckets(bucketKeys);
     }
 
-    //get LSH nearest neighbor candidates of a movie, using the "OR" multi-bucket strategy:
-    //a movie is a candidate if it shares any bucket with the input movie in any hash table.
+    //get LSH nearest neighbor candidates of a movie, using the "OR" multi-bucket strategy combined with
+    //multi-probe: a movie is a candidate if it shares any bucket with the input movie in any hash table,
+    //and we additionally probe neighbouring buckets to recall near neighbours that fell across a boundary.
     public List<Movie> getLshCandidates(Movie movie){
+        return getLshCandidates(movie, LSH_MIN_CANDIDATE_SIZE, LSH_MAX_PROBE_RADIUS);
+    }
+
+    /**
+     * multi-probe LSH candidate retrieval. Standard LSH only looks at the bucket the movie hashes to, so a
+     * near neighbour that fell just across a bucket boundary is missed. Multi-probe also inspects the
+     * neighbouring buckets (bucket value +/- step on the same projection axis). The probe radius grows step
+     * by step and stops early once enough candidates are gathered, so the extra cost is only paid when the
+     * exact bucket is too sparse.
+     * @param movie input movie
+     * @param minCandidateSize stop widening the probe radius once the candidate pool reaches this size
+     * @param maxProbeRadius the largest neighbouring-bucket distance to probe on each hash-table axis
+     * @return movie candidates (pre-rank pool)
+     */
+    public List<Movie> getLshCandidates(Movie movie, int minCandidateSize, int maxProbeRadius){
         List<Movie> candidates = new ArrayList<>();
         if (null == movie || null == movie.getEmbBuckets()){
             return candidates;
         }
         HashSet<Integer> candidateIdSet = new HashSet<>();
-        for (String bucketKey : movie.getEmbBuckets()){
-            List<Integer> movieIds = this.lshBucketReverseIndexMap.get(bucketKey);
-            if (null != movieIds){
-                candidateIdSet.addAll(movieIds);
+        //expand the probe radius shell by shell; radius 0 is the movie's own bucket
+        for (int radius = 0; radius <= maxProbeRadius; radius++){
+            for (String bucketKey : movie.getEmbBuckets()){
+                for (String probeKey : probeBucketKeys(bucketKey, radius)){
+                    List<Integer> movieIds = this.lshBucketReverseIndexMap.get(probeKey);
+                    if (null != movieIds){
+                        candidateIdSet.addAll(movieIds);
+                    }
+                }
+            }
+            candidateIdSet.remove(movie.getMovieId());
+            //already have enough candidates, no need to probe wider buckets
+            if (candidateIdSet.size() >= minCandidateSize){
+                break;
             }
         }
-        candidateIdSet.remove(movie.getMovieId());
         for (Integer movieId : candidateIdSet){
             Movie candidate = getMovieById(movieId);
             if (null != candidate){
@@ -211,6 +241,33 @@ public class DataManager {
             }
         }
         return candidates;
+    }
+
+    //generate the probe bucket keys at exactly the given radius on the same hash-table axis.
+    //radius 0 -> the bucket itself; radius r -> the two buckets r steps away on each side.
+    //bucket values are integer-valued doubles (e.g. "-2.0"), so adding an integer step keeps the
+    //"<tableIndex>_<value>" key format identical to the offline-generated one.
+    private List<String> probeBucketKeys(String bucketKey, int radius){
+        List<String> probeKeys = new ArrayList<>();
+        if (radius == 0){
+            probeKeys.add(bucketKey);
+            return probeKeys;
+        }
+        int separatorIndex = bucketKey.indexOf('_');
+        if (separatorIndex < 0){
+            return probeKeys;
+        }
+        String tableIndex = bucketKey.substring(0, separatorIndex);
+        String bucketValueStr = bucketKey.substring(separatorIndex + 1);
+        double bucketValue;
+        try {
+            bucketValue = Double.parseDouble(bucketValueStr);
+        } catch (NumberFormatException e){
+            return probeKeys;
+        }
+        probeKeys.add(tableIndex + "_" + (bucketValue + radius));
+        probeKeys.add(tableIndex + "_" + (bucketValue - radius));
+        return probeKeys;
     }
 
     //load movie features
