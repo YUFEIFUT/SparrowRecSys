@@ -23,6 +23,7 @@ object CollaborativeFiltering {
 
   // 注意：这个要运行很久很久
   def main(args: Array[String]): Unit = {
+    val totalStart = System.currentTimeMillis()
     // 为了去掉讨厌的报错
     sys.props("hadoop.home.dir") = "D:\\dev_software\\hadoop"
 
@@ -31,8 +32,12 @@ object CollaborativeFiltering {
       .setAppName("collaborativeFiltering")
       .set("spark.submit.deployMode", "client")
 
+    var t0 = System.currentTimeMillis()
     val spark = SparkSession.builder.config(conf).getOrCreate()
+    println(s"[计时] SparkSession创建: ${System.currentTimeMillis() - t0}ms")
+
     import spark.implicits._
+    t0 = System.currentTimeMillis()
     val ratingResourcesPath = this.getClass.getResource("/webroot/sampledata/ratings.csv")
     // 定义类型转换UDF：将字符串转为Int和Double，因为CSV读入后默认全是String类型
     val toInt = udf[Int, String]( _.toInt)
@@ -43,6 +48,7 @@ object CollaborativeFiltering {
       .withColumn("ratingFloat", toFloat(col("rating")))
 
     val Array(training, test) = ratingSamples.randomSplit(Array(0.8, 0.2), seed = 42)
+    println(s"[计时] CSV读取+类型转换+数据集划分: ${System.currentTimeMillis() - t0}ms")
 
     // ==================== 构建ALS协同过滤模型 ====================
     // ALS（交替最小二乘法）：通过矩阵分解将用户-物品评分矩阵分解为用户隐因子和物品隐因子
@@ -56,7 +62,9 @@ object CollaborativeFiltering {
       .setItemCol("movieIdInt")
       .setRatingCol("ratingFloat")
 
+    t0 = System.currentTimeMillis()
     val model = als.fit(training)
+    println(s"[计时] ALS模型训练(fit): ${System.currentTimeMillis() - t0}ms")
 
     // Evaluate the model by computing the RMSE on the test data
     // Note we set cold start strategy to 'drop' to ensure we don't get NaN evaluation metrics
@@ -65,19 +73,29 @@ object CollaborativeFiltering {
     // 模型没有学过它们的隐因子，自然无法预测评分，结果就是 NaN（Not a Number，非数字）。
     model.setColdStartStrategy("drop")
     // 用训练好的模型对测试集进行预测
+    // 注意：transform() 是惰性的，此时不会真正计算，只是构建了计算图
     val predictions = model.transform(test)
 
     // 查看模型学到的物品隐因子和用户隐因子（各展示前10条）
+    // 这两步很快，因为 itemFactors/userFactors 是训练结束时就已经算好的
+    t0 = System.currentTimeMillis()
     model.itemFactors.show(10, truncate = false)
     model.userFactors.show(10, truncate = false)
+    println(s"[计时] 展示item/userFactors: ${System.currentTimeMillis() - t0}ms")
 
     // 使用RMSE（均方根误差）评估模型预测精度
     // RMSE越小，说明预测评分与真实评分的偏差越小
+    // ⚠️ evaluate() 是一个 action 操作，会触发 predictions 的惰性求值
+    // 这里需要为测试集的每条样本做 user_factor × item_factor 矩阵乘法，是整个流程中最耗时的一步
+    println("开始计算预测值（这一步较耗时，因为要为测试集所有样本做矩阵乘法）...")
     val evaluator = new RegressionEvaluator()
       .setMetricName("rmse")
       .setLabelCol("ratingFloat")
       .setPredictionCol("prediction")
+    t0 = System.currentTimeMillis()
     val rmse = evaluator.evaluate(predictions)
+    println(s"[计时] 评估器evaluate(predictions): ${System.currentTimeMillis() - t0}ms")
+    println(s"RMSE计算完成: $rmse")
     println(s"Root-mean-square error = $rmse")
 
     // ==================== 保存用户和物品隐向量到CSV文件 ====================
@@ -88,6 +106,7 @@ object CollaborativeFiltering {
 
     // 保存物品隐向量（电影embedding）
     // 格式：id:emb1 emb2 ... embN（与 Embedding 写入文件的格式保持一致）
+    t0 = System.currentTimeMillis()
     val itemEmbFile = new File(outputFolderPath + "alsItemEmbeddings.csv")
     var itemBw: BufferedWriter = null
     try {
@@ -116,6 +135,7 @@ object CollaborativeFiltering {
     } finally {
       if (userBw != null) userBw.close()
     }
+    println(s"[计时] 保存item+user隐向量到文件: ${System.currentTimeMillis() - t0}ms")
 
     println(s"物品隐向量已保存到: ${itemEmbFile.getPath}")
     println(s"用户隐向量已保存到: ${userEmbFile.getPath}")
@@ -124,6 +144,7 @@ object CollaborativeFiltering {
     // 根据配置决定是否执行耗时的推荐结果生成操作
     if (GENERATE_RECOMMENDATIONS) {
       println("开始生成推荐结果（这可能需要较长时间）...")
+      t0 = System.currentTimeMillis()
       
       // 为每个用户生成Top-10电影推荐
       // Generate top 10 movie recommendations for each user
@@ -146,6 +167,7 @@ object CollaborativeFiltering {
       movieRecs.show(false)
       userSubsetRecs.show(false)
       movieSubSetRecs.show(false)
+      println(s"[计时] 全量推荐(recommendForAllUsers/AllItems + subset): ${System.currentTimeMillis() - t0}ms")
     } else {
       println("跳过推荐结果生成（GENERATE_RECOMMENDATIONS = false）")
     }
@@ -158,20 +180,25 @@ object CollaborativeFiltering {
     // 注意：构造的DataFrame列名必须与 ALS 设置的 userCol / itemCol 一致（userIdInt / movieIdInt）。
 
     // 为指定的几个已知用户生成Top-10电影推荐
+    t0 = System.currentTimeMillis()
     val knownUsers = Seq(10, 20, 30).toDF(als.getUserCol)
     val knownUserRecs = model.recommendForUserSubset(knownUsers, 10)
+    println(s"[计时] recommendForUserSubset(3个用户): ${System.currentTimeMillis() - t0}ms")
     println("指定用户的Top-10电影推荐：")
     knownUserRecs.show(truncate = false)
 
     // 为指定的几部已知电影生成Top-10用户推荐
+    t0 = System.currentTimeMillis()
     val knownMovies = Seq(1, 2, 3).toDF(als.getItemCol)
     val knownMovieRecs = model.recommendForItemSubset(knownMovies, 10)
+    println(s"[计时] recommendForItemSubset(3部电影): ${System.currentTimeMillis() - t0}ms")
     println("指定电影的Top-10用户推荐：")
     knownMovieRecs.show(truncate = false)
 
     // ==================== 交叉验证调参 ====================
     if (ENABLE_CROSS_VALIDATION) {
       println("开始交叉验证调参（这可能需要较长时间）...")
+      t0 = System.currentTimeMillis()
       
       // 构建参数网格，这里仅搜索regParam=0.01这一个值（实际场景可添加多个候选值进行网格搜索）
       val paramGrid = new ParamGridBuilder()
@@ -192,6 +219,7 @@ object CollaborativeFiltering {
         .setNumFolds(10)  // Use 3+ in practice
       // 注意：交叉验证应该在训练集上进行，不能用测试集（否则是数据泄漏）
       val cvModel = cv.fit(training)
+      println(s"[计时] 10折交叉验证fit: ${System.currentTimeMillis() - t0}ms")
       // 获取每组参数对应的平均评估指标
       val avgMetrics = cvModel.avgMetrics
 
@@ -208,6 +236,7 @@ object CollaborativeFiltering {
       println(s"当前模型RMSE: $rmse")
     }
 
+    println(s"[计时] 总耗时: ${System.currentTimeMillis() - totalStart}ms")
     spark.stop()
   }
 }
