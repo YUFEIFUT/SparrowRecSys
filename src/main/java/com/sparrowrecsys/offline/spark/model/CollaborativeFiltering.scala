@@ -1,5 +1,6 @@
 package com.sparrowrecsys.offline.spark.model
 
+import java.io.{BufferedWriter, File, FileWriter}
 import org.apache.spark.SparkConf
 import org.apache.spark.ml.evaluation.RegressionEvaluator
 import org.apache.spark.ml.recommendation.ALS
@@ -32,8 +33,7 @@ object CollaborativeFiltering {
       .set("spark.submit.deployMode", "client")
 
     val spark = SparkSession.builder.config(conf).getOrCreate()
-    // 设置日志级别为WARN，减少控制台输出的INFO日志
-    Logger.getRootLogger.setLevel(Level.WARN)
+    import spark.implicits._
     val ratingResourcesPath = this.getClass.getResource("/webroot/sampledata/ratings.csv")
     // 定义类型转换UDF：将字符串转为Int和Double，因为CSV读入后默认全是String类型
     val toInt = udf[Int, String]( _.toInt)
@@ -43,7 +43,7 @@ object CollaborativeFiltering {
       .withColumn("movieIdInt", toInt(col("movieId")))
       .withColumn("ratingFloat", toFloat(col("rating")))
 
-    val Array(training, test) = ratingSamples.randomSplit(Array(0.8, 0.2))
+    val Array(training, test) = ratingSamples.randomSplit(Array(0.8, 0.2), seed = 42)
 
     // ==================== 构建ALS协同过滤模型 ====================
     // ALS（交替最小二乘法）：通过矩阵分解将用户-物品评分矩阵分解为用户隐因子和物品隐因子
@@ -85,31 +85,38 @@ object CollaborativeFiltering {
     // 这些隐向量可以用于线上服务，格式与SparrowRecSys的embedding加载格式兼容
     // 通过classpath资源定位输出目录，避免依赖运行时工作目录的硬编码相对/绝对路径
     // （写法参考 Embedding.trainItem2vec 中的保存方式）
-    import java.io.{BufferedWriter, File, FileWriter}
     val outputFolderPath = this.getClass.getResource("/webroot/sampledata/").getPath
 
     // 保存物品隐向量（电影embedding）
     // 格式：id:emb1 emb2 ... embN（与 Embedding 写入文件的格式保持一致）
     val itemEmbFile = new File(outputFolderPath + "alsItemEmbeddings.csv")
-    val itemBw = new BufferedWriter(new FileWriter(itemEmbFile))
-    val itemFactors = model.itemFactors.collect()
-    for (row <- itemFactors) {
-      val id = row.getAs[Int]("id")
-      val features = row.getAs[Seq[Float]]("features")
-      itemBw.write(id + ":" + features.mkString(" ") + "\n")
+    var itemBw: BufferedWriter = null
+    try {
+      itemBw = new BufferedWriter(new FileWriter(itemEmbFile))
+      val itemFactors = model.itemFactors.collect()
+      for (row <- itemFactors) {
+        val id = row.getAs[Int]("id")
+        val features = row.getAs[Seq[Float]]("features")
+        itemBw.write(id + ":" + features.mkString(" ") + "\n")
+      }
+    } finally {
+      if (itemBw != null) itemBw.close()
     }
-    itemBw.close()
 
     // 保存用户隐向量（用户embedding）
     val userEmbFile = new File(outputFolderPath + "alsUserEmbeddings.csv")
-    val userBw = new BufferedWriter(new FileWriter(userEmbFile))
-    val userFactors = model.userFactors.collect()
-    for (row <- userFactors) {
-      val id = row.getAs[Int]("id")
-      val features = row.getAs[Seq[Float]]("features")
-      userBw.write(id + ":" + features.mkString(" ") + "\n")
+    var userBw: BufferedWriter = null
+    try {
+      userBw = new BufferedWriter(new FileWriter(userEmbFile))
+      val userFactors = model.userFactors.collect()
+      for (row <- userFactors) {
+        val id = row.getAs[Int]("id")
+        val features = row.getAs[Seq[Float]]("features")
+        userBw.write(id + ":" + features.mkString(" ") + "\n")
+      }
+    } finally {
+      if (userBw != null) userBw.close()
     }
-    userBw.close()
 
     println(s"物品隐向量已保存到: ${itemEmbFile.getPath}")
     println(s"用户隐向量已保存到: ${userEmbFile.getPath}")
@@ -150,7 +157,6 @@ object CollaborativeFiltering {
     // 既然我们已经知道数据集中存在的几个用户id和电影id，直接构造一个小DataFrame，
     // 用 recommendForUserSubset / recommendForItemSubset 推荐即可，避免全量计算和shuffle，速度快得多。
     // 注意：构造的DataFrame列名必须与 ALS 设置的 userCol / itemCol 一致（userIdInt / movieIdInt）。
-    import spark.implicits._
 
     // 为指定的几个已知用户生成Top-10电影推荐
     val knownUsers = Seq(10, 20, 30).toDF(als.getUserCol)
@@ -185,7 +191,8 @@ object CollaborativeFiltering {
         .setEstimatorParamMaps(paramGrid)
         // 折数，实际生产环境建议至少3折
         .setNumFolds(10)  // Use 3+ in practice
-      val cvModel = cv.fit(test)
+      // 注意：交叉验证应该在训练集上进行，不能用测试集（否则是数据泄漏）
+      val cvModel = cv.fit(training)
       // 获取每组参数对应的平均评估指标
       val avgMetrics = cvModel.avgMetrics
 
