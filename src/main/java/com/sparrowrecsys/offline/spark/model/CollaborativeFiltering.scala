@@ -7,12 +7,11 @@ import org.apache.spark.ml.recommendation.ALS
 import org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
-import org.apache.log4j.{Level, Logger}
-
-// 在类加载时立即设置日志级别，比在main方法中设置更早
-Logger.getRootLogger.setLevel(Level.WARN)
 
 object CollaborativeFiltering {
+
+  // 这个可以不用加，主要是加上那个log4j的配置文件就行了
+  //  Logger.getRootLogger.setLevel(Level.WARN)
 
   // 控制是否执行耗时的推荐结果生成操作
   // 设为false可以只保存embedding，跳过recommendForAllUsers等操作
