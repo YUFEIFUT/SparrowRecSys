@@ -1,7 +1,7 @@
 package com.sparrowrecsys.offline.spark.model
 
 import org.apache.spark.SparkConf
-import org.apache.spark.ml.evaluation.{BinaryClassificationEvaluator, RegressionEvaluator}
+import org.apache.spark.ml.evaluation.RegressionEvaluator
 import org.apache.spark.ml.recommendation.ALS
 import org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder}
 import org.apache.spark.sql.SparkSession
@@ -143,6 +143,26 @@ object CollaborativeFiltering {
     } else {
       println("跳过推荐结果生成（GENERATE_RECOMMENDATIONS = false）")
     }
+
+    // ==================== 针对已知id的快速推荐 ====================
+    // recommendForAllUsers/AllItems 要为全量用户/物品打分，非常耗时；
+    // 而 ratingSamples.select(...).distinct().limit(3) 又会因 distinct 触发 shuffle。
+    // 既然我们已经知道数据集中存在的几个用户id和电影id，直接构造一个小DataFrame，
+    // 用 recommendForUserSubset / recommendForItemSubset 推荐即可，避免全量计算和shuffle，速度快得多。
+    // 注意：构造的DataFrame列名必须与 ALS 设置的 userCol / itemCol 一致（userIdInt / movieIdInt）。
+    import spark.implicits._
+
+    // 为指定的几个已知用户生成Top-10电影推荐
+    val knownUsers = Seq(10, 20, 30).toDF(als.getUserCol)
+    val knownUserRecs = model.recommendForUserSubset(knownUsers, 10)
+    println("指定用户的Top-10电影推荐：")
+    knownUserRecs.show(truncate = false)
+
+    // 为指定的几部已知电影生成Top-10用户推荐
+    val knownMovies = Seq(1, 2, 3).toDF(als.getItemCol)
+    val knownMovieRecs = model.recommendForItemSubset(knownMovies, 10)
+    println("指定电影的Top-10用户推荐：")
+    knownMovieRecs.show(truncate = false)
 
     // ==================== 交叉验证调参 ====================
     if (ENABLE_CROSS_VALIDATION) {
