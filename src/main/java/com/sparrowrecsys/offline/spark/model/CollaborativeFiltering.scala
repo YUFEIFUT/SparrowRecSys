@@ -83,32 +83,36 @@ object CollaborativeFiltering {
 
     // ==================== 保存用户和物品隐向量到CSV文件 ====================
     // 这些隐向量可以用于线上服务，格式与SparrowRecSys的embedding加载格式兼容
-    val outputPath = "src/main/resources/webroot/sampledata"
+    // 通过classpath资源定位输出目录，避免依赖运行时工作目录的硬编码相对/绝对路径
+    // （写法参考 Embedding.trainItem2vec 中的保存方式）
+    import java.io.{BufferedWriter, File, FileWriter}
+    val outputFolderPath = this.getClass.getResource("/webroot/sampledata/").getPath
 
     // 保存物品隐向量（电影embedding）
-    // 格式：id,feature1,feature2,...,featureN
+    // 格式：id:emb1 emb2 ... embN（与 Embedding 写入文件的格式保持一致）
+    val itemEmbFile = new File(outputFolderPath + "alsItemEmbeddings.csv")
+    val itemBw = new BufferedWriter(new FileWriter(itemEmbFile))
     val itemFactors = model.itemFactors.collect()
-    val itemEmbeddingLines = itemFactors.map { row =>
+    for (row <- itemFactors) {
       val id = row.getAs[Int]("id")
       val features = row.getAs[Seq[Float]]("features")
-      s"$id,${features.mkString(",")}"
+      itemBw.write(id + ":" + features.mkString(" ") + "\n")
     }
-    val itemEmbeddingContent = itemEmbeddingLines.mkString("\n")
-    import java.io.PrintWriter
-    new PrintWriter(s"$outputPath/itemEmbeddings.csv") { write(itemEmbeddingContent); close() }
+    itemBw.close()
 
     // 保存用户隐向量（用户embedding）
+    val userEmbFile = new File(outputFolderPath + "alsUserEmbeddings.csv")
+    val userBw = new BufferedWriter(new FileWriter(userEmbFile))
     val userFactors = model.userFactors.collect()
-    val userEmbeddingLines = userFactors.map { row =>
+    for (row <- userFactors) {
       val id = row.getAs[Int]("id")
       val features = row.getAs[Seq[Float]]("features")
-      s"$id,${features.mkString(",")}"
+      userBw.write(id + ":" + features.mkString(" ") + "\n")
     }
-    val userEmbeddingContent = userEmbeddingLines.mkString("\n")
-    new PrintWriter(s"$outputPath/userEmbeddings.csv") { write(userEmbeddingContent); close() }
+    userBw.close()
 
-    println(s"物品隐向量已保存到: $outputPath/itemEmbeddings.csv")
-    println(s"用户隐向量已保存到: $outputPath/userEmbeddings.csv")
+    println(s"物品隐向量已保存到: ${itemEmbFile.getPath}")
+    println(s"用户隐向量已保存到: ${userEmbFile.getPath}")
 
     // ==================== 生成推荐结果 ====================
     // 根据配置决定是否执行耗时的推荐结果生成操作
