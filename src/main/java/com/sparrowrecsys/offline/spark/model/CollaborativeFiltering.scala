@@ -7,11 +7,20 @@ import org.apache.spark.ml.recommendation.ALS
 import org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
+import redis.clients.jedis.Jedis
+import redis.clients.jedis.params.SetParams
 
 object CollaborativeFiltering {
 
   // 这个可以不用加，主要是加上那个log4j的配置文件就行了
   //  Logger.getRootLogger.setLevel(Level.WARN)
+
+  // Redis连接配置（与 Embedding 中保持一致）
+  val redisEndpoint = "localhost"
+  val redisPort = 6379
+
+  // 控制是否将隐向量写入Redis，供线上服务使用（需要本地有可用的Redis）
+  private val SAVE_TO_REDIS = false
 
   // 控制是否执行耗时的推荐结果生成操作
   // 设为false可以只保存embedding，跳过recommendForAllUsers等操作
@@ -107,11 +116,12 @@ object CollaborativeFiltering {
     // 保存物品隐向量（电影embedding）
     // 格式：id:emb1 emb2 ... embN（与 Embedding 写入文件的格式保持一致）
     t0 = System.currentTimeMillis()
+    // 先把隐因子拉到Driver端，文件和Redis两处复用，避免重复collect
+    val itemFactors = model.itemFactors.collect()
     val itemEmbFile = new File(outputFolderPath + "alsItemEmbeddings.csv")
     var itemBw: BufferedWriter = null
     try {
       itemBw = new BufferedWriter(new FileWriter(itemEmbFile))
-      val itemFactors = model.itemFactors.collect()
       for (row <- itemFactors) {
         val id = row.getAs[Int]("id")
         val features = row.getAs[Seq[Float]]("features")
@@ -122,11 +132,11 @@ object CollaborativeFiltering {
     }
 
     // 保存用户隐向量（用户embedding）
+    val userFactors = model.userFactors.collect()
     val userEmbFile = new File(outputFolderPath + "alsUserEmbeddings.csv")
     var userBw: BufferedWriter = null
     try {
       userBw = new BufferedWriter(new FileWriter(userEmbFile))
-      val userFactors = model.userFactors.collect()
       for (row <- userFactors) {
         val id = row.getAs[Int]("id")
         val features = row.getAs[Seq[Float]]("features")
@@ -139,6 +149,35 @@ object CollaborativeFiltering {
 
     println(s"物品隐向量已保存到: ${itemEmbFile.getPath}")
     println(s"用户隐向量已保存到: ${userEmbFile.getPath}")
+
+    // ==================== 可选：将隐向量写入Redis ====================
+    // 写法参考 Embedding.trainItem2vec / generateUserEmb 中的Redis写入风格
+    // 注意：这里特意使用独立的key前缀 alsI2vEmb / alsUEmb，与 Embedding 的 i2vEmb / uEmb 区分开，
+    //      避免覆盖 Item2vec 生成的同名向量（两份向量语义不同，需并存以便对比/切换）。
+    //      若将来要让线上服务读取ALS向量，对应的loader也需按相同前缀去读。
+    // key格式：alsI2vEmb:<movieId> / alsUEmb:<userId>，value为空格分隔的浮点数，统一设置24小时过期
+    if (SAVE_TO_REDIS) {
+      val redisClient = new Jedis(redisEndpoint, redisPort)
+      val params = SetParams.setParams()
+      //set ttl to 24hs
+      params.ex(60 * 60 * 24)
+
+      // 写入物品隐向量，key前缀 alsI2vEmb
+      for (row <- itemFactors) {
+        val id = row.getAs[Int]("id")
+        val features = row.getAs[Seq[Float]]("features")
+        redisClient.set("alsI2vEmb:" + id, features.mkString(" "), params)
+      }
+
+      // 写入用户隐向量，key前缀 alsUEmb
+      for (row <- userFactors) {
+        val id = row.getAs[Int]("id")
+        val features = row.getAs[Seq[Float]]("features")
+        redisClient.set("alsUEmb:" + id, features.mkString(" "), params)
+      }
+
+      redisClient.close()
+    }
 
     // ==================== 生成推荐结果 ====================
     // 根据配置决定是否执行耗时的推荐结果生成操作
