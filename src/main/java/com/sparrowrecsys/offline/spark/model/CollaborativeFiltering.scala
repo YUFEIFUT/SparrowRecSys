@@ -1,38 +1,31 @@
 package com.sparrowrecsys.offline.spark.model
 
-import java.io.{BufferedWriter, File, FileWriter}
 import org.apache.spark.SparkConf
 import org.apache.spark.ml.evaluation.RegressionEvaluator
 import org.apache.spark.ml.recommendation.ALS
 import org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
-import redis.clients.jedis.Jedis
-import redis.clients.jedis.params.SetParams
 
+/**
+ * ALS 协同过滤——训练侧。
+ *
+ * 职责（只做"训练相关"的事，保持单一职责）：
+ *   读数据 → 转换数据 → 训练模型 → 评估模型 → 保存模型到 modeldata/alsModel
+ *   外加一个"为指定已知用户快速生成Top-10"的小演示。
+ *
+ * 模型保存后，下游的隐向量导出 / 每用户Top-N推荐导出，交给 [[AlsModelExporter]]：
+ * 它直接加载这里保存的模型，避免每生成一种产物都得重新训练一遍。
+ */
 object CollaborativeFiltering {
 
-  // 这个可以不用加，主要是加上那个log4j的配置文件就行了
-  //  Logger.getRootLogger.setLevel(Level.WARN)
+  // 模型保存目录名（保存在 classpath 的 /webroot/modeldata/ 下，AlsModelExporter 从同一位置加载）
+  val MODEL_DIR_NAME = "alsModel"
 
-  // Redis连接配置（与 Embedding 中保持一致）
-  val redisEndpoint = "localhost"
-  val redisPort = 6379
-
-  // 控制是否将隐向量写入Redis，供线上服务使用（需要本地有可用的Redis）
-  private val SAVE_TO_REDIS = false
-
-  // 控制是否执行耗时的推荐结果生成操作
-  // 设为false可以只保存embedding，跳过recommendForAllUsers等操作
-  val GENERATE_RECOMMENDATIONS = false
-
-  // 控制是否执行交叉验证调参
-  // 设为false可以跳过耗时的交叉验证，只进行一次模型训练
+  // 控制是否执行交叉验证调参（设为false可跳过耗时的交叉验证，只做一次训练）
   val ENABLE_CROSS_VALIDATION = false
 
-  // 注意：这个要运行很久很久
   def main(args: Array[String]): Unit = {
-    val totalStart = System.currentTimeMillis()
     // 为了去掉讨厌的报错
     sys.props("hadoop.home.dir") = "D:\\dev_software\\hadoop"
 
@@ -41,62 +34,43 @@ object CollaborativeFiltering {
       .setAppName("collaborativeFiltering")
       .set("spark.submit.deployMode", "client")
 
-    var t0 = System.currentTimeMillis()
     val spark = SparkSession.builder.config(conf).getOrCreate()
-    println(s"[计时] SparkSession创建: ${System.currentTimeMillis() - t0}ms")
-
     import spark.implicits._
-    t0 = System.currentTimeMillis()
+
+    // ==================== 读数据 + 转换数据 ====================
     val ratingResourcesPath = this.getClass.getResource("/webroot/sampledata/ratings.csv")
-    // 定义类型转换UDF：将字符串转为Int和Double，因为CSV读入后默认全是String类型
-    val toInt = udf[Int, String]( _.toInt)
-    val toFloat = udf[Double, String]( _.toFloat)
+    // 类型转换UDF：CSV读入后默认全是String，需转成Int/Double
+    val toInt = udf[Int, String](_.toInt)
+    val toFloat = udf[Double, String](_.toFloat)
     val ratingSamples = spark.read.format("csv").option("header", "true").load(ratingResourcesPath.getPath)
       .withColumn("userIdInt", toInt(col("userId")))
       .withColumn("movieIdInt", toInt(col("movieId")))
       .withColumn("ratingFloat", toFloat(col("rating")))
 
     val Array(training, test) = ratingSamples.randomSplit(Array(0.8, 0.2), seed = 42)
-    println(s"[计时] CSV读取+类型转换+数据集划分: ${System.currentTimeMillis() - t0}ms")
 
-    // ==================== 构建ALS协同过滤模型 ====================
-    // ALS（交替最小二乘法）：通过矩阵分解将用户-物品评分矩阵分解为用户隐因子和物品隐因子
-    // Build the recommendation model using ALS on the training data
+    // ==================== 训练模型 ====================
+    // ALS（交替最小二乘法）：把"用户-物品评分矩阵"分解为用户隐因子和物品隐因子
     val als = new ALS()
-      // 最大迭代次数
       .setMaxIter(5)
-      // 正则化参数，防止过拟合
       .setRegParam(0.01)
       .setUserCol("userIdInt")
       .setItemCol("movieIdInt")
       .setRatingCol("ratingFloat")
 
-    t0 = System.currentTimeMillis()
+    var t0 = System.currentTimeMillis()
     val model = als.fit(training)
     println(s"[计时] ALS模型训练(fit): ${System.currentTimeMillis() - t0}ms")
 
-    // Evaluate the model by computing the RMSE on the test data
-    // Note we set cold start strategy to 'drop' to ensure we don't get NaN evaluation metrics
-    // ==================== 模型评估 ====================
-    // ALS 模型通过学习得到每个用户和每部电影的隐因子向量。但测试集中可能出现训练集中从未出现过的用户或电影，
-    // 模型没有学过它们的隐因子，自然无法预测评分，结果就是 NaN（Not a Number，非数字）。
+    // ==================== 评估模型 ====================
+    // coldStartStrategy=drop：丢弃测试集中训练集没出现过的user/item，避免预测出 NaN
     model.setColdStartStrategy("drop")
-    // 用训练好的模型对测试集进行预测
-    // 注意：transform() 是惰性的，此时不会真正计算，只是构建了计算图
     val predictions = model.transform(test)
 
-    // 查看模型学到的物品隐因子和用户隐因子（各展示前10条）
-    // 这两步很快，因为 itemFactors/userFactors 是训练结束时就已经算好的
-    t0 = System.currentTimeMillis()
+    // 看一眼模型学到的隐因子（各前10条）
     model.itemFactors.show(10, truncate = false)
     model.userFactors.show(10, truncate = false)
-    println(s"[计时] 展示item/userFactors: ${System.currentTimeMillis() - t0}ms")
 
-    // 使用RMSE（均方根误差）评估模型预测精度
-    // RMSE越小，说明预测评分与真实评分的偏差越小
-    // ⚠️ evaluate() 是一个 action 操作，会触发 predictions 的惰性求值
-    // 这里需要为测试集的每条样本做 user_factor × item_factor 矩阵乘法，是整个流程中最耗时的一步
-    println("开始计算预测值（这一步较耗时，因为要为测试集所有样本做矩阵乘法）...")
     val evaluator = new RegressionEvaluator()
       .setMetricName("rmse")
       .setLabelCol("ratingFloat")
@@ -104,121 +78,21 @@ object CollaborativeFiltering {
     t0 = System.currentTimeMillis()
     val rmse = evaluator.evaluate(predictions)
     println(s"[计时] 评估器evaluate(predictions): ${System.currentTimeMillis() - t0}ms")
-    println(s"RMSE计算完成: $rmse")
     println(s"Root-mean-square error = $rmse")
 
-    // ==================== 保存用户和物品隐向量到CSV文件 ====================
-    // 这些隐向量可以用于线上服务，格式与SparrowRecSys的embedding加载格式兼容
-    // 通过classpath资源定位输出目录，避免依赖运行时工作目录的硬编码相对/绝对路径
-    // （写法参考 Embedding.trainItem2vec 中的保存方式）
-    val outputFolderPath = this.getClass.getResource("/webroot/sampledata/").getPath
-
-    // 保存物品隐向量（电影embedding）
-    // 格式：id:emb1 emb2 ... embN（与 Embedding 写入文件的格式保持一致）
+    // ==================== 保存模型 ====================
+    // ALSModel.save 输出的是一个"自包含目录"（内部含 metadata/ 与 data/ 的parquet），不是零散文件。
+    // 保存到 /webroot/modeldata/alsModel；overwrite() 允许重复运行覆盖旧模型。
+    val modelPath = this.getClass.getResource("/webroot/modeldata/").getPath + MODEL_DIR_NAME
     t0 = System.currentTimeMillis()
-    // 先把隐因子拉到Driver端，文件和Redis两处复用，避免重复collect
-    val itemFactors = model.itemFactors.collect()
-    val itemEmbFile = new File(outputFolderPath + "alsItemEmbeddings.csv")
-    var itemBw: BufferedWriter = null
-    try {
-      itemBw = new BufferedWriter(new FileWriter(itemEmbFile))
-      for (row <- itemFactors) {
-        val id = row.getAs[Int]("id")
-        val features = row.getAs[Seq[Float]]("features")
-        itemBw.write(id + ":" + features.mkString(" ") + "\n")
-      }
-    } finally {
-      if (itemBw != null) itemBw.close()
-    }
+    model.write.overwrite().save(modelPath)
+    println(s"[计时] 保存模型: ${System.currentTimeMillis() - t0}ms")
+    println(s"模型已保存到目录: $modelPath")
 
-    // 保存用户隐向量（用户embedding）
-    val userFactors = model.userFactors.collect()
-    val userEmbFile = new File(outputFolderPath + "alsUserEmbeddings.csv")
-    var userBw: BufferedWriter = null
-    try {
-      userBw = new BufferedWriter(new FileWriter(userEmbFile))
-      for (row <- userFactors) {
-        val id = row.getAs[Int]("id")
-        val features = row.getAs[Seq[Float]]("features")
-        userBw.write(id + ":" + features.mkString(" ") + "\n")
-      }
-    } finally {
-      if (userBw != null) userBw.close()
-    }
-    println(s"[计时] 保存item+user隐向量到文件: ${System.currentTimeMillis() - t0}ms")
-
-    println(s"物品隐向量已保存到: ${itemEmbFile.getPath}")
-    println(s"用户隐向量已保存到: ${userEmbFile.getPath}")
-
-    // ==================== 可选：将隐向量写入Redis ====================
-    // 写法参考 Embedding.trainItem2vec / generateUserEmb 中的Redis写入风格
-    // 注意：这里特意使用独立的key前缀 alsI2vEmb / alsUEmb，与 Embedding 的 i2vEmb / uEmb 区分开，
-    //      避免覆盖 Item2vec 生成的同名向量（两份向量语义不同，需并存以便对比/切换）。
-    //      若将来要让线上服务读取ALS向量，对应的loader也需按相同前缀去读。
-    // key格式：alsI2vEmb:<movieId> / alsUEmb:<userId>，value为空格分隔的浮点数，统一设置24小时过期
-    if (SAVE_TO_REDIS) {
-      val redisClient = new Jedis(redisEndpoint, redisPort)
-      val params = SetParams.setParams()
-      //set ttl to 24hs
-      params.ex(60 * 60 * 24)
-
-      // 写入物品隐向量，key前缀 alsI2vEmb
-      for (row <- itemFactors) {
-        val id = row.getAs[Int]("id")
-        val features = row.getAs[Seq[Float]]("features")
-        redisClient.set("alsI2vEmb:" + id, features.mkString(" "), params)
-      }
-
-      // 写入用户隐向量，key前缀 alsUEmb
-      for (row <- userFactors) {
-        val id = row.getAs[Int]("id")
-        val features = row.getAs[Seq[Float]]("features")
-        redisClient.set("alsUEmb:" + id, features.mkString(" "), params)
-      }
-
-      redisClient.close()
-    }
-
-    // ==================== 生成推荐结果 ====================
-    // 根据配置决定是否执行耗时的推荐结果生成操作
-    if (GENERATE_RECOMMENDATIONS) {
-      println("开始生成推荐结果（这可能需要较长时间）...")
-      t0 = System.currentTimeMillis()
-      
-      // 为每个用户生成Top-10电影推荐
-      // Generate top 10 movie recommendations for each user
-      val userRecs = model.recommendForAllUsers(10)
-      // 为每部电影推荐Top-10用户（即哪些用户最可能喜欢该电影）
-      // Generate top 10 user recommendations for each movie
-      val movieRecs = model.recommendForAllItems(10)
-
-      // Generate top 10 movie recommendations for a specified set of users
-      // 为指定的3个用户子集生成Top-10推荐（适用于线上单用户/少量用户的推荐场景）
-      val users = ratingSamples.select(als.getUserCol).distinct().limit(3)
-      val userSubsetRecs = model.recommendForUserSubset(users, 10)
-
-      // 为指定的3部电影子集生成Top-10用户推荐
-      // Generate top 10 user recommendations for a specified set of movies
-      val movies = ratingSamples.select(als.getItemCol).distinct().limit(3)
-      val movieSubSetRecs = model.recommendForItemSubset(movies, 10)
-      // $example off$
-      userRecs.show(false)
-      movieRecs.show(false)
-      userSubsetRecs.show(false)
-      movieSubSetRecs.show(false)
-      println(s"[计时] 全量推荐(recommendForAllUsers/AllItems + subset): ${System.currentTimeMillis() - t0}ms")
-    } else {
-      println("跳过推荐结果生成（GENERATE_RECOMMENDATIONS = false）")
-    }
-
-    // ==================== 针对已知id的快速推荐 ====================
-    // recommendForAllUsers/AllItems 要为全量用户/物品打分，非常耗时；
-    // 而 ratingSamples.select(...).distinct().limit(3) 又会因 distinct 触发 shuffle。
-    // 既然我们已经知道数据集中存在的几个用户id和电影id，直接构造一个小DataFrame，
-    // 用 recommendForUserSubset / recommendForItemSubset 推荐即可，避免全量计算和shuffle，速度快得多。
-    // 注意：构造的DataFrame列名必须与 ALS 设置的 userCol / itemCol 一致（userIdInt / movieIdInt）。
-
-    // 为指定的几个已知用户生成Top-10电影推荐
+    // ==================== 为指定的几个已知用户快速生成Top-10电影推荐（演示） ====================
+    // 直接构造已知用户id的小DataFrame，用 recommendForUserSubset 推荐，
+    // 避免 recommendForAllUsers 的全量计算、也避免 distinct().limit() 的 shuffle。
+    // 注意：构造的DataFrame列名必须与 ALS 的 userCol 一致（userIdInt）。
     t0 = System.currentTimeMillis()
     val knownUsers = Seq(10, 20, 30).toDF(als.getUserCol)
     val knownUserRecs = model.recommendForUserSubset(knownUsers, 10)
@@ -226,56 +100,33 @@ object CollaborativeFiltering {
     println("指定用户的Top-10电影推荐：")
     knownUserRecs.show(truncate = false)
 
-    // 为指定的几部已知电影生成Top-10用户推荐
-    t0 = System.currentTimeMillis()
-    val knownMovies = Seq(1, 2, 3).toDF(als.getItemCol)
-    val knownMovieRecs = model.recommendForItemSubset(knownMovies, 10)
-    println(s"[计时] recommendForItemSubset(3部电影): ${System.currentTimeMillis() - t0}ms")
-    println("指定电影的Top-10用户推荐：")
-    knownMovieRecs.show(truncate = false)
-
-    // ==================== 交叉验证调参 ====================
+    // ==================== 可选：交叉验证调参 ====================
     if (ENABLE_CROSS_VALIDATION) {
       println("开始交叉验证调参（这可能需要较长时间）...")
-      t0 = System.currentTimeMillis()
-      
-      // 构建参数网格，这里仅搜索regParam=0.01这一个值（实际场景可添加多个候选值进行网格搜索）
+      // 仅搜索 regParam=0.01（实际场景可加多个候选值做网格搜索）
       val paramGrid = new ParamGridBuilder()
         .addGrid(als.regParam, Array(0.01))
         .build()
 
-      // 使用10折交叉验证评估模型的泛化能力
-      // 原理：将数据分为10份，轮流用其中9份训练、1份验证，最终取10次评估指标的平均值
-      // 交叉验证比单次train/test split更可靠，能有效避免因数据划分偶然性导致的评估偏差
+      // 10折交叉验证：数据分10份，轮流9份训练1份验证，取10次评估的平均，比单次划分更可靠
       val cv = new CrossValidator()
-        // 待评估的模型
         .setEstimator(als)
-        // 评估器（RMSE）
         .setEvaluator(evaluator)
-        // 参数网格
         .setEstimatorParamMaps(paramGrid)
-        // 折数，实际生产环境建议至少3折
-        .setNumFolds(10)  // Use 3+ in practice
-      // 注意：交叉验证应该在训练集上进行，不能用测试集（否则是数据泄漏）
+        .setNumFolds(10) // Use 3+ in practice
+      // 注意：交叉验证应在训练集上做，不能用测试集（否则数据泄漏）
       val cvModel = cv.fit(training)
-      println(s"[计时] 10折交叉验证fit: ${System.currentTimeMillis() - t0}ms")
-      // 获取每组参数对应的平均评估指标
       val avgMetrics = cvModel.avgMetrics
 
-      // 打印每组参数及其对应的平均RMSE，选择最优参数组合
       paramGrid.zip(avgMetrics).foreach { case (params, metric) =>
         println(s"参数: $params -> 平均RMSE: $metric")
       }
-
-      // 找到最优参数
-      val bestMetric = avgMetrics.min
-      println(s"最优平均RMSE: $bestMetric")
+      println(s"最优平均RMSE: ${avgMetrics.min}")
     } else {
       println("跳过交叉验证调参（ENABLE_CROSS_VALIDATION = false）")
       println(s"当前模型RMSE: $rmse")
     }
 
-    println(s"[计时] 总耗时: ${System.currentTimeMillis() - totalStart}ms")
     spark.stop()
   }
 }
