@@ -175,7 +175,7 @@ public class SimilarMovieProcess {
         //   genreSimilarity = (double)sameGenreCount / (movie.getGenres().size() + candidate.getGenres().size() - sameGenreCount);
         // 如果本意是按平均类型数归一化，应为：
         //   genreSimilarity = (double)sameGenreCount / ((movie.getGenres().size() + candidate.getGenres().size()) / 2.0);
-        double genreSimilarity = (double)sameGenreCount / (movie.getGenres().size() + candidate.getGenres().size()) / 2;
+        double genreSimilarity = (double)sameGenreCount / (movie.getGenres().size() + candidate.getGenres().size()) * 2;
         // 将候选电影的平均评分（满分 5 分）归一化到 [0, 1] 区间
         double ratingScore = candidate.getAverageRating() / 5;
 
