@@ -63,8 +63,9 @@ public class RecSysServer {
                 webRootUri.getPath() + "sampledata/links.csv",webRootUri.getPath() + "sampledata/ratings.csv",
                 webRootUri.getPath() + "modeldata/item2vecEmb.csv",
                 webRootUri.getPath() + "modeldata/userEmb.csv",
+                webRootUri.getPath() + "modeldata/lshBucket.csv",
                 webRootUri.getPath() + "modeldata/userRecs.csv",
-                "i2vEmb", "uEmb");
+                "i2vEmb", "uEmb", "lshBucket");
 
         // 配置Servlet上下文处理器
         ServletContextHandler context = new ServletContextHandler();
