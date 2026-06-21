@@ -28,10 +28,15 @@ public class User {
     @JsonIgnore
     Map<String, String> userFeatures;
 
+    //离线ALS预计算的Top-N推荐电影id列表（方案A，按推荐分降序），启动时从文件加载
+    @JsonIgnore
+    List<Integer> alsRecMovieIds;
+
     public User(){
         this.ratings = new ArrayList<>();
         this.emb = null;
         this.userFeatures = null;
+        this.alsRecMovieIds = null;
     }
 
     public int getUserId() {
@@ -110,5 +115,13 @@ public class User {
 
     public void setUserFeatures(Map<String, String> userFeatures) {
         this.userFeatures = userFeatures;
+    }
+
+    public List<Integer> getAlsRecMovieIds() {
+        return alsRecMovieIds;
+    }
+
+    public void setAlsRecMovieIds(List<Integer> alsRecMovieIds) {
+        this.alsRecMovieIds = alsRecMovieIds;
     }
 }

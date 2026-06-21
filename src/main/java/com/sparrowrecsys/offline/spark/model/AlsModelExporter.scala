@@ -21,8 +21,8 @@ import redis.clients.jedis.params.SetParams
  * 数据格式约定（必须与线上读取端对齐）：
  *   隐向量文件 alsItemEmbeddings.csv / alsUserEmbeddings.csv：每行  id:e1 e2 ... eN
  *   隐向量Redis：alsI2vEmb:id / alsUEmb:id  ->  e1 e2 ... eN
- *   推荐文件 userRecs.csv：每行  userId:m1,m2,m3
- *   推荐Redis：rec:userId  ->  m1,m2,m3
+ *   推荐文件 userRecs.csv：每行  userId:m1 m2 m3
+ *   推荐Redis：rec:userId  ->  m1 m2 m3
  */
 object AlsModelExporter {
 
@@ -91,7 +91,7 @@ object AlsModelExporter {
   /**
    * 方案A：为每个用户离线算好 Top-N 推荐，落盘为 CSV，并可选写入 Redis。
    * 供线上 RecForYouProcess.retrievalByAlsOffline 作为"离线ALS召回"这一路读取。
-   * 格式：文件每行 userId:m1,m2,m3 ；Redis  rec:userId -> m1,m2,m3 （movieId按推荐分降序、逗号分隔）。
+   * 格式：文件每行 userId:m1 m2 m3 ；Redis  rec:userId -> m1 m2 m3 （movieId按推荐分降序、空格分隔）。
    *
    * @param model       已加载的 ALS 模型
    * @param topN        每个用户推荐多少部
@@ -107,11 +107,11 @@ object AlsModelExporter {
     println(s"[计时] recommendForAllUsers+collect 总耗时: ${recCost}ms，用户数: $userCount，" +
       f"平均每用户: ${recCost.toDouble / math.max(userCount, 1)}%.3fms")
 
-    // 把每个用户的推荐movieId列表拼成 "m1,m2,m3"（文件和Redis复用同一份字符串）
+    // 把每个用户的推荐movieId列表拼成 "m1 m2 m3"（空格分隔，与项目其它 key:v1 v2 v3 文件约定一致；文件和Redis复用同一份字符串）
     val userRecPairs = userRecRows.map { row =>
       val userId = row.getAs[Int]("userIdInt")
       val recs = row.getAs[Seq[Row]]("recommendations")
-      val movieIdStr = recs.map(_.getAs[Int]("movieIdInt")).mkString(",")
+      val movieIdStr = recs.map(_.getAs[Int]("movieIdInt")).mkString(" ")
       (userId, movieIdStr)
     }
 

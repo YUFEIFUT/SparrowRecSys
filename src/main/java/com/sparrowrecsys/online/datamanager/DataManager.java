@@ -37,7 +37,7 @@ public class DataManager {
     }
 
     //load data from file system including movie, rating, link data and model data like embedding vectors.
-    public void loadData(String movieDataPath, String linkDataPath, String ratingDataPath, String movieEmbPath, String userEmbPath, String movieRedisKey, String userRedisKey) throws Exception{
+    public void loadData(String movieDataPath, String linkDataPath, String ratingDataPath, String movieEmbPath, String userEmbPath, String userRecPath, String movieRedisKey, String userRedisKey) throws Exception{
         loadMovieData(movieDataPath);
         loadLinkData(linkDataPath);
         loadRatingData(ratingDataPath);
@@ -47,6 +47,7 @@ public class DataManager {
         }
 
         loadUserEmb(userEmbPath, userRedisKey);
+        loadUserRecs(userRecPath);
     }
 
     //load movie data from movies.csv
@@ -161,6 +162,45 @@ public class DataManager {
             }
             System.out.println("Loading user embedding completed. " + validEmbCount + " user embeddings in total.");
         }
+    }
+
+    //load user precomputed ALS recommendations (方案A：离线ALS预计算召回)
+    //文件格式：每行 userId:m1 m2 m3 （冒号后为按推荐分降序、空格分隔的movieId串，与离线AlsModelExporter写出格式一致）
+    //仅在数据源为文件时启动加载到内存（User对象）；数据源为Redis时由 RecForYouProcess 按请求读取 rec:userId
+    private void loadUserRecs(String userRecPath) throws Exception{
+        // 如果数据源不是文件模式，直接跳过（说明线上走的是Redis读取路径）
+        if (!Config.EMB_DATA_SOURCE.equals(Config.DATA_SOURCE_FILE)){
+            return;
+        }
+        File recFile = new File(userRecPath);
+        //离线推荐结果是可选产物，文件不存在时跳过（如离线作业尚未运行），不阻断服务启动
+        if (!recFile.exists()){
+            System.out.println("User recs file not found, skip loading: " + userRecPath);
+            return;
+        }
+        System.out.println("Loading user recs from " + userRecPath + " ...");
+        int validCount = 0;
+        try (Scanner scanner = new Scanner(recFile)) {
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                String[] data = line.split(":");
+                if (data.length == 2) {
+                    User u = getUserById(Integer.parseInt(data[0].trim()));
+                    if (null == u) {
+                        continue;
+                    }
+                    List<Integer> recMovieIds = new ArrayList<>();
+                    for (String idStr : data[1].split(" ")) {
+                        if (!idStr.trim().isEmpty()) {
+                            recMovieIds.add(Integer.parseInt(idStr.trim()));
+                        }
+                    }
+                    u.setAlsRecMovieIds(recMovieIds);
+                    validCount++;
+                }
+            }
+        }
+        System.out.println("Loading user recs completed. " + validCount + " user recs in total.");
     }
 
     //parse release year

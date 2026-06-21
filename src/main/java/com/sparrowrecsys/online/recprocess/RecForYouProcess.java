@@ -19,6 +19,19 @@ import static com.sparrowrecsys.online.util.HttpClient.asyncSinglePostRequest;
 
 public class RecForYouProcess {
 
+    // ==================== 多路召回各路配额配置 ====================
+    // 业界主流范式：召回层只负责"产出候选集"，每一路按各自的"配额(取多少个)"贡献候选，
+    // 合并去重后整体交给下游排序层(ranker)精排。召回层不做融合打分——精细排序是排序层的职责。
+    // 配额越大，该路在候选集中占的"坑位"越多，即对最终结果的潜在影响越大。
+    private static final int QUOTA_HIGH_RATING = 300;   // 高分召回（非个性化兜底）
+    private static final int QUOTA_ALS_OFFLINE = 100;   // 离线ALS召回（实际受离线预计算的topN限制，通常远小于此）
+    private static final int QUOTA_EMB_ANN     = 400;   // Embedding/ANN召回（个性化主力）
+
+    // ==================== 各路召回开关 ====================
+    // 离线ALS这一路依赖Redis中离线写入的 rec:userId，无Redis时可关掉
+    private static final boolean ENABLE_ALS_OFFLINE = true;
+    private static final boolean ENABLE_EMB_ANN = true;
+
     /**
      * get recommendation movie list
      * @param userId input user id
@@ -31,10 +44,9 @@ public class RecForYouProcess {
         if (null == user){
             return new ArrayList<>();
         }
-        final int CANDIDATE_SIZE = 800;
-        List<Movie> candidates = DataManager.getInstance().getMovies(CANDIDATE_SIZE, "rating");
 
         //load user emb from redis if data source is redis
+        // 注意：要在召回之前加载好用户Embedding，因为 Embedding/ANN 召回路依赖 user.getEmb()
         if (Config.EMB_DATA_SOURCE.equals(Config.DATA_SOURCE_REDIS)){
             String userEmbKey = "uEmb:" + userId;
             String userEmb = RedisClient.getInstance().get(userEmbKey);
@@ -51,12 +63,160 @@ public class RecForYouProcess {
             }
         }
 
+        // 多路召回（配额制）：替换原来单路的 getMovies(800,"rating")
+        List<Movie> candidates = multipleRetrievalRecall(user);
+
         List<Movie> rankedList = ranker(user, candidates, model);
 
         if (rankedList.size() > size){
             return rankedList.subList(0, size);
         }
         return rankedList;
+    }
+
+    /**
+     * 多路召回（配额制）：每一路按各自配额取若干候选，合并去重后整体交给排序层。
+     * <p>
+     * 这是业界主流的召回范式：召回只负责"圈出一批不错的候选"，不负责精细排序；
+     * 候选的最终顺序由下游 {@link #ranker} 决定。各路的影响力通过"配额(取多少个)"体现，
+     * 而不是给每个候选算融合分。
+     * <p>
+     * 当前包含三路：
+     *   1. 高分召回（非个性化兜底，配额 {@link #QUOTA_HIGH_RATING}）
+     *   2. 离线ALS预计算召回（方案A，配额 {@link #QUOTA_ALS_OFFLINE}）
+     *   3. Embedding/ANN 召回（用户向量近邻，配额 {@link #QUOTA_EMB_ANN}）
+     *
+     * @param user 目标用户
+     * @return 合并去重后的候选集合（顺序为各路依次、首次出现的顺序，仅作排序层输入，不代表最终排序）
+     */
+    public static List<Movie> multipleRetrievalRecall(User user){
+        if (null == user){
+            return new ArrayList<>();
+        }
+
+        // 用 LinkedHashMap 按 movieId 去重，同时保留"首次被召回"的顺序
+        LinkedHashMap<Integer, Movie> candidateMap = new LinkedHashMap<>();
+
+        // 第一路：高分召回（非个性化兜底）
+        mergeChannel(candidateMap, DataManager.getInstance().getMovies(QUOTA_HIGH_RATING, "rating"));
+
+        // 第二路：离线ALS预计算召回（方案A）
+        if (ENABLE_ALS_OFFLINE){
+            mergeChannel(candidateMap, retrievalByAlsOffline(user, QUOTA_ALS_OFFLINE));
+        }
+
+        // 第三路：Embedding/ANN 召回（用户向量近邻）
+        if (ENABLE_EMB_ANN){
+            mergeChannel(candidateMap, retrievalByEmbedding(user, QUOTA_EMB_ANN));
+        }
+
+        return new ArrayList<>(candidateMap.values());
+    }
+
+    /**
+     * 把某一路的召回结果并入候选集：按 movieId 去重，保留首次出现的顺序。
+     * 用 movieId 做去重键，不依赖 Movie 的 equals/hashCode，更稳妥。
+     *
+     * @param candidateMap 累计候选集（movieId -> Movie）
+     * @param candidates   某一路的召回结果
+     */
+    private static void mergeChannel(LinkedHashMap<Integer, Movie> candidateMap, List<Movie> candidates){
+        if (null == candidates){
+            return;
+        }
+        for (Movie m : candidates){
+            if (null != m){
+                candidateMap.putIfAbsent(m.getMovieId(), m);
+            }
+        }
+    }
+
+    /**
+     * 离线ALS预计算召回（方案A）：读取离线 CollaborativeFiltering 算好的每用户 Top-N 推荐结果。
+     * <p>
+     * 数据来源按 {@link Config#EMB_DATA_SOURCE} 决定（与项目里 user embedding 的处理方式一致）：
+     *   - 文件：启动时已由 DataManager 加载进内存（{@link User#getAlsRecMovieIds()}），这里直接读内存；
+     *   - Redis：按请求读取 key=rec:&lt;userId&gt;，value 为按推荐分降序、空格分隔的 movieId 串。
+     * <p>
+     * 无对应数据（如新用户、离线作业未运行、Redis 不可用）时返回空列表，这一路自动失效，不影响其他路。
+     *
+     * @param user 目标用户
+     * @param size 该路最多取多少候选
+     * @return 候选电影列表（已按离线推荐分排序）
+     */
+    private static List<Movie> retrievalByAlsOffline(User user, int size){
+        List<Movie> candidates = new ArrayList<>();
+
+        // 第一步：拿到该用户的推荐 movieId 列表（内存 或 Redis）
+        List<Integer> recMovieIds;
+        if (Config.EMB_DATA_SOURCE.equals(Config.DATA_SOURCE_REDIS)){
+            // 数据源为 Redis：按请求读取 rec:userId
+            recMovieIds = new ArrayList<>();
+            try {
+                String recStr = RedisClient.getInstance().get("rec:" + user.getUserId());
+                if (null != recStr && !recStr.isEmpty()){
+                    for (String idStr : recStr.split(" ")){
+                        if (!idStr.trim().isEmpty()){
+                            recMovieIds.add(Integer.parseInt(idStr.trim()));
+                        }
+                    }
+                }
+            } catch (Exception e){
+                // Redis 不可用 / 解析失败：这一路降级为空
+                return candidates;
+            }
+        } else {
+            // 数据源为文件：读取启动时已加载到内存的离线推荐
+            recMovieIds = user.getAlsRecMovieIds();
+        }
+
+        if (null == recMovieIds){
+            return candidates;
+        }
+
+        // 第二步：把 movieId 解析成 Movie 对象（两条来源在这里汇合，逻辑统一）
+        for (int i = 0; i < recMovieIds.size() && candidates.size() < size; i++){
+            Movie m = DataManager.getInstance().getMovieById(recMovieIds.get(i));
+            if (null != m){
+                candidates.add(m);
+            }
+        }
+        return candidates;
+    }
+
+    /**
+     * Embedding/ANN 召回：用用户向量在物品向量空间里检索最相似的 Top-N 电影。
+     * <p>
+     * ⚠️ 当前实现是"暴力遍历全库算余弦相似度"（与 SimilarMovieProcess.retrievalCandidatesByEmbedding 同思路），
+     *    时间复杂度 O(物品数)。物品量大时这正是性能瓶颈所在。
+     *    生产中应替换为 jelmerk/hnswlib 的 HNSW 索引近邻检索（支持内积/MIPS），把暴力扫描换成亚线性近似检索——
+     *    届时离线把物品向量灌进索引，这里用 user.getEmb() 作为查询向量查 Top-N 即可。
+     *
+     * @param user 目标用户
+     * @param size 该路最多取多少候选
+     * @return 候选电影列表（已按相似度从高到低排序）
+     */
+    private static List<Movie> retrievalByEmbedding(User user, int size){
+        List<Movie> candidates = new ArrayList<>();
+        if (null == user || null == user.getEmb()){
+            return candidates;
+        }
+
+        List<Movie> allCandidates = DataManager.getInstance().getMovies(10000, "rating");
+        HashMap<Movie, Double> movieScoreMap = new HashMap<>();
+        for (Movie candidate : allCandidates){
+            if (null == candidate.getEmb()){
+                continue;
+            }
+            double similarity = user.getEmb().calculateSimilarity(candidate.getEmb());
+            movieScoreMap.put(candidate, similarity);
+        }
+
+        movieScoreMap.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .limit(size)
+                .forEach(e -> candidates.add(e.getKey()));
+        return candidates;
     }
 
     /**

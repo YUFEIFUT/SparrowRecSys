@@ -58,11 +58,12 @@ public class RecSysServer {
         URI webRootUri = URI.create(webRootLocation.toURI().toASCIIString().replaceFirst("/index.html$","/"));
         System.out.printf("Web Root URI: %s%n", webRootUri.getPath());
 
-        // 初始化数据管理器：加载电影数据、用户数据、Embedding向量等
+        // 初始化数据管理器：加载电影数据、用户数据、Embedding向量、离线ALS推荐结果等
         DataManager.getInstance().loadData(webRootUri.getPath() + "sampledata/movies.csv",
                 webRootUri.getPath() + "sampledata/links.csv",webRootUri.getPath() + "sampledata/ratings.csv",
                 webRootUri.getPath() + "modeldata/item2vecEmb.csv",
                 webRootUri.getPath() + "modeldata/userEmb.csv",
+                webRootUri.getPath() + "modeldata/userRecs.csv",
                 "i2vEmb", "uEmb");
 
         // 配置Servlet上下文处理器
