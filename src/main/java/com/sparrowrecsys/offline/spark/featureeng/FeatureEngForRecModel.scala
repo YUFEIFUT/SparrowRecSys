@@ -303,9 +303,9 @@ object FeatureEngForRecModel {
 
     val sampleResourcesPath = this.getClass.getResource(savePath)
     training.repartition(1).write.option("header", "true").mode(SaveMode.Overwrite)
-      .csv(sampleResourcesPath+"/trainingSamples")
+      .csv(sampleResourcesPath+"/trainingSamplesByTimeStamp")
     test.repartition(1).write.option("header", "true").mode(SaveMode.Overwrite)
-      .csv(sampleResourcesPath+"/testSamples")
+      .csv(sampleResourcesPath+"/testSamplesByTimeStamp")
   }
 
 
@@ -404,6 +404,9 @@ object FeatureEngForRecModel {
   def main(args: Array[String]): Unit = {
     Logger.getLogger("org").setLevel(Level.ERROR)
 
+    // 为了去掉讨厌的报错
+    sys.props("hadoop.home.dir") = "D:\\dev_software\\hadoop"
+
     val conf = new SparkConf()
       .setMaster("local")
       .setAppName("featureEngineering")
@@ -424,7 +427,7 @@ object FeatureEngForRecModel {
 
 
     //save samples as csv format
-    splitAndSaveTrainingTestSamples(samplesWithUserFeatures, "/webroot/sampledata")
+    splitAndSaveTrainingTestSamplesByTimeStamp(samplesWithUserFeatures, "/webroot/sampledata")
 
     //save user features and item features to redis for online inference
     //extractAndSaveUserFeaturesToRedis(samplesWithUserFeatures)
