@@ -70,9 +70,16 @@ numerical_columns = [tf.feature_column.numeric_column('releaseYear'),
 
 # cross feature between current movie and user historical movie
 rated_movie = tf.feature_column.categorical_column_with_identity(key='userRatedMovie1', num_buckets=1001)
+# 这里似乎类似WideNDeep的课程文章讲的，用了类似google的(已安装应用 和 曝光应用)来作为wide层的特征
+# 所以这里的 movie_col 就相当于当前用户当前观看的并且给出评分的电影，而rated_movie则是用户最近看过的喜欢的电影
+# 这样就构成了一个简单的 如果A所以B的 简单规则
+# indicator_column将交叉特征转换为独热编码向量，最多10000个组合
 crossed_feature = tf.feature_column.indicator_column(tf.feature_column.crossed_column([movie_col, rated_movie], 10000))
 
 # define input for keras model
+# ============ 定义Keras模型的输入层 ============
+# 为每个特征创建一个Input层，指定名称、形状和数据类型
+# 这些输入将接收来自CSV数据集对应列的数据
 inputs = {
     'movieAvgRating': tf.keras.layers.Input(name='movieAvgRating', shape=(), dtype='float32'),
     'movieRatingStddev': tf.keras.layers.Input(name='movieRatingStddev', shape=(), dtype='float32'),
@@ -98,11 +105,24 @@ inputs = {
 
 # wide and deep model architecture
 # deep part for all input features
+# ============ Wide & Deep 模型架构 ============
+
+# ---------- Deep部分（深度学习部分）----------
+# DenseFeatures层将输入的数值特征和类别嵌入特征转换为稠密向量
+# numerical_columns: 数值特征直接传入
+# categorical_columns: 类别特征通过嵌入转换为稠密向量后传入
+# 这里 numerical_columns + categorical_columns 的操作实际上是两个列表进行合并操作
+# 我操，我一直以为是两个向量相加呢，见鬼了
 deep = tf.keras.layers.DenseFeatures(numerical_columns + categorical_columns)(inputs)
 deep = tf.keras.layers.Dense(128, activation='relu')(deep)
 deep = tf.keras.layers.Dense(128, activation='relu')(deep)
 # wide part for cross feature
+# ---------- Wide部分（线性部分）----------
+# DenseFeatures层只处理交叉特征（crossed_feature）
+# Wide部分通过交叉特征捕获特征间的共现关系，具有"记忆"能力
 wide = tf.keras.layers.DenseFeatures(crossed_feature)(inputs)
+# 将Deep部分的输出和Wide部分的输出拼接在一起
+# 这样模型既保留了Wide部分的记忆能力，又具有Deep部分的泛化能力
 both = tf.keras.layers.concatenate([deep, wide])
 output_layer = tf.keras.layers.Dense(1, activation='sigmoid')(both)
 model = tf.keras.Model(inputs, output_layer)
