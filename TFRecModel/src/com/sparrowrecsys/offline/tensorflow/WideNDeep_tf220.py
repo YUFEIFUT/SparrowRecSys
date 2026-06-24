@@ -205,6 +205,25 @@ deep = tf.keras.layers.Dense(128, activation='relu')(deep)
 # 含义和课程文章里 Google Wide&Deep 的 (已安装应用 x 曝光应用) 一致：
 # movieId 是当前用户正在看并评分的电影，userRatedMovie1 是用户最近看过且喜欢的电影，
 # 交叉后构成 "如果 A 则 B" 这样的简单共现规则，让模型具备记忆能力。
+#
+# 【userRatedMovie1 的选取逻辑 —— 为什么是"最近喜欢的"而非随机一部】
+#   特征工程阶段(FeatureEngForRecModel.addUserFeatures)对每条样本做了：
+#     窗口：按 userId 分区，按 timestamp 排序，rowsBetween(-100, -1)（只看历史，不含当前行）
+#     collect_list(当 label=1 时取 movieId) → 收集喜欢的电影
+#     reverse → 反转列表，让最近喜欢的排最前面
+#     getItem(0) → 取第一个，就是距离当前时间戳最近的、用户喜欢过的电影
+#   所以交叉特征 movieId × userRatedMovie1 的语义是：
+#     "用户刚喜欢了 A，现在在看 B" → "如果 A 则 B" 的最近共现记忆。
+#
+# 【为什么只用最近 1 部做交叉，而不是最近 5 部都交叉？】
+#   特征工程实际取了最近 5 部(userRatedMovie1~5)，但只把 userRatedMovie1 送进交叉。
+#   原因是参数效率的权衡：
+#     - 一次交叉已经占了 wide 部分 10000 维（num_bins=10000）
+#     - 若 5 部都交叉，wide 部分变 50000 维，参数量暴增
+#     - 而当前采样后仅约 11 万条样本，数据量撑不起这么大的 wide 部分，容易过拟合
+#     - 只取最近 1 部是性价比最高的选择——用最少的参数抓住最强的记忆信号
+#   注：在大数据量、用户行为丰富的场景下，可以用 attention 动态加权最近 N 部电影
+#       （那是 DIN/DIEN 干的事），而非硬取第 1 部，但那已经超出 Wide&Deep 的职责了。
 wide = tf.keras.layers.HashedCrossing(
     num_bins=10000, output_mode='one_hot', name='crossed_movie_ratedmovie'
 )((inputs['movieId'], inputs['userRatedMovie1']))
