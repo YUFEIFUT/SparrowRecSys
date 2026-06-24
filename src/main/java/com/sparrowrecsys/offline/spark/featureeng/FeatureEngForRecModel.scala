@@ -281,31 +281,59 @@ object FeatureEngForRecModel {
 
     按时间划分才是推荐系统的正确评估方式——你不能用用户未来的评分去预测他过去的行为，
     这和 addUserFeatures 中 rowsBetween(-100, -1) 的防泄露设计一脉相承。
+
+    【关于切分方式的取舍 —— 务必看清适用前提】
+    本方法用 ntile(10) 开窗：本质就是"全局按时间戳排序，再按行号取前 80% / 中 10% / 后 10%"，
+    切分精确、实现直观。但要注意它依赖一次【全局排序】：
+      - 小数据量（如本项目采样后约 11 万行）：全局排序是毫秒级，用 ntile 既精确又简单，是最优解。
+      - 大数据量（亿级及以上）：全局排序要 shuffle 全部数据，代价极高，这种写法会成为瓶颈，行不通。
+        此时应改回用 approxQuantile 这类近似分位算法——扫一遍数据估出时间阈值，再用廉价的 where 过滤切分，
+        免去全局排序（代价是近似误差，且本项目在小数据上恰好遇到过 Spark 2.4.3 approxQuantile 失准）。
+    一句话：小数据用 ntile 精确切；大数据用近似分位点换掉昂贵的全局排序。
    */
   def splitAndSaveTrainingTestSamplesByTimeStamp(samples:DataFrame, savePath:String)={
     //generate a smaller sample set for demo
     // 从完整样本中随机抽取10%作为小样本集，用于快速调试
+    // 加上固定 seed，保证每次划分点一致、结果可复现（早停等实验才可比较）
     // 同时将 timestamp 列转为 Long 类型，确保后续能做数值比较和分位数计算
-    val smallSamples = samples.sample(0.1).withColumn("timestampLong", col("timestamp").cast(LongType))
+    // cache 一次，供后续开窗排序与三次写出复用，避免反复重算上游昂贵的特征处理
+    val smallSamples = samples.sample(0.1, seed = 42L).withColumn("timestampLong", col("timestamp").cast(LongType)).cache()
+    val totalCount = smallSamples.count()
+    println(s"采样后总样本量: $totalCount")
 
-    // 计算 timestampLong 的 0.8 分位数（第80百分位点）
-    // 参数含义：数据列名、分位数数组[0.8]、允许的相对误差0.05（近似计算，牺牲精度换速度）
-    // 返回值是 Array[Double]，取第一个元素作为训练/测试的时间分界点
-    val quantile = smallSamples.stat.approxQuantile("timestampLong", Array(0.8), 0.05)
-    val splitTimestamp = quantile.apply(0)
+    // 用 ntile(10) 按时间戳排序切分，而不是 approxQuantile：
+    //   Spark 2.4.3 的 approxQuantile 在这份数据上严重失准（把第 80 百分位估成了第 99.6），导致比例失衡。
+    //   ntile 是精确的等量分桶：按 timestampLong 升序排好后均分成 10 个桶，每桶约占 1/10。
+    //   - 第 1~8 桶 → 训练集（最早的 80%）
+    //   - 第 9 桶   → 验证集（中间的 10%）
+    //   - 第 10 桶  → 测试集（最新的 10%）
+    //   保证验证集、测试集都严格晚于训练集，无数据穿越，且比例精确 8:1:1。
+    val bucketWindow = Window.orderBy(col("timestampLong"))
+    val bucketedSamples = smallSamples.withColumn("bucket", ntile(10).over(bucketWindow))
 
-    // 按时间分界点划分训练集和测试集：
-    // - 训练集：时间戳 <= 分界点（较早的80%数据）
-    // - 测试集：时间戳 > 分界点（较晚的20%数据）
-    // 划分后删除临时的 timestampLong 列，恢复原始列结构
-    val training = smallSamples.where(col("timestampLong") <= splitTimestamp).drop("timestampLong")
-    val test = smallSamples.where(col("timestampLong") > splitTimestamp).drop("timestampLong")
+    // 按桶号划分三块，划分后删除临时列，恢复原始列结构
+    val training = bucketedSamples.where(col("bucket") <= 8).drop("timestampLong", "bucket")
+    val validation = bucketedSamples.where(col("bucket") === 9).drop("timestampLong", "bucket")
+    val test = bucketedSamples.where(col("bucket") === 10).drop("timestampLong", "bucket")
+
+    // 打印三块的实际样本量与占比，确认是否为 8:1:1（ntile 等量分桶，整除余数会落在前面的桶，波动极小）
+    val trainCount = training.count()
+    val valCount = validation.count()
+    val testCount = test.count()
+    println(f"训练集: $trainCount (${100.0 * trainCount / totalCount}%.1f%%)")
+    println(f"验证集: $valCount (${100.0 * valCount / totalCount}%.1f%%)")
+    println(f"测试集: $testCount (${100.0 * testCount / totalCount}%.1f%%)")
 
     val sampleResourcesPath = this.getClass.getResource(savePath)
     training.repartition(1).write.option("header", "true").mode(SaveMode.Overwrite)
       .csv(sampleResourcesPath+"/trainingSamplesByTimeStamp")
+    validation.repartition(1).write.option("header", "true").mode(SaveMode.Overwrite)
+      .csv(sampleResourcesPath+"/validationSamplesByTimeStamp")
     test.repartition(1).write.option("header", "true").mode(SaveMode.Overwrite)
       .csv(sampleResourcesPath+"/testSamplesByTimeStamp")
+
+    // 释放缓存，避免占用内存
+    smallSamples.unpersist()
   }
 
 
