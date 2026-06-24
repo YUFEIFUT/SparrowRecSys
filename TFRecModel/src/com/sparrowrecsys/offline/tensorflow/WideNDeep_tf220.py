@@ -30,15 +30,9 @@ import tensorflow as tf
 # 改成你本地的 trainingSamples.csv / testSamples.csv 路径。
 # 这里默认指向本仓库内的 sampledata 目录。
 # 从本文件(.../TFRecModel/src/com/sparrowrecsys/offline/tensorflow/) 往上 6 级即仓库根目录
-PROJECT_ROOT = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "..", "..")
-)
-SAMPLE_DATA_DIR = os.path.join(
-    PROJECT_ROOT, "src", "main", "resources", "webroot", "sampledata"
-)
-
-training_samples_file_path = os.path.join(SAMPLE_DATA_DIR, "trainingSamples.csv")
-test_samples_file_path = os.path.join(SAMPLE_DATA_DIR, "testSamples.csv")
+training_samples_file_path = "/content/SparrowRecSys/src/main/resources/webroot/sampledata/trainingSamplesByTimeStamp.csv"
+validation_samples_file_path = "/content/SparrowRecSys/src/main/resources/webroot/sampledata/validationSamplesByTimeStamp.csv"
+test_samples_file_path = "/content/SparrowRecSys/src/main/resources/webroot/sampledata/testSamplesByTimeStamp.csv"
 
 
 # ============ 只选用模型真正用到的列 ============
@@ -110,6 +104,7 @@ def get_dataset(file_path):
 
 
 train_dataset = get_dataset(training_samples_file_path)
+validation_dataset = get_dataset(validation_samples_file_path)
 test_dataset = get_dataset(test_samples_file_path)
 
 # ============ genre(电影类型)词表 ============
@@ -226,10 +221,28 @@ model = tf.keras.Model(inputs, output_layer)
 model.compile(
     loss='binary_crossentropy',
     optimizer='adam',
-    metrics=['accuracy', tf.keras.metrics.AUC(curve='ROC'), tf.keras.metrics.AUC(curve='PR')])
+    # 给两个 AUC 显式命名，否则 Keras 会自动命名为 auc / auc_1，
+    # 早停回调要监控的 val_auc_roc 名字才稳定可控。
+    metrics=['accuracy',
+             tf.keras.metrics.AUC(curve='ROC', name='auc_roc'),
+             tf.keras.metrics.AUC(curve='PR', name='auc_pr')])
+
+# ============ 早停法(Early Stopping) ============
+# 监控验证集的 ROC AUC：当它连续 patience 个 epoch 不再提升时停止训练，
+# 并用 restore_best_weights 回滚到验证表现最好的那一轮权重，避免过拟合。
+# mode='max' 因为 AUC 越大越好。
+early_stopping = tf.keras.callbacks.EarlyStopping(
+    monitor='val_auc_roc',
+    mode='max',
+    patience=3,
+    restore_best_weights=True)
 
 # ============ 训练 ============
-model.fit(train_dataset, epochs=5)
+# epochs 放大到 50，实际训练轮数由早停根据验证集表现自动决定。
+history = model.fit(train_dataset,
+          validation_data=validation_dataset,
+          epochs=50,
+          callbacks=[early_stopping])
 
 # ============ 评估 ============
 test_loss, test_accuracy, test_roc_auc, test_pr_auc = model.evaluate(test_dataset)
