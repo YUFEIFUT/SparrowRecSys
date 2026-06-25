@@ -94,7 +94,8 @@ deep_feature_columns = [tf.feature_column.numeric_column('releaseYear'),
 # ===================== 构建嵌入层输出 =====================
 
 # 通过 DenseFeatures 将字典输入中的 movieId 嵌入列转换为稠密张量，输出形状 (batch, 10)
-# TODO 这里感觉有点奇怪，明明已经进行了Embedding的转换，还进行Dense操作干嘛呢？Embedding不是本身就是稠密张量吗？
+# 这里感觉有点奇怪，明明已经进行了Embedding的转换，还进行Dense操作干嘛呢？Embedding不是本身就是稠密张量吗？
+# [看"问题与思考.md"文档中的第一个问题"]
 item_emb_layer = tf.keras.layers.DenseFeatures([movie_emb_col])(inputs)
 # 将 userId 嵌入列转换为稠密张量，输出形状 (batch, 10)
 user_emb_layer = tf.keras.layers.DenseFeatures([user_emb_col])(inputs)
@@ -107,7 +108,7 @@ user_genre_emb_layer = tf.keras.layers.DenseFeatures([user_genre_emb_col])(input
 
 # The first-order term in the FM layer
 # FM 一阶项：将所有 indicator 列拼接后通过一个无激活函数的 Dense(1) 等价操作（DenseFeatures 输出拼接好的稀疏转稠密向量）
-# 【TODO 这里具体是干嘛呢】
+# 【这里具体是干嘛呢】# [看"问题与思考.md"文档中的第二个问题"]
 fm_first_order_layer = tf.keras.layers.DenseFeatures(fm_first_order_columns)(inputs)
 
 # FM part, cross different categorical feature embeddings
