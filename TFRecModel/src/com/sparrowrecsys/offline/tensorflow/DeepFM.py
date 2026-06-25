@@ -53,7 +53,8 @@ inputs = {
 # movie id embedding feature
 movie_col = tf.feature_column.categorical_column_with_identity(key='movieId', num_buckets=1001)
 movie_emb_col = tf.feature_column.embedding_column(movie_col, 10)
-movie_ind_col = tf.feature_column.indicator_column(movie_col) # movid id indicator columns
+# 将 movieId 转为 one-hot 指示向量（用于 FM 一阶部分）
+movie_ind_col = tf.feature_column.indicator_column(movie_col) # movie id indicator columns
 
 # user id embedding feature
 user_col = tf.feature_column.categorical_column_with_identity(key='userId', num_buckets=30001)
@@ -76,8 +77,10 @@ item_genre_emb_col = tf.feature_column.embedding_column(item_genre_col, 10)
 item_genre_ind_col = tf.feature_column.indicator_column(item_genre_col) # item genre indicator columns
 
 # fm first-order term columns: without embedding and concatenate to the output layer directly
+# FM 一阶特征列：使用 one-hot/indicator 形式，不经过嵌入，直接参与一阶加权求和
 fm_first_order_columns = [movie_ind_col, user_ind_col, user_genre_ind_col, item_genre_ind_col]
 
+# Deep 部分使用的特征列：包含 7 个数值特征 + 2 个嵌入特征（movieId 和 userId 的 embedding）
 deep_feature_columns = [tf.feature_column.numeric_column('releaseYear'),
                         tf.feature_column.numeric_column('movieRatingCount'),
                         tf.feature_column.numeric_column('movieAvgRating'),
@@ -88,26 +91,49 @@ deep_feature_columns = [tf.feature_column.numeric_column('releaseYear'),
                         movie_emb_col,
                         user_emb_col]
 
+# ===================== 构建嵌入层输出 =====================
+
+# 通过 DenseFeatures 将字典输入中的 movieId 嵌入列转换为稠密张量，输出形状 (batch, 10)
+# TODO 这里感觉有点奇怪，明明已经进行了Embedding的转换，还进行Dense操作干嘛呢？Embedding不是本身就是稠密张量吗？
 item_emb_layer = tf.keras.layers.DenseFeatures([movie_emb_col])(inputs)
+# 将 userId 嵌入列转换为稠密张量，输出形状 (batch, 10)
 user_emb_layer = tf.keras.layers.DenseFeatures([user_emb_col])(inputs)
+# 将电影类型嵌入列转换为稠密张量，输出形状 (batch, 10)
 item_genre_emb_layer = tf.keras.layers.DenseFeatures([item_genre_emb_col])(inputs)
+# 将用户偏好类型嵌入列转换为稠密张量，输出形状 (batch, 10)
 user_genre_emb_layer = tf.keras.layers.DenseFeatures([user_genre_emb_col])(inputs)
 
+# ===================== FM 层 =====================
+
 # The first-order term in the FM layer
+# FM 一阶项：将所有 indicator 列拼接后通过一个无激活函数的 Dense(1) 等价操作（DenseFeatures 输出拼接好的稀疏转稠密向量）
+# 【TODO 这里具体是干嘛呢】
 fm_first_order_layer = tf.keras.layers.DenseFeatures(fm_first_order_columns)(inputs)
 
 # FM part, cross different categorical feature embeddings
+# FM 二阶交叉项：对不同类别的嵌入向量做内积（Dot product），模拟特征交叉
+
+# 电影 ID 嵌入 × 用户 ID 嵌入 → 标量（衡量用户-电影匹配度）
 product_layer_item_user = tf.keras.layers.Dot(axes=1)([item_emb_layer, user_emb_layer])
+# 电影类型嵌入 × 用户偏好类型嵌入 → 标量（衡量类型偏好的匹配度）
 product_layer_item_genre_user_genre = tf.keras.layers.Dot(axes=1)([item_genre_emb_layer, user_genre_emb_layer])
 product_layer_item_genre_user = tf.keras.layers.Dot(axes=1)([item_genre_emb_layer, user_emb_layer])
 product_layer_user_genre_item = tf.keras.layers.Dot(axes=1)([item_emb_layer, user_genre_emb_layer])
 
+# ===================== Deep 层 =====================
+
 # deep part, MLP to generalize all input features
+# Deep 部分：通过多层感知机（MLP）自动学习特征间的高阶非线性组合
+# 先将所有 deep 特征（数值 + 嵌入）拼接为一个稠密向量
 deep = tf.keras.layers.DenseFeatures(deep_feature_columns)(inputs)
 deep = tf.keras.layers.Dense(64, activation='relu')(deep)
 deep = tf.keras.layers.Dense(64, activation='relu')(deep)
 
+# ===================== 输出层 =====================
+
 # concatenate fm part and deep part
+# 将 FM 一阶项、4 个 FM 二阶交叉项、Deep 部分的输出沿特征维度拼接
+# 这就是 DeepFM 的核心思想：FM 负责低阶特征交叉 + Deep 负责高阶特征组合
 concat_layer = tf.keras.layers.concatenate([fm_first_order_layer, product_layer_item_user, product_layer_item_genre_user_genre,
                                             product_layer_item_genre_user, product_layer_user_genre_item, deep], axis=1)
 output_layer = tf.keras.layers.Dense(1, activation='sigmoid')(concat_layer)
