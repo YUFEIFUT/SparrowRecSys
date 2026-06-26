@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepFM Variant — 网络架构图</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0e14;
+            --surface: #141820;
+            --border: #2a2e3a;
+            --text: #d4d8e0;
+            --muted: #6b7084;
+            --input: #5a6070;
+            --indicator: #e8943a;
+            --embedding: #9b6dff;
+            --dense-lin: #4da6ff;
+            --dense-act: #3ddc84;
+            --add: #34c759;
+            --sub: #ff4d6a;
+            --mul: #e86da0;
+            --reduce: #b07aff;
+            --concat: #e0a020;
+            --flatten: #7a7f92;
+            --output: #f0a050;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Syne', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 32px 16px 60px;
+        }
+        h1 {
+            font-weight: 800;
+            font-size: 1.9rem;
+            letter-spacing: -0.03em;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, #4da6ff 0%, #9b6dff 50%, #f0a050 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .sub {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-align: center;
+            max-width: 820px;
+            line-height: 1.7;
+            margin-bottom: 28px;
+        }
+        .wrap {
+            width: 100%;
+            max-width: 1200px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        svg { display: block; width: 100%; height: auto; }
+
+        /* legend */
+        .leg { display:flex; flex-wrap:wrap; gap:16px 28px; justify-content:center;
+            margin-top:24px; font-size:0.75rem; font-family:'DM Mono',monospace; color:var(--muted); }
+        .leg span { display:flex; align-items:center; gap:6px; }
+        .leg i { display:inline-block; width:14px; height:14px; border-radius:3px; }
+
+        @keyframes dash { to { stroke-dashoffset: -24; } }
+        .conn { stroke-dasharray: 8 5; animation: dash 1.8s linear infinite; }
+
+        /* Tooltip */
+        .tip {
+            position: fixed;
+            background: #1e2230;
+            border: 1px solid #3a3f50;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-family: 'DM Mono', monospace;
+            font-size: 0.75rem;
+            color: #c0c6d4;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.18s;
+            z-index: 100;
+            max-width: 280px;
+            line-height: 1.55;
+            box-shadow: 0 8px 30px rgba(0,0,0,.55);
+        }
+        .tip.show { opacity:1; }
+    </style>
+</head>
+<body>
+
+<h1>DeepFM Variant Architecture</h1>
+<p class="sub">
+    一阶/二阶路径中，类别特征与数值特征分开处理；FM 二阶交叉采用 (Σv)² − Σ(v²) 公式高效计算。
+</p>
+
+<div class="wrap">
+    <svg id="svg" viewBox="0 0 1200 1060" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#141820"/><stop offset="100%" stop-color="#181d28"/>
+            </linearGradient>
+            <filter id="gl"><feGaussianBlur stdDeviation="6" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <marker id="ah" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+                <path d="M0 0 L8 4 L0 8z" fill="#3a3f50"/></marker>
+        </defs>
+
+        <!-- ============ SECTION BACKGROUNDS ============ -->
+        <rect x="24" y="8" width="1152" height="128" rx="14" fill="url(#sg)" stroke="#2a2e3a" stroke-width="1"/>
+        <rect x="24" y="150" width="1152" height="232" rx="14" fill="url(#sg)" stroke="#2a2e3a" stroke-width="1"/>
+        <rect x="24" y="396" width="1152" height="72" rx="14" fill="url(#sg)" stroke="#2a2e3a" stroke-width="1"/>
+        <rect x="24" y="482" width="560" height="270" rx="14" fill="url(#sg)" stroke="#ff4d6a" stroke-width="1" stroke-opacity=".25"/>
+        <rect x="608" y="482" width="568" height="270" rx="14" fill="url(#sg)" stroke="#4da6ff" stroke-width="1" stroke-opacity=".25"/>
+        <rect x="24" y="770" width="1152" height="180" rx="14" fill="url(#sg)" stroke="#2a2e3a" stroke-width="1"/>
+
+        <!-- ============ SECTION LABELS ============ -->
+        <text x="44" y="32" fill="#6b7084" font-size="12" font-weight="700" letter-spacing=".06em" font-family="Syne,sans-serif">① INPUT FEATURES</text>
+        <text x="44" y="174" fill="#6b7084" font-size="12" font-weight="700" letter-spacing=".06em">② FEATURE COLUMN PROCESSING</text>
+        <text x="44" y="420" fill="#6b7084" font-size="12" font-weight="700" letter-spacing=".06em">③ MERGE LAYERS</text>
+        <text x="44" y="506" fill="#ff4d6a" font-size="12" font-weight="700" letter-spacing=".06em">④-a FM BRANCH</text>
+        <text x="628" y="506" fill="#4da6ff" font-size="12" font-weight="700" letter-spacing=".06em">④-b DEEP BRANCH</text>
+        <text x="44" y="794" fill="#6b7084" font-size="12" font-weight="700" letter-spacing=".06em">⑤ OUTPUT</text>
+
+        <!-- ============ CONNECTIONS (behind nodes) ============ -->
+        <g opacity=".45">
+
+            <!-- cat inputs → indicator -->
+            <path class="conn" d="M117,100 C117,135 155,148 155,192" stroke="#e8943a" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M257,100 C257,135 155,148 155,192" stroke="#e8943a" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M397,100 C397,135 155,148 155,192" stroke="#e8943a" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M537,100 C537,135 155,148 155,192" stroke="#e8943a" stroke-width="1.4" fill="none"/>
+
+            <!-- indicator → dense(1) 1st order -->
+            <path class="conn" d="M155,232 L155,262" stroke="#e8943a" stroke-width="1.4" fill="none"/>
+
+            <!-- num → dense(1) 1st order -->
+            <path class="conn" d="M890,104 C890,140 430,148 430,192" stroke="#4da6ff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M430,232 L430,262" stroke="#4da6ff" stroke-width="1.4" fill="none"/>
+
+            <!-- 2× dense(1) → add -->
+            <path class="conn" d="M155,298 C155,330 280,330 280,340" stroke="#34c759" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M430,298 C430,330 280,330 280,340" stroke="#34c759" stroke-width="1.4" fill="none"/>
+
+            <!-- cat → embedding -->
+            <path class="conn" d="M117,100 C117,140 665,155 665,192" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M257,100 C257,140 760,155 760,192" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M397,100 C397,140 855,155 855,192" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M537,100 C537,140 950,155 950,192" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+
+            <!-- emb → dense(64) -->
+            <path class="conn" d="M665,228 L665,258" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M760,228 L760,258" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M855,228 L855,258" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M950,228 L950,258" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+
+            <!-- num → dense(64) 2nd order -->
+            <path class="conn" d="M890,104 C890,140 1090,160 1090,258" stroke="#4da6ff" stroke-width="1.4" fill="none"/>
+
+            <!-- dense(64) → reshape -->
+            <path class="conn" d="M665,292 L665,318" stroke="#7a7f92" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M760,292 L760,318" stroke="#7a7f92" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M855,292 L855,318" stroke="#7a7f92" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M950,292 L950,318" stroke="#7a7f92" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M1090,292 L1090,318" stroke="#7a7f92" stroke-width="1.4" fill="none"/>
+
+            <!-- reshape → concat -->
+            <path class="conn" d="M665,344 C665,370 840,375 840,406" stroke="#e0a020" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M760,344 C760,370 840,375 840,406" stroke="#e0a020" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M855,344 C855,370 840,375 840,406" stroke="#e0a020" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M950,344 C950,370 840,375 840,406" stroke="#e0a020" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M1090,344 C1090,370 840,375 840,406" stroke="#e0a020" stroke-width="1.4" fill="none"/>
+
+            <!-- add → final concat -->
+            <path class="conn" d="M280,380 C280,520 600,760 600,806" stroke="#34c759" stroke-width="1.6" fill="none"/>
+
+            <!-- 2nd-order concat → FM & Deep split -->
+            <path class="conn" d="M840,448 C840,475 280,475 280,524" stroke="#ff4d6a" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M840,448 C840,475 1010,475 1010,524" stroke="#4da6ff" stroke-width="1.4" fill="none"/>
+
+            <!-- FM internal -->
+            <path class="conn" d="M280,524 L160,546" stroke="#ff4d6a" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M280,524 C280,535 430,535 430,546" stroke="#ff4d6a" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M160,582 L160,608" stroke="#ff4d6a" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M430,582 L430,608" stroke="#ff4d6a" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M160,644 C160,665 280,665 280,680" stroke="#ff4d6a" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M430,644 C430,665 280,665 280,680" stroke="#ff4d6a" stroke-width="1.4" fill="none"/>
+
+            <!-- FM subtract → final concat -->
+            <path class="conn" d="M280,722 C280,765 600,790 600,806" stroke="#ff4d6a" stroke-width="1.6" fill="none"/>
+
+            <!-- Deep internal -->
+            <path class="conn" d="M1010,524 L1010,546" stroke="#4da6ff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M1010,582 L1010,618" stroke="#4da6ff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M1010,654 L1010,688" stroke="#4da6ff" stroke-width="1.4" fill="none"/>
+
+            <!-- Deep dense(16) → final concat -->
+            <path class="conn" d="M1010,724 C1010,765 600,790 600,806" stroke="#4da6ff" stroke-width="1.6" fill="none"/>
+
+            <!-- final concat → dense(1) → output -->
+            <path d="M600,860 L600,890" stroke="#f0a050" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+            <path d="M600,938 L600,970" stroke="#f0a050" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+        </g>
+
+        <!-- ============ NODES ============ -->
+
+        <!-- INPUT: Categorical -->
+        <text x="300" y="60" text-anchor="middle" fill="#6b7084" font-size="10" font-family="DM Mono,monospace">Categorical Inputs</text>
+        <g><rect x="62" y="70" width="110" height="30" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/><text x="117" y="90" text-anchor="middle" fill="#c8ccd4" font-size="11" font-family="DM Mono,monospace">movieId</text></g>
+        <g><rect x="192" y="70" width="130" height="30" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/><text x="257" y="90" text-anchor="middle" fill="#c8ccd4" font-size="11" font-family="DM Mono,monospace">userId</text></g>
+        <g><rect x="340" y="70" width="115" height="30" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/><text x="397" y="90" text-anchor="middle" fill="#c8ccd4" font-size="11" font-family="DM Mono,monospace">userGenre</text></g>
+        <g><rect x="475" y="70" width="125" height="30" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/><text x="537" y="90" text-anchor="middle" fill="#c8ccd4" font-size="11" font-family="DM Mono,monospace">movieGenre</text></g>
+
+        <!-- INPUT: Numerical -->
+        <text x="890" y="60" text-anchor="middle" fill="#6b7084" font-size="10" font-family="DM Mono,monospace">Numerical Inputs (7 features)</text>
+        <g><rect x="660" y="70" width="460" height="34" rx="6" fill="#1a1e28" stroke="#4da6ff" stroke-width=".8" stroke-opacity=".4"/>
+            <text x="890" y="84" text-anchor="middle" fill="#7a8090" font-size="9.5" font-family="DM Mono,monospace">releaseYear · movieRatingCnt · movieAvgRating · movieRatingStddev</text>
+            <text x="890" y="97" text-anchor="middle" fill="#7a8090" font-size="9.5" font-family="DM Mono,monospace">userRatingCnt · userAvgRating · userRatingStddev</text></g>
+
+        <!-- FIRST ORDER PATH LABEL -->
+        <text x="280" y="182" text-anchor="middle" fill="#e8943a" font-size="11" font-weight="700">First Order Path</text>
+
+        <!-- Indicator node -->
+        <g class="nd" data-tip="将类别特征(One-Hot)和数值特征分别通过 DenseFeatures 提取后，各经一个 Dense(1) 线性层。&#10;输出形状: (batch, 1)">
+            <rect x="55" y="192" width="200" height="40" rx="7" fill="#1e1810" stroke="#e8943a" stroke-width="1.4"/>
+            <text x="155" y="217" text-anchor="middle" fill="#e8943a" font-size="11" font-family="DM Mono,monospace">DenseFeatures (Indicator)</text>
+        </g>
+
+        <!-- Numeric dense features -->
+        <g class="nd" data-tip="数值特征直接通过 DenseFeatures 提取。&#10;包含: releaseYear, movieRatingCount 等 7 个连续特征。">
+            <rect x="330" y="192" width="200" height="40" rx="7" fill="#101828" stroke="#4da6ff" stroke-width="1.4"/>
+            <text x="430" y="217" text-anchor="middle" fill="#4da6ff" font-size="11" font-family="DM Mono,monospace">DenseFeatures (Numeric)</text>
+        </g>
+
+        <!-- Dense(1) from indicator -->
+        <g class="nd" data-tip="线性全连接层，将 One-Hot 向量映射为标量。&#10;输出: (batch, 1)">
+            <rect x="95" y="262" width="120" height="36" rx="6" fill="#121e10" stroke="#34c759" stroke-width="1.4"/>
+            <text x="155" y="285" text-anchor="middle" fill="#34c759" font-size="11" font-family="DM Mono,monospace">Dense(1)</text>
+        </g>
+
+        <!-- Dense(1) from numeric -->
+        <g class="nd" data-tip="线性全连接层，将数值特征映射为标量。&#10;输出: (batch, 1)">
+            <rect x="370" y="262" width="120" height="36" rx="6" fill="#121e10" stroke="#34c759" stroke-width="1.4"/>
+            <text x="430" y="285" text-anchor="middle" fill="#34c759" font-size="11" font-family="DM Mono,monospace">Dense(1)</text>
+        </g>
+
+        <!-- Add node -->
+        <g class="nd" data-tip="将类别和数值两条一阶路径的输出相加。&#10;对应 FM 公式: w₀ + Σ(wᵢ·xᵢ)&#10;输出: (batch, 1)">
+            <rect x="210" y="340" width="140" height="40" rx="7" fill="#0e1e10" stroke="#34c759" stroke-width="1.6"/>
+            <text x="280" y="365" text-anchor="middle" fill="#34c759" font-size="12" font-weight="700" font-family="DM Mono,monospace">⊕ Add</text>
+        </g>
+
+        <!-- Shape annotation: first order -->
+        <text x="390" y="366" fill="#34c759" font-size="9.5" font-family="DM Mono,monospace" opacity=".7">→ (batch, 1)</text>
+
+        <!-- SECOND ORDER PATH LABEL -->
+        <text x="840" y="182" text-anchor="middle" fill="#9b6dff" font-size="11" font-weight="700">Second Order Path</text>
+
+        <!-- Embedding nodes -->
+        <g class="nd" data-tip="item_genre Embedding: 将电影类型字符串映射为 10 维稠密向量。&#10;使用 vocabulary_list 匹配 19 种类型。&#10;输出: (batch, 10)">
+            <rect x="620" y="192" width="90" height="36" rx="6" fill="#1a1428" stroke="#9b6dff" stroke-width="1.3"/>
+            <text x="665" y="215" text-anchor="middle" fill="#9b6dff" font-size="10" font-family="DM Mono,monospace">Emb(10)</text>
+        </g>
+        <text x="665" y="242" text-anchor="middle" fill="#6b5a90" font-size="8.5" font-family="DM Mono,monospace">movieGenre</text>
+
+        <g class="nd" data-tip="movieId Embedding: 将电影ID (0~1000) 映射为 10 维稠密向量。&#10;输出: (batch, 10)">
+            <rect x="715" y="192" width="90" height="36" rx="6" fill="#1a1428" stroke="#9b6dff" stroke-width="1.3"/>
+            <text x="760" y="215" text-anchor="middle" fill="#9b6dff" font-size="10" font-family="DM Mono,monospace">Emb(10)</text>
+        </g>
+        <text x="760" y="242" text-anchor="middle" fill="#6b5a90" font-size="8.5" font-family="DM Mono,monospace">movieId</text>
+
+        <g class="nd" data-tip="user_genre Embedding: 将用户偏好类型映射为 10 维稠密向量。&#10;输出: (batch, 10)">
+            <rect x="810" y="192" width="90" height="36" rx="6" fill="#1a1428" stroke="#9b6dff" stroke-width="1.3"/>
+            <text x="855" y="215" text-anchor="middle" fill="#9b6dff" font-size="10" font-family="DM Mono,monospace">Emb(10)</text>
+        </g>
+        <text x="855" y="242" text-anchor="middle" fill="#6b5a90" font-size="8.5" font-family="DM Mono,monospace">userGenre</text>
+
+        <g class="nd" data-tip="userId Embedding: 将用户ID (0~30000) 映射为 10 维稠密向量。&#10;输出: (batch, 10)">
+            <rect x="905" y="192" width="90" height="36" rx="6" fill="#1a1428" stroke="#9b6dff" stroke-width="1.3"/>
+            <text x="950" y="215" text-anchor="middle" fill="#9b6dff" font-size="10" font-family="DM Mono,monospace">Emb(10)</text>
+        </g>
+        <text x="950" y="242" text-anchor="middle" fill="#6b5a90" font-size="8.5" font-family="DM Mono,monospace">userId</text>
+
+        <!-- Dense(64) from embeddings -->
+        <g class="nd" data-tip="将每个 Embedding(10) 通过线性层映射到统一的 64 维空间。&#10;使所有字段维度一致，便于后续拼接和交叉计算。&#10;输出: (batch, 64)">
+            <rect x="620" y="258" width="90" height="34" rx="6" fill="#101828" stroke="#4da6ff" stroke-width="1.2"/>
+            <text x="665" y="280" text-anchor="middle" fill="#4da6ff" font-size="10" font-family="DM Mono,monospace">Dense(64)</text>
+        </g>
+        <g class="nd">
+            <rect x="715" y="258" width="90" height="34" rx="6" fill="#101828" stroke="#4da6ff" stroke-width="1.2"/>
+            <text x="760" y="280" text-anchor="middle" fill="#4da6ff" font-size="10" font-family="DM Mono,monospace">Dense(64)</text>
+        </g>
+        <g class="nd">
+            <rect x="810" y="258" width="90" height="34" rx="6" fill="#101828" stroke="#4da6ff" stroke-width="1.2"/>
+            <text x="855" y="280" text-anchor="middle" fill="#4da6ff" font-size="10" font-family="DM Mono,monospace">Dense(64)</text>
+        </g>
+        <g class="nd">
+            <rect x="905" y="258" width="90" height="34" rx="6" fill="#101828" stroke="#4da6ff" stroke-width="1.2"/>
+            <text x="950" y="280" text-anchor="middle" fill="#4da6ff" font-size="10" font-family="DM Mono,monospace">Dense(64)</text>
+        </g>
+
+        <!-- Dense(64) from numerical -->
+        <g class="nd" data-tip="将 7 个数值特征通过线性层映射到 64 维空间。&#10;与 Embedding 路径维度对齐。&#10;输出: (batch, 64)">
+            <rect x="1040" y="258" width="100" height="34" rx="6" fill="#101828" stroke="#4da6ff" stroke-width="1.2"/>
+            <text x="1090" y="280" text-anchor="middle" fill="#4da6ff" font-size="10" font-family="DM Mono,monospace">Dense(64)</text>
+        </g>
+
+        <!-- Reshape nodes -->
+        <g class="nd" data-tip="将 (batch, 64) 变形为 (batch, 1, 64)，&#10;每个特征作为一个独立"字段"。&#10;拼接后得到字段矩阵 (batch, num_fields, 64)。">
+        <rect x="620" y="318" width="90" height="26" rx="5" fill="#1a1e24" stroke="#7a7f92" stroke-width="1"/>
+        <text x="665" y="336" text-anchor="middle" fill="#9a9fb0" font-size="9" font-family="DM Mono,monospace">Reshape</text>
+        </g>
+        <g class="nd"><rect x="715" y="318" width="90" height="26" rx="5" fill="#1a1e24" stroke="#7a7f92" stroke-width="1"/><text x="760" y="336" text-anchor="middle" fill="#9a9fb0" font-size="9" font-family="DM Mono,monospace">Reshape</text></g>
+        <g class="nd"><rect x="810" y="318" width="90" height="26" rx="5" fill="#1a1e24" stroke="#7a7f92" stroke-width="1"/><text x="855" y="336" text-anchor="middle" fill="#9a9fb0" font-size="9" font-family="DM Mono,monospace">Reshape</text></g>
+        <g class="nd"><rect x="905" y="318" width="90" height="26" rx="5" fill="#1a1e24" stroke="#7a7f92" stroke-width="1"/><text x="950" y="336" text-anchor="middle" fill="#9a9fb0" font-size="9" font-family="DM Mono,monospace">Reshape</text></g>
+        <g class="nd"><rect x="1040" y="318" width="100" height="26" rx="5" fill="#1a1e24" stroke="#7a7f92" stroke-width="1"/><text x="1090" y="336" text-anchor="middle" fill="#9a9fb0" font-size="9" font-family="DM Mono,monospace">Reshape</text></g>
+
+        <!-- Reshape shape annotations -->
+        <text x="665" y="358" text-anchor="middle" fill="#7a7f92" font-size="8" font-family="DM Mono,monospace" opacity=".6">(batch,1,64)</text>
+        <text x="760" y="358" text-anchor="middle" fill="#7a7f92" font-size="8" font-family="DM Mono,monospace" opacity=".6">(batch,1,64)</text>
+        <text x="855" y="358" text-anchor="middle" fill="#7a7f92" font-size="8" font-family="DM Mono,monospace" opacity=".6">(batch,1,64)</text>
+        <text x="950" y="358" text-anchor="middle" fill="#7a7f92" font-size="8" font-family="DM Mono,monospace" opacity=".6">(batch,1,64)</text>
+        <text x="1090" y="358" text-anchor="middle" fill="#7a7f92" font-size="8" font-family="DM Mono,monospace" opacity=".6">(batch,1,64)</text>
+
+        <!-- ===== MERGE LAYER ===== -->
+
+        <!-- Concatenate (second order) -->
+        <g class="nd" data-tip="将 5 个字段的 (batch, 1, 64) 张量沿 axis=1 拼接，&#10;形成字段矩阵，用于后续 FM 二阶交叉计算。&#10;输出: (batch, 5, 64)">
+            <rect x="680" y="406" width="320" height="42" rx="8" fill="#1e1a10" stroke="#e0a020" stroke-width="1.5"/>
+            <text x="840" y="425" text-anchor="middle" fill="#e0a020" font-size="11" font-weight="600" font-family="DM Mono,monospace">Concatenate (axis=1)</text>
+            <text x="840" y="441" text-anchor="middle" fill="#c09818" font-size="9.5" font-family="DM Mono,monospace" opacity=".7">→ (batch, 5, 64)</text>
+        </g>
+
+        <!-- ===== FM BRANCH ===== -->
+
+        <!-- FM: two paths converge -->
+
+        <!-- Split point indicator -->
+        <circle cx="280" cy="524" r="5" fill="#ff4d6a" opacity=".6"/>
+
+        <!-- Path A label -->
+        <text x="160" y="510" text-anchor="middle" fill="#ff4d6a" font-size="9" font-weight="600" font-family="DM Mono,monospace" opacity=".7">Path A: (Σv)²</text>
+
+        <!-- ReduceLayer sum -->
+        <g class="nd" data-tip="对字段矩阵沿 axis=1（字段维度）求和。&#10;将 5 个字段的 64 维向量逐元素相加。&#10;输出: (batch, 64)">
+            <rect x="60" y="546" width="200" height="36" rx="6" fill="#221428" stroke="#b07aff" stroke-width="1.3"/>
+            <text x="160" y="570" text-anchor="middle" fill="#b07aff" font-size="10.5" font-family="DM Mono,monospace">ReduceLayer (sum)</text>
+        </g>
+
+        <!-- Multiply (self) Path A -->
+        <g class="nd" data-tip="对求和结果进行逐元素自乘（平方）。&#10;计算 (Σv)²，即先求和再平方。&#10;输出: (batch, 64)">
+            <rect x="60" y="608" width="200" height="36" rx="6" fill="#221018" stroke="#e86da0" stroke-width="1.3"/>
+            <text x="160" y="632" text-anchor="middle" fill="#e86da0" font-size="10.5" font-family="DM Mono,monospace">⊕ Multiply (self)</text>
+        </g>
+
+        <!-- Path B label -->
+        <text x="430" y="510" text-anchor="middle" fill="#ff4d6a" font-size="9" font-weight="600" font-family="DM Mono,monospace" opacity=".7">Path B: Σ(v²)</text>
+
+        <!-- Multiply (self) Path B -->
+        <g class="nd" data-tip="对字段矩阵每个元素进行逐元素平方。&#10;输入: (batch, 5, 64) → 输出: (batch, 5, 64)">
+            <rect x="330" y="546" width="200" height="36" rx="6" fill="#221018" stroke="#e86da0" stroke-width="1.3"/>
+            <text x="430" y="570" text-anchor="middle" fill="#e86da0" font-size="10.5" font-family="DM Mono,monospace">⊕ Multiply (elem)</text>
+        </g>
+
+        <!-- ReduceLayer sum Path B -->
+        <g class="nd" data-tip="对平方后的字段矩阵沿 axis=1 求和。&#10;计算 Σ(v²)，即先平方再求和。&#10;输出: (batch, 64)">
+            <rect x="330" y="608" width="200" height="36" rx="6" fill="#221428" stroke="#b07aff" stroke-width="1.3"/>
+            <text x="430" y="632" text-anchor="middle" fill="#b07aff" font-size="10.5" font-family="DM Mono,monospace">ReduceLayer (sum)</text>
+        </g>
+
+        <!-- Subtract -->
+        <g class="nd" data-tip="FM 核心公式: (Σv)² − Σ(v²)&#10;高效计算所有字段两两之间的特征交叉。&#10;输出: (batch, 64)&#10;&#10;注: 省略了常数系数 0.5（不影响模型表达能力）">
+            <rect x="180" y="680" width="200" height="42" rx="7" fill="#200e14" stroke="#ff4d6a" stroke-width="1.6"/>
+            <text x="280" y="700" text-anchor="middle" fill="#ff4d6a" font-size="11" font-weight="700" font-family="DM Mono,monospace">⊖ Subtract</text>
+            <text x="280" y="716" text-anchor="middle" fill="#cc3050" font-size="9" font-family="DM Mono,monospace" opacity=".7">(Σv)² − Σ(v²) → (batch, 64)</text>
+        </g>
+
+        <!-- ===== DEEP BRANCH ===== -->
+
+        <!-- Flatten -->
+        <g class="nd" data-tip="将字段矩阵 (batch, 5, 64) 展平为一维向量，&#10;作为 DNN 的输入。&#10;输出: (batch, 320)">
+            <rect x="920" y="546" width="180" height="36" rx="6" fill="#181c24" stroke="#7a7f92" stroke-width="1.2"/>
+            <text x="1010" y="570" text-anchor="middle" fill="#9a9fb0" font-size="10.5" font-family="DM Mono,monospace">Flatten</text>
+        </g>
+        <text x="1010" y="596" text-anchor="middle" fill="#7a7f92" font-size="8.5" font-family="DM Mono,monospace" opacity=".6">→ (batch, 320)</text>
+
+        <!-- Dense(32, relu) -->
+        <g class="nd" data-tip="第一层隐藏层: 320 → 32&#10;使用 ReLU 激活函数引入非线性。&#10;输出: (batch, 32)">
+            <rect x="920" y="618" width="180" height="36" rx="6" fill="#0e1e18" stroke="#3ddc84" stroke-width="1.3"/>
+            <text x="1010" y="642" text-anchor="middle" fill="#3ddc84" font-size="10.5" font-family="DM Mono,monospace">Dense (32, ReLU)</text>
+        </g>
+        <text x="1010" y="668" text-anchor="middle" fill="#7a7f92" font-size="8.5" font-family="DM Mono,monospace" opacity=".6">→ (batch, 32)</text>
+
+        <!-- Dense(16, relu) -->
+        <g class="nd" data-tip="第二层隐藏层: 32 → 16&#10;使用 ReLU 激活函数。&#10;输出: (batch, 16)">
+            <rect x="920" y="688" width="180" height="36" rx="6" fill="#0e1e18" stroke="#3ddc84" stroke-width="1.3"/>
+            <text x="1010" y="712" text-anchor="middle" fill="#3ddc84" font-size="10.5" font-family="DM Mono,monospace">Dense (16, ReLU)</text>
+        </g>
+        <text x="1010" y="738" text-anchor="middle" fill="#7a7f92" font-size="8.5" font-family="DM Mono,monospace" opacity=".6">→ (batch, 16)</text>
+
+        <!-- ===== OUTPUT SECTION ===== -->
+
+        <!-- Final Concatenate -->
+        <g class="nd" data-tip="将三个部分的输出拼接:&#10;  一阶特征: (batch, 1)&#10;  FM 二阶:  (batch, 64)&#10;  Deep:     (batch, 16)&#10;总输出: (batch, 81)">
+            <rect x="250" y="806" width="700" height="54" rx="10" fill="#1a1610" stroke="#f0a050" stroke-width="1.8"/>
+            <text x="600" y="828" text-anchor="middle" fill="#f0a050" font-size="12" font-weight="700" font-family="DM Mono,monospace">Concatenate</text>
+            <text x="600" y="848" text-anchor="middle" fill="#d0903c" font-size="10" font-family="DM Mono,monospace" opacity=".75">[First Order (1)] ⊕ [FM (64)] ⊕ [Deep (16)]  →  (batch, 81)</text>
+        </g>
+
+        <!-- Three input annotations to final concat -->
+        <text x="420" y="800" fill="#34c759" font-size="8.5" font-family="DM Mono,monospace" opacity=".7">③ First Order</text>
+        <text x="560" y="800" fill="#ff4d6a" font-size="8.5" font-family="DM Mono,monospace" opacity=".7">④-a FM</text>
+        <text x="690" y="800" fill="#4da6ff" font-size="8.5" font-family="DM Mono,monospace" opacity=".7">④-b Deep</text>
+
+        <!-- Dense(1, sigmoid) -->
+        <g class="nd" data-tip="输出层: 81 → 1&#10;Sigmoid 激活函数将输出压缩到 [0, 1] 区间。&#10;表示"好评"的预测概率。&#10;输出: (batch, 1)">
+        <rect x="350" y="890" width="500" height="48" rx="10" fill="#1a1210" stroke="#f0a050" stroke-width="1.5"/>
+        <text x="600" y="912" text-anchor="middle" fill="#f0a050" font-size="13" font-weight="700" font-family="DM Mono,monospace">Dense (1, Sigmoid)</text>
+        <text x="600" y="931" text-anchor="middle" fill="#d0903c" font-size="10" font-family="DM Mono,monospace" opacity=".7">→ (batch, 1)</text>
+        </g>
+
+        <!-- Output -->
+        <g class="nd" data-tip="最终预测结果: 好评概率 P(goodRating)&#10;训练目标: 最小化 binary_crossentropy 损失。">
+            <rect x="420" y="970" width="360" height="42" rx="10" fill="#1e1810" stroke="#f0a050" stroke-width="2" filter="url(#gl)"/>
+            <text x="600" y="996" text-anchor="middle" fill="#f0a050" font-size="14" font-weight="800" font-family="Syne,sans-serif">P ( Good Rating )</text>
+        </g>
+
+        <!-- Decorative: output glow -->
+        <ellipse cx="600" cy="996" rx="180" ry="25" fill="#f0a050" opacity=".04"/>
+
+    </svg>
+</div>
+
+<!-- Legend -->
+<div class="leg">
+    <span><i style="background:#5a6070"></i> Input</span>
+    <span><i style="background:#e8943a"></i> Indicator (One-Hot)</span>
+    <span><i style="background:#9b6dff"></i> Embedding</span>
+    <span><i style="background:#4da6ff"></i> Dense (Linear)</span>
+    <span><i style="background:#3ddc84"></i> Dense (ReLU)</span>
+    <span><i style="background:#34c759"></i> Add</span>
+    <span><i style="background:#e86da0"></i> Multiply</span>
+    <span><i style="background:#b07aff"></i> ReduceLayer</span>
+    <span><i style="background:#ff4d6a"></i> Subtract / FM</span>
+    <span><i style="background:#e0a020"></i> Concatenate</span>
+    <span><i style="background:#f0a050"></i> Output</span>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+    // Tooltip interaction
+    const tip = document.getElementById('tip');
+    document.querySelectorAll('.nd').forEach(g => {
+        const msg = g.getAttribute('data-tip');
+        if (!msg) return;
+        g.style.cursor = 'pointer';
+        g.addEventListener('mouseenter', e => {
+            tip.innerHTML = msg.replace(/\n/g, '<br>');
+            tip.classList.add('show');
+        });
+        g.addEventListener('mousemove', e => {
+            tip.style.left = (e.clientX + 16) + 'px';
+            tip.style.top = (e.clientY + 16) + 'px';
+        });
+        g.addEventListener('mouseleave', () => {
+            tip.classList.remove('show');
+        });
+    });
+</script>
+
+</body>
+</html>
