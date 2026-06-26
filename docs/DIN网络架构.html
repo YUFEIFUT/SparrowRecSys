@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIN — Deep Interest Network Architecture</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0e14;
+            --surface: #141820;
+            --border: #2a2e3a;
+            --text: #d4d8e0;
+            --muted: #6b7084;
+            --input: #5a6070;
+            --indicator: #e8943a;
+            --embedding: #9b6dff;
+            --dense-lin: #4da6ff;
+            --dense-act: #3ddc84;
+            --sub: #ff4d6a;
+            --mul: #e86da0;
+            --concat: #e0a020;
+            --flatten: #7a7f92;
+            --pool: #b07aff;
+            --output: #f0a050;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Syne', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 32px 16px 60px;
+        }
+        h1 {
+            font-weight: 800;
+            font-size: 1.9rem;
+            letter-spacing: -0.03em;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, #9b6dff 0%, #3ddc84 50%, #f0a050 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .sub {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-align: center;
+            max-width: 860px;
+            line-height: 1.7;
+            margin-bottom: 28px;
+        }
+        .wrap {
+            width: 100%;
+            max-width: 1200px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        svg { display: block; width: 100%; height: auto; }
+        .leg { display:flex; flex-wrap:wrap; gap:16px 24px; justify-content:center;
+            margin-top:24px; font-size:0.72rem; font-family:'DM Mono',monospace; color:var(--muted); }
+        .leg span { display:flex; align-items:center; gap:6px; }
+        .leg i { display:inline-block; width:14px; height:14px; border-radius:3px; }
+        @keyframes dash { to { stroke-dashoffset: -24; } }
+        .conn { stroke-dasharray: 8 5; animation: dash 1.8s linear infinite; }
+        .tip {
+            position: fixed;
+            background: #1e2230;
+            border: 1px solid #3a3f50;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-family: 'DM Mono', monospace;
+            font-size: 0.75rem;
+            color: #c0c6d4;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.18s;
+            z-index: 100;
+            max-width: 300px;
+            line-height: 1.55;
+            box-shadow: 0 8px 30px rgba(0,0,0,.55);
+        }
+        .tip.show { opacity:1; }
+    </style>
+</head>
+<body>
+
+<h1>Deep Interest Network Architecture</h1>
+<p class="sub">
+    DIN 通过 Activation Unit 对用户历史行为序列施加自适应注意力权重 — 候选物品与历史行为的关联程度决定注意力大小，从而精准捕获用户兴趣向量。
+</p>
+
+<div class="wrap">
+    <svg id="svg" viewBox="0 0 1200 1170" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#141820"/><stop offset="100%" stop-color="#181d28"/>
+            </linearGradient>
+            <linearGradient id="sg2" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#141522"/><stop offset="100%" stop-color="#18162a"/>
+            </linearGradient>
+            <filter id="gl"><feGaussianBlur stdDeviation="6" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <marker id="ah" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+                <path d="M0 0 L8 4 L0 8z" fill="#3a3f50"/></marker>
+        </defs>
+
+        <!-- ============ SECTION BACKGROUNDS ============ -->
+        <rect x="24" y="8" width="1152" height="115" rx="14" fill="url(#sg)" stroke="#2a2e3a" stroke-width="1"/>
+        <rect x="24" y="137" width="1152" height="115" rx="14" fill="url(#sg)" stroke="#2a2e3a" stroke-width="1"/>
+        <rect x="24" y="266" width="1152" height="80" rx="14" fill="url(#sg)" stroke="#2a2e3a" stroke-width="1"/>
+        <rect x="24" y="360" width="1152" height="430" rx="14" fill="url(#sg2)" stroke="#9b6dff" stroke-width="1" stroke-opacity=".25"/>
+        <rect x="24" y="804" width="1152" height="55" rx="14" fill="url(#sg)" stroke="#2a2e3a" stroke-width="1"/>
+        <rect x="24" y="873" width="1152" height="280" rx="14" fill="url(#sg)" stroke="#2a2e3a" stroke-width="1"/>
+
+        <!-- ============ SECTION LABELS ============ -->
+        <text x="44" y="32" fill="#6b7084" font-size="12" font-weight="700" letter-spacing=".06em" font-family="Syne,sans-serif">① INPUT FEATURES</text>
+        <text x="44" y="161" fill="#6b7084" font-size="12" font-weight="700" letter-spacing=".06em">② DENSE FEATURES</text>
+        <text x="44" y="290" fill="#6b7084" font-size="12" font-weight="700" letter-spacing=".06em">③ SHARED EMBEDDING</text>
+        <text x="44" y="384" fill="#9b6dff" font-size="12" font-weight="700" letter-spacing=".06em">④ ACTIVATION UNIT  (注意力机制)</text>
+        <text x="44" y="828" fill="#6b7084" font-size="12" font-weight="700" letter-spacing=".06em">⑤ SUM POOLING</text>
+        <text x="44" y="897" fill="#6b7084" font-size="12" font-weight="700" letter-spacing=".06em">⑥ OUTPUT</text>
+
+        <!-- ============ FORMULA ANNOTATION INSIDE ④ ============ -->
+        <text x="760" y="415" fill="#7a60b0" font-size="9.5" font-family="DM Mono,monospace" opacity=".35" font-style="italic">
+            α = σ(W · [h⊖a , h , a , h⊗a] + b)
+        </text>
+        <text x="760" y="432" fill="#7a60b0" font-size="9.5" font-family="DM Mono,monospace" opacity=".35" font-style="italic">
+            user_interest = Σ(αᵢ · hᵢ)
+        </text>
+
+        <!-- ============ CONNECTIONS ============ -->
+        <g opacity=".45">
+
+            <!-- ①→② Input to DenseFeatures -->
+            <path class="conn" d="M82,94 C82,138 155,160 155,190" stroke="#e8943a" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M197,94 C197,138 155,160 155,190" stroke="#e8943a" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M352,98 C352,140 372,160 372,190" stroke="#e8943a" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M497,94 C497,140 525,160 525,190" stroke="#e8943a" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M617,94 C617,140 775,160 775,190" stroke="#e8943a" stroke-width="1.4" fill="none"/>
+            <!-- Numerical → User Profile DF (long left curve) -->
+            <path class="conn" d="M920,98 C920,140 155,155 155,190" stroke="#4da6ff" stroke-width="1.4" fill="none"/>
+            <!-- Numerical → Context DF -->
+            <path class="conn" d="M920,98 C920,140 775,155 775,190" stroke="#4da6ff" stroke-width="1.4" fill="none"/>
+
+            <!-- ②→③ DF to Shared Embedding -->
+            <path class="conn" d="M372,232 C372,262 430,278 430,298" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M525,232 C525,262 580,278 580,298" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+
+            <!-- ③→④ Embedding → AU: candidate → Squeeze+Repeat -->
+            <path class="conn" d="M540,342 C540,370 510,380 510,395" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+
+            <!-- ③→④ Embedding → AU: behavior → Subtract -->
+            <path class="conn" d="M440,342 C410,380 385,430 415,456" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+
+            <!-- ③→④ Embedding → AU: behavior → Multiply -->
+            <path class="conn" d="M470,342 C510,380 580,430 605,456" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+
+            <!-- ③→④ Embedding → AU: behavior → Weighted Multiply (long) -->
+            <path class="conn" d="M430,342 C350,500 360,660 430,745" stroke="#9b6dff" stroke-width="1.2" fill="none" stroke-opacity=".5"/>
+
+            <!-- AU internal: Squeeze+Repeat → Subtract -->
+            <path class="conn" d="M470,433 C448,448 415,448 415,456" stroke="#7a7f92" stroke-width="1.4" fill="none"/>
+
+            <!-- AU internal: Squeeze+Repeat → Multiply -->
+            <path class="conn" d="M550,433 C572,448 605,448 605,456" stroke="#7a7f92" stroke-width="1.4" fill="none"/>
+
+            <!-- AU internal: Subtract → Concat -->
+            <path class="conn" d="M415,494 C415,512 460,518 470,520" stroke="#ff4d6a" stroke-width="1.4" fill="none"/>
+
+            <!-- AU internal: Multiply → Concat -->
+            <path class="conn" d="M605,494 C605,512 560,518 550,520" stroke="#e86da0" stroke-width="1.4" fill="none"/>
+
+            <!-- AU internal: Concat → Dense(32) -->
+            <path class="conn" d="M510,562 L510,580" stroke="#3ddc84" stroke-width="1.4" fill="none"/>
+
+            <!-- AU internal: Dense(32) → Dense(1) -->
+            <path class="conn" d="M510,616 L510,635" stroke="#4da6ff" stroke-width="1.4" fill="none"/>
+
+            <!-- AU internal: Dense(1) → Reshape -->
+            <path class="conn" d="M510,671 L510,690" stroke="#7a7f92" stroke-width="1.4" fill="none"/>
+
+            <!-- AU internal: Reshape → Weighted Multiply -->
+            <path class="conn" d="M510,726 L510,745" stroke="#e86da0" stroke-width="1.4" fill="none"/>
+
+            <!-- ④→⑤ Weighted Multiply → Sum Pooling -->
+            <path class="conn" d="M510,783 C510,795 510,802 510,810" stroke="#b07aff" stroke-width="1.6" fill="none"/>
+
+            <!-- ②→⑥ User Profile DF → Output Concat (left bypass) -->
+            <path class="conn" d="M155,232 C80,500 80,800 320,908" stroke="#e8943a" stroke-width="1.4" fill="none"/>
+
+            <!-- ②→⑥ Context DF → Output Concat (right bypass) -->
+            <path class="conn" d="M775,232 C1050,500 1050,800 840,908" stroke="#e8943a" stroke-width="1.4" fill="none"/>
+
+            <!-- ③→⑥ Candidate Embedding → Output Concat -->
+            <path class="conn" d="M555,342 C630,500 730,800 700,908" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+
+            <!-- ⑤→⑥ Sum Pooling → Output Concat -->
+            <path class="conn" d="M510,846 C510,870 530,890 540,908" stroke="#b07aff" stroke-width="1.6" fill="none"/>
+
+            <!-- ⑥ internal -->
+            <path d="M580,954 L580,970" stroke="#f0a050" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+            <path d="M580,1008 L580,1020" stroke="#f0a050" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+            <path d="M580,1058 L580,1070" stroke="#f0a050" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+
+        </g>
+
+        <!-- ============ SPLIT INDICATOR ============ -->
+        <circle cx="510" cy="342" r="4" fill="#9b6dff" opacity=".5"/>
+
+        <!-- ============ NODES ============ -->
+
+        <!-- ===== ① INPUT FEATURES ===== -->
+
+        <text x="160" y="48" text-anchor="middle" fill="#6b7084" font-size="10" font-family="DM Mono,monospace">User Profile</text>
+        <g class="nd" data-tip="用户画像特征:&#10;• userId (int32) — 用户唯一标识&#10;• userGenre1~5 (string) — 用户偏好的 5 个电影类型&#10;&#10;这些特征通过 User Profile DenseFeatures 处理后&#10;包含 Embedding 向量与数值特征的拼接结果。">
+            <rect x="40" y="58" width="85" height="36" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/>
+            <text x="82" y="81" text-anchor="middle" fill="#c8ccd4" font-size="11" font-family="DM Mono,monospace">userId</text>
+        </g>
+        <g class="nd" data-tip="用户偏好类型特征 (string × 5)&#10;userGenre1 ~ userGenre5&#10;基于 vocabulary_list 映射为 Embedding(19, 10)">
+            <rect x="140" y="58" width="115" height="36" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/>
+            <text x="197" y="81" text-anchor="middle" fill="#c8ccd4" font-size="10.5" font-family="DM Mono,monospace">userGenre1~5</text>
+        </g>
+
+        <text x="352" y="48" text-anchor="middle" fill="#6b7084" font-size="10" font-family="DM Mono,monospace">Behavior Sequence</text>
+        <g class="nd" data-tip="用户行为序列 — 最近评分过的 5 部电影 ID。&#10;这些 ID 将通过共享 Embedding 层转为向量，&#10;然后进入 Activation Unit 计算注意力权重。">
+            <rect x="270" y="54" width="165" height="44" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/>
+            <text x="352" y="76" text-anchor="middle" fill="#c8ccd4" font-size="10.5" font-family="DM Mono,monospace">userRatedMovie1~5</text>
+            <text x="352" y="92" text-anchor="middle" fill="#7a8090" font-size="8.5" font-family="DM Mono,monospace">(最近评分电影 ID)</text>
+        </g>
+
+        <text x="497" y="48" text-anchor="middle" fill="#6b7084" font-size="10" font-family="DM Mono,monospace">Candidate</text>
+        <g class="nd" data-tip="候选电影 ID — 当前需要预测的电影。&#10;与用户行为序列共享同一个 Embedding 层，&#10;确保候选和历史行为在同一语义空间中。">
+            <rect x="450" y="58" width="95" height="36" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/>
+            <text x="497" y="81" text-anchor="middle" fill="#c8ccd4" font-size="11" font-family="DM Mono,monospace">movieId</text>
+        </g>
+
+        <text x="617" y="48" text-anchor="middle" fill="#6b7084" font-size="10" font-family="DM Mono,monospace">Context</text>
+        <g class="nd" data-tip="候选电影的上下文特征:&#10;• movieGenre1~3 (string) — 电影类型&#10;• releaseYear — 上映年份&#10;• movieAvgRating · movieRatingStddev · movieRatingCount">
+            <rect x="560" y="58" width="115" height="36" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/>
+            <text x="617" y="81" text-anchor="middle" fill="#c8ccd4" font-size="10.5" font-family="DM Mono,monospace">movieGenre1~3</text>
+        </g>
+
+        <text x="920" y="48" text-anchor="middle" fill="#6b7084" font-size="10" font-family="DM Mono,monospace">Numerical Inputs (7 features)</text>
+        <g class="nd" data-tip="7 个数值特征:&#10;→ User Profile DF:&#10;  userAvgRating, userRatingStddev, userRatingCount&#10;→ Context DF:&#10;  releaseYear, movieRatingCount, movieAvgRating, movieRatingStddev">
+            <rect x="695" y="54" width="450" height="44" rx="6" fill="#1a1e28" stroke="#4da6ff" stroke-width=".8" stroke-opacity=".4"/>
+            <text x="920" y="74" text-anchor="middle" fill="#7a8090" font-size="9" font-family="DM Mono,monospace">releaseYear · movieRatingCnt · movieAvgRating · movieRatingStddev</text>
+            <text x="920" y="90" text-anchor="middle" fill="#7a8090" font-size="9" font-family="DM Mono,monospace">userRatingCnt · userAvgRating · userRatingStddev</text>
+        </g>
+
+        <!-- ===== ② DENSE FEATURES ===== -->
+
+        <g class="nd" data-tip="User Profile DenseFeatures:&#10;• userId → Embedding(30001, 10) = 10 维&#10;• userGenre1 → Embedding(词表, 10) = 10 维&#10;• userAvgRating, userRatingStddev, userRatingCount = 3 维&#10;拼接后: (batch, 23)">
+            <rect x="40" y="190" width="230" height="42" rx="7" fill="#1e1810" stroke="#e8943a" stroke-width="1.4"/>
+            <text x="155" y="210" text-anchor="middle" fill="#e8943a" font-size="11" font-family="DM Mono,monospace">DenseFeatures</text>
+            <text x="155" y="226" text-anchor="middle" fill="#c09818" font-size="9.5" font-family="DM Mono,monospace" opacity=".7">User Profile → (batch, 23)</text>
+        </g>
+
+        <g class="nd" data-tip="Behavior DenseFeatures:&#10;提取用户最近评分的 5 部电影 ID (数值)。&#10;输出原始 ID，后续通过共享 Embedding 转为向量。&#10;输出: (batch, 5)">
+            <rect x="290" y="190" width="165" height="42" rx="7" fill="#1e1810" stroke="#e8943a" stroke-width="1.4"/>
+            <text x="372" y="210" text-anchor="middle" fill="#e8943a" font-size="11" font-family="DM Mono,monospace">DenseFeatures</text>
+            <text x="372" y="226" text-anchor="middle" fill="#c09818" font-size="9.5" font-family="DM Mono,monospace" opacity=".7">Behavior → (batch, 5)</text>
+        </g>
+
+        <g class="nd" data-tip="Candidate DenseFeatures:&#10;提取候选电影 ID (数值)。&#10;输出原始 ID，后续通过共享 Embedding 转为向量。&#10;输出: (batch, 1)">
+            <rect x="475" y="190" width="100" height="42" rx="7" fill="#1e1810" stroke="#e8943a" stroke-width="1.4"/>
+            <text x="525" y="210" text-anchor="middle" fill="#e8943a" font-size="11" font-family="DM Mono,monospace">DenseFeatures</text>
+            <text x="525" y="226" text-anchor="middle" fill="#c09818" font-size="9.5" font-family="DM Mono,monospace" opacity=".7">Cand. → (b, 1)</text>
+        </g>
+
+        <g class="nd" data-tip="Context DenseFeatures:&#10;• movieGenre1 → Embedding(词表, 10) = 10 维&#10;• releaseYear, movieRatingCount, movieAvgRating, movieRatingStddev = 4 维&#10;拼接后: (batch, 14)">
+            <rect x="600" y="190" width="350" height="42" rx="7" fill="#1e1810" stroke="#e8943a" stroke-width="1.4"/>
+            <text x="775" y="210" text-anchor="middle" fill="#e8943a" font-size="11" font-family="DM Mono,monospace">DenseFeatures</text>
+            <text x="775" y="226" text-anchor="middle" fill="#c09818" font-size="9.5" font-family="DM Mono,monospace" opacity=".7">Context → (batch, 14)</text>
+        </g>
+
+        <!-- ===== ③ SHARED EMBEDDING ===== -->
+
+        <g class="nd" data-tip="共享 Embedding 层:&#10;Embedding(input_dim=1001, output_dim=10, mask_zero=True)&#10;&#10;核心设计: 候选电影和行为序列共用同一个 Embedding 矩阵，&#10;确保它们在同一语义空间中。&#10;mask_zero=True: ID=0 (padding) 会被忽略。&#10;&#10;• behavior_emb: (batch, 5, 10)&#10;• candidate_emb: (batch, 1, 10)">
+            <rect x="340" y="298" width="330" height="44" rx="8" fill="#1a1428" stroke="#9b6dff" stroke-width="1.5"/>
+            <text x="505" y="318" text-anchor="middle" fill="#9b6dff" font-size="11" font-weight="600" font-family="DM Mono,monospace">Shared Embedding (1001, 10)</text>
+            <text x="505" y="336" text-anchor="middle" fill="#7a60b0" font-size="9.5" font-family="DM Mono,monospace" opacity=".7">mask_zero=True · 行为 &amp; 候选共享</text>
+        </g>
+
+        <!-- Embedding output annotations -->
+        <text x="420" y="358" text-anchor="middle" fill="#9b6dff" font-size="8.5" font-family="DM Mono,monospace" opacity=".55">behavior_emb</text>
+        <text x="590" y="358" text-anchor="middle" fill="#9b6dff" font-size="8.5" font-family="DM Mono,monospace" opacity=".55">candidate_emb</text>
+
+        <!-- ===== ④ ACTIVATION UNIT ===== -->
+
+        <!-- Squeeze + RepeatVector -->
+        <g class="nd" data-tip="候选电影向量处理:&#10;1. Squeeze(axis=1): 去除多余维度&#10;   (batch, 1, 10) → (batch, 10)&#10;2. RepeatVector(5): 复制 5 份与行为序列对齐&#10;   (batch, 10) → (batch, 5, 10)">
+            <rect x="390" y="395" width="240" height="38" rx="7" fill="#1a1e24" stroke="#7a7f92" stroke-width="1.3"/>
+            <text x="510" y="418" text-anchor="middle" fill="#9a9fb0" font-size="10.5" font-family="DM Mono,monospace">Squeeze → RepeatVector(5)</text>
+        </g>
+        <text x="510" y="446" text-anchor="middle" fill="#7a7f92" font-size="8.5" font-family="DM Mono,monospace" opacity=".55">→ (batch, 5, 10)</text>
+
+        <!-- Subtract -->
+        <g class="nd" data-tip="差值特征:&#10;user_behaviors_emb − repeated_candidate_emb&#10;&#10;逐元素相减，捕获每部历史电影与候选电影&#10;之间的差异信号。&#10;输出: (batch, 5, 10)">
+            <rect x="340" y="456" width="150" height="38" rx="6" fill="#200e14" stroke="#ff4d6a" stroke-width="1.3"/>
+            <text x="415" y="480" text-anchor="middle" fill="#ff4d6a" font-size="11" font-weight="600" font-family="DM Mono,monospace">⊖ Subtract</text>
+        </g>
+
+        <!-- Multiply -->
+        <g class="nd" data-tip="交互特征:&#10;user_behaviors_emb ⊙ repeated_candidate_emb&#10;&#10;逐元素相乘，捕获每部历史电影与候选电影&#10;之间的相似性/交互信号。&#10;输出: (batch, 5, 10)">
+            <rect x="530" y="456" width="150" height="38" rx="6" fill="#201020" stroke="#e86da0" stroke-width="1.3"/>
+            <text x="605" y="480" text-anchor="middle" fill="#e86da0" font-size="11" font-weight="600" font-family="DM Mono,monospace">⊗ Multiply</text>
+        </g>
+
+        <!-- Concatenate -->
+        <g class="nd" data-tip="将 4 种特征沿最后一维拼接:&#10;[Subtract, Behavior, Repeated_Candidate, Multiply]&#10;&#10;每个时间步从 10 维扩展到 40 维，&#10;作为注意力打分网络的输入。&#10;输出: (batch, 5, 40)">
+            <rect x="370" y="520" width="280" height="42" rx="7" fill="#1e1a10" stroke="#e0a020" stroke-width="1.5"/>
+            <text x="510" y="540" text-anchor="middle" fill="#e0a020" font-size="11" font-weight="600" font-family="DM Mono,monospace">Concatenate (axis=-1)</text>
+            <text x="510" y="556" text-anchor="middle" fill="#c09818" font-size="9" font-family="DM Mono,monospace" opacity=".7">[sub, beh, cand, mul] → (batch, 5, 40)</text>
+        </g>
+
+        <!-- Dense(32, PReLU) -->
+        <g class="nd" data-tip="注意力打分网络 — 第一层:&#10;全连接 32 个神经元。&#10;PReLU: max(0,x) + a·min(0,x)，a 可学习。&#10;比 ReLU 更灵活，避免Dead Neuron问题。&#10;输出: (batch, 5, 32)">
+            <rect x="370" y="580" width="280" height="36" rx="6" fill="#0e1e18" stroke="#3ddc84" stroke-width="1.3"/>
+            <text x="510" y="603" text-anchor="middle" fill="#3ddc84" font-size="11" font-family="DM Mono,monospace">Dense(32) + PReLU</text>
+        </g>
+
+        <!-- Dense(1, sigmoid) -->
+        <g class="nd" data-tip="注意力打分网络 — 输出层:&#10;全连接 1 个神经元 + sigmoid。&#10;为每个时间步生成注意力权重 α ∈ [0, 1]。&#10;与候选电影越相关的历史电影，α 越接近 1。&#10;输出: (batch, 5, 1)">
+            <rect x="370" y="635" width="280" height="36" rx="6" fill="#101828" stroke="#4da6ff" stroke-width="1.3"/>
+            <text x="510" y="658" text-anchor="middle" fill="#4da6ff" font-size="11" font-family="DM Mono,monospace">Dense(1, sigmoid)</text>
+        </g>
+        <text x="510" y="684" text-anchor="middle" fill="#4da6ff" font-size="8.5" font-family="DM Mono,monospace" opacity=".55">注意力权重 α: (batch, 5, 1)</text>
+
+        <!-- Flatten + RepeatVector + Permute -->
+        <g class="nd" data-tip="将注意力权重变形以匹配行为 Embedding:&#10;1. Flatten:       (b, 5, 1) → (b, 5)&#10;2. RepeatVec(10): (b, 5) → (b, 10, 5)&#10;3. Permute(2,1):  (b, 10, 5) → (b, 5, 10)&#10;&#10;使权重形状与行为 Embedding 一致。">
+            <rect x="370" y="690" width="280" height="36" rx="6" fill="#1a1e24" stroke="#7a7f92" stroke-width="1.2"/>
+            <text x="510" y="713" text-anchor="middle" fill="#9a9fb0" font-size="10" font-family="DM Mono,monospace">Flatten → RepeatVec(10) → Permute</text>
+        </g>
+
+        <!-- Weighted Multiply -->
+        <g class="nd" data-tip="注意力加权:&#10;α ⊙ behavior_emb&#10;&#10;每部历史电影的 Embedding 被其注意力权重缩放。&#10;与候选越相关的电影获得越大权重，&#10;不相关的电影被抑制。&#10;输出: (batch, 5, 10)">
+            <rect x="370" y="745" width="280" height="38" rx="7" fill="#201020" stroke="#e86da0" stroke-width="1.5"/>
+            <text x="510" y="768" text-anchor="middle" fill="#e86da0" font-size="11" font-weight="600" font-family="DM Mono,monospace">⊗ Multiply (attention weighted)</text>
+        </g>
+        <text x="510" y="796" text-anchor="middle" fill="#e86da0" font-size="8.5" font-family="DM Mono,monospace" opacity=".55">→ (batch, 5, 10)</text>
+
+        <!-- ===== ⑤ SUM POOLING ===== -->
+
+        <g class="nd" data-tip="对加权后的行为序列沿时间步求和。&#10;将 5 部电影的加权 Embedding 聚合为一个&#10;固定长度的用户兴趣向量。&#10;&#10;这是 DIN 的核心输出: 自适应用户兴趣表示。&#10;输出: (batch, 10)">
+            <rect x="400" y="810" width="220" height="36" rx="7" fill="#1a1428" stroke="#b07aff" stroke-width="1.5"/>
+            <text x="510" y="833" text-anchor="middle" fill="#b07aff" font-size="11" font-weight="600" font-family="DM Mono,monospace">Λ Sum Pooling (axis=1)</text>
+        </g>
+        <text x="510" y="858" text-anchor="middle" fill="#b07aff" font-size="8.5" font-family="DM Mono,monospace" opacity=".55">→ 用户兴趣向量 (batch, 10)</text>
+
+        <!-- ===== ⑥ OUTPUT ===== -->
+
+        <!-- Final Concatenation -->
+        <g class="nd" data-tip="将所有特征拼接:&#10;• User Profile (23): userId + userGenre + 统计特征&#10;• Pooled Interest (10): 注意力加权的行为兴趣&#10;• Candidate Emb (10): 候选电影向量&#10;• Context (14): 电影类型 + 统计特征&#10;&#10;总计: (batch, 57)">
+            <rect x="200" y="908" width="760" height="46" rx="10" fill="#1a1610" stroke="#f0a050" stroke-width="1.8"/>
+            <text x="580" y="930" text-anchor="middle" fill="#f0a050" font-size="12" font-weight="700" font-family="DM Mono,monospace">Concatenate</text>
+            <text x="580" y="948" text-anchor="middle" fill="#d0903c" font-size="9.5" font-family="DM Mono,monospace" opacity=".75">[User Profile (23)] ⊕ [Pooled Interest (10)] ⊕ [Candidate Emb (10)] ⊕ [Context (14)]  →  (batch, 57)</text>
+        </g>
+
+        <!-- Source annotations -->
+        <text x="345" y="902" fill="#e8943a" font-size="8.5" font-family="DM Mono,monospace" opacity=".65">② User Profile</text>
+        <text x="505" y="902" fill="#b07aff" font-size="8.5" font-family="DM Mono,monospace" opacity=".65">⑤ Pooled</text>
+        <text x="625" y="902" fill="#9b6dff" font-size="8.5" font-family="DM Mono,monospace" opacity=".65">③ Candidate</text>
+        <text x="775" y="902" fill="#e8943a" font-size="8.5" font-family="DM Mono,monospace" opacity=".65">② Context</text>
+
+        <!-- Dense(128, PReLU) -->
+        <g class="nd" data-tip="第一层全连接: 57 → 128&#10;PReLU 激活函数引入非线性。&#10;输出: (batch, 128)">
+            <rect x="430" y="970" width="300" height="38" rx="8" fill="#0e1e18" stroke="#3ddc84" stroke-width="1.3"/>
+            <text x="580" y="994" text-anchor="middle" fill="#3ddc84" font-size="12" font-weight="600" font-family="DM Mono,monospace">Dense(128) + PReLU</text>
+        </g>
+
+        <!-- Dense(64, PReLU) -->
+        <g class="nd" data-tip="第二层全连接: 128 → 64&#10;PReLU 激活函数。&#10;输出: (batch, 64)">
+            <rect x="430" y="1020" width="300" height="38" rx="8" fill="#0e1e18" stroke="#3ddc84" stroke-width="1.3"/>
+            <text x="580" y="1044" text-anchor="middle" fill="#3ddc84" font-size="12" font-weight="600" font-family="DM Mono,monospace">Dense(64) + PReLU</text>
+        </g>
+
+        <!-- Dense(1, sigmoid) -->
+        <g class="nd" data-tip="输出层: 64 → 1&#10;Sigmoid 将输出压缩到 [0, 1]。&#10;表示用户点击/好评的预测概率。&#10;输出: (batch, 1)">
+            <rect x="430" y="1070" width="300" height="40" rx="10" fill="#1a1210" stroke="#f0a050" stroke-width="1.5"/>
+            <text x="580" y="1096" text-anchor="middle" fill="#f0a050" font-size="13" font-weight="700" font-family="DM Mono,monospace">Dense (1, Sigmoid)</text>
+        </g>
+
+        <!-- Final output -->
+        <g class="nd" data-tip="最终预测结果: P(goodRating | user, item)&#10;&#10;训练: binary_crossentropy 损失&#10;优化器: Adam&#10;评估: Accuracy, ROC-AUC, PR-AUC">
+            <rect x="420" y="1122" width="320" height="40" rx="10" fill="#1e1810" stroke="#f0a050" stroke-width="2" filter="url(#gl)"/>
+            <text x="580" y="1148" text-anchor="middle" fill="#f0a050" font-size="14" font-weight="800" font-family="Syne,sans-serif">P ( Good Rating )</text>
+        </g>
+
+        <!-- Decorative glow -->
+        <ellipse cx="580" cy="1142" rx="160" ry="24" fill="#f0a050" opacity=".04"/>
+
+    </svg>
+</div>
+
+<!-- Legend -->
+<div class="leg">
+    <span><i style="background:#5a6070"></i> Input</span>
+    <span><i style="background:#e8943a"></i> DenseFeatures</span>
+    <span><i style="background:#9b6dff"></i> Embedding</span>
+    <span><i style="background:#7a7f92"></i> Reshape / Squeeze</span>
+    <span><i style="background:#ff4d6a"></i> Subtract</span>
+    <span><i style="background:#e86da0"></i> Multiply</span>
+    <span><i style="background:#e0a020"></i> Concatenate</span>
+    <span><i style="background:#3ddc84"></i> Dense (PReLU)</span>
+    <span><i style="background:#4da6ff"></i> Dense (Sigmoid)</span>
+    <span><i style="background:#b07aff"></i> Sum Pooling</span>
+    <span><i style="background:#f0a050"></i> Output</span>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+    const tip = document.getElementById('tip');
+    document.querySelectorAll('.nd').forEach(g => {
+        const msg = g.getAttribute('data-tip');
+        if (!msg) return;
+        g.style.cursor = 'pointer';
+        g.addEventListener('mouseenter', e => {
+            tip.innerHTML = msg.replace(/\n/g, '<br>');
+            tip.classList.add('show');
+        });
+        g.addEventListener('mousemove', e => {
+            tip.style.left = (e.clientX + 16) + 'px';
+            tip.style.top = (e.clientY + 16) + 'px';
+        });
+        g.addEventListener('mouseleave', () => {
+            tip.classList.remove('show');
+        });
+    });
+</script>
+
+</body>
+</html>
