@@ -58,6 +58,21 @@
         <div id="main-container">
             <div class="movie-alt" id="user-details-container">
             </div>
+            <div id="model-selector" style="margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                <label style="font-weight: bold; margin-right: 10px;">Ranking Model:</label>
+                <label style="margin-right: 15px; cursor: pointer;">
+                    <input type="radio" name="rankModel" value="nerualcf" /> NeuralCF
+                </label>
+                <label style="margin-right: 15px; cursor: pointer;">
+                    <input type="radio" name="rankModel" value="embmlp" /> EmbeddingMLP
+                </label>
+                <label style="margin-right: 15px; cursor: pointer;">
+                    <input type="radio" name="rankModel" value="emb" /> Embedding
+                </label>
+                <label style="cursor: pointer;">
+                    <input type="radio" name="rankModel" value="default" /> Default
+                </label>
+            </div>
             <div class="frontpage" id="recPage">
                 <div class="frontpage-section-top">
                     <div class="row">
@@ -132,11 +147,23 @@ var windowLocation = window.location;
 var userId = getQueryString("id",windowLocation);
 var model = getQueryString("model",windowLocation);
 if(null == model){
-    model = "emb";
-    //model = "nerualcf"
+    // model = "emb";
+    // model = "nerualcf"
+    model = "embmlp";
 }
 
 var baseUrl = windowLocation.protocol + "//" + windowLocation.host + "/"
+
+// Set the radio button to match the current model from URL
+$('input[name="rankModel"][value="' + model + '"]').prop('checked', true);
+
+// When user selects a different model, reload the page with the new model param
+$('input[name="rankModel"]').on('change', function(){
+    var selectedModel = $(this).val();
+    var url = new URL(window.location.href);
+    url.searchParams.set('model', selectedModel);
+    window.location.href = url.toString();
+});
 
 addUserDetails("user-details-container", userId, baseUrl);
 addRecForYou("#recPage", "recForYou", userId, model, baseUrl);

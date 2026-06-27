@@ -3,6 +3,7 @@ package com.sparrowrecsys.online.recprocess;
 import com.sparrowrecsys.online.datamanager.DataManager;
 import com.sparrowrecsys.online.datamanager.User;
 import com.sparrowrecsys.online.datamanager.Movie;
+
 import com.sparrowrecsys.online.datamanager.RedisClient;
 import com.sparrowrecsys.online.util.Config;
 import com.sparrowrecsys.online.util.Utility;
@@ -239,6 +240,9 @@ public class RecForYouProcess {
             case "nerualcf":
                 callNeuralCFTFServing(user, candidates, candidateScoreMap);
                 break;
+            case "embmlp":
+                callEmbeddingMLPTFServing(user, candidates, candidateScoreMap);
+                break;
             default:
                 //default ranking in candidate set
                 for (int i = 0 ; i < candidates.size(); i++){
@@ -287,13 +291,96 @@ public class RecForYouProcess {
         instancesRoot.put("instances", instances);
 
         //need to confirm the tf serving end point
-        String predictionScores = asyncSinglePostRequest("http://localhost:8501/v1/models/recmodel:predict", instancesRoot.toString());
+        // curl -X POST "http://localhost:8501/v1/models/sparrow_ncf:predict" -H "Content-Type: application/json" -d "{\"instances\":[{\"movieId\":223,\"userId\":9077}]}"
+        String predictionScores = asyncSinglePostRequest(Config.TF_SERVING_NCF_URL, instancesRoot.toString());
         System.out.println("send user" + user.getUserId() + " request to tf serving.");
 
         JSONObject predictionsObject = new JSONObject(predictionScores);
         JSONArray scores = predictionsObject.getJSONArray("predictions");
         for (int i = 0 ; i < candidates.size(); i++){
             candidateScoreMap.put(candidates.get(i), scores.getJSONArray(i).getDouble(0));
+        }
+    }
+
+    /**
+     * call TensorFlow Serving to get the EmbeddingMLP model inference result.
+     * <p>
+     * The request payload uses the TF Serving "instances" format. Each instance contains
+     * 17 features that the EmbeddingMLP model expects:
+     * <pre>
+     *   movieId, userId, releaseYear,
+     *   movieRatingCount, movieAvgRating, movieRatingStddev,
+     *   userRatingCount, userAvgRating, userRatingStddev,
+     *   userGenre1..userGenre5,
+     *   movieGenre1..movieGenre3
+     * </pre>
+     * <p>
+     * All features are pre-computed offline by Spark (FeatureEngForRecModel) and stored in Redis:
+     * - User features (uf:userId) loaded in {@link RecForYouProcess#getRecList}
+     * - Movie features (mf:movieId) loaded in {@link DataManager#loadMovieFeatures}
+     *
+     * @param user              input user
+     * @param candidates        candidate movies
+     * @param candidateScoreMap save prediction score into the score map
+     */
+    public static void callEmbeddingMLPTFServing(User user, List<Movie> candidates, HashMap<Movie, Double> candidateScoreMap){
+        if (null == user || null == candidates || candidates.size() == 0){
+            return;
+        }
+
+        Map<String, String> uf = user.getUserFeatures();
+
+        JSONArray instances = new JSONArray();
+        List<Movie> validCandidates = new ArrayList<>();
+        for (Movie m : candidates){
+            Map<String, String> mf = m.getMovieFeatures();
+            if (null == mf || null == uf){
+                continue;
+            }
+
+            // All values wrapped in single-element arrays so TF Serving parses them as [batch, 1]
+            // matching the model's expected input shape.
+            JSONObject instance = new JSONObject();
+
+            // --- Movie features (from Redis mf:movieId) ---
+            instance.put("movieId", new JSONArray().put(m.getMovieId()));
+            instance.put("releaseYear", new JSONArray().put(Double.parseDouble(mf.getOrDefault("releaseYear", "0"))));
+            instance.put("movieRatingCount", new JSONArray().put(Double.parseDouble(mf.getOrDefault("movieRatingCount", "0"))));
+            instance.put("movieAvgRating", new JSONArray().put(Double.parseDouble(mf.getOrDefault("movieAvgRating", "0"))));
+            instance.put("movieRatingStddev", new JSONArray().put(Double.parseDouble(mf.getOrDefault("movieRatingStddev", "0"))));
+            instance.put("movieGenre1", new JSONArray().put(mf.getOrDefault("movieGenre1", "None")));
+            instance.put("movieGenre2", new JSONArray().put(mf.getOrDefault("movieGenre2", "None")));
+            instance.put("movieGenre3", new JSONArray().put(mf.getOrDefault("movieGenre3", "None")));
+
+            // --- User features (from Redis uf:userId) ---
+            instance.put("userId", new JSONArray().put(user.getUserId()));
+            instance.put("userRatingCount", new JSONArray().put(Double.parseDouble(uf.getOrDefault("userRatingCount", "0"))));
+            instance.put("userAvgRating", new JSONArray().put(Double.parseDouble(uf.getOrDefault("userAvgRating", "0"))));
+            instance.put("userRatingStddev", new JSONArray().put(Double.parseDouble(uf.getOrDefault("userRatingStddev", "0"))));
+            instance.put("userGenre1", new JSONArray().put(uf.getOrDefault("userGenre1", "None")));
+            instance.put("userGenre2", new JSONArray().put(uf.getOrDefault("userGenre2", "None")));
+            instance.put("userGenre3", new JSONArray().put(uf.getOrDefault("userGenre3", "None")));
+            instance.put("userGenre4", new JSONArray().put(uf.getOrDefault("userGenre4", "None")));
+            instance.put("userGenre5", new JSONArray().put(uf.getOrDefault("userGenre5", "None")));
+
+            instances.put(instance);
+            validCandidates.add(m);
+        }
+
+        if (instances.isEmpty()){
+            return;
+        }
+
+        JSONObject requestBody = new JSONObject();
+        requestBody.put("instances", instances);
+
+        String predictionScores = asyncSinglePostRequest(Config.TF_SERVING_MLP_URL, requestBody.toString());
+        System.out.println("send user" + user.getUserId() + " request to EmbeddingMLP tf serving.");
+
+        JSONObject predictionsObject = new JSONObject(predictionScores);
+        JSONArray scores = predictionsObject.getJSONArray("predictions");
+        for (int i = 0; i < validCandidates.size(); i++){
+            candidateScoreMap.put(validCandidates.get(i), scores.getJSONArray(i).getDouble(0));
         }
     }
 }
