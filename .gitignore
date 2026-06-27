@@ -31,3 +31,4 @@ TFRecModel.iml
 RecPySpark.iml
 
 CLAUDE.md
+/.playwright-mcp/**
