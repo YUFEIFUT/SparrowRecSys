@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wide & Deep — 网络架构图</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0e14;
+            --surface: #141820;
+            --border: #2a2e3a;
+            --text: #d4d8e0;
+            --muted: #6b7084;
+            --input: #5a6070;
+            --wide: #ff4d6a;
+            --deep: #4da6ff;
+            --embedding: #9b6dff;
+            --dense-lin: #4da6ff;
+            --dense-act: #3ddc84;
+            --concat: #e0a020;
+            --output: #f0a050;
+            --cross: #e8943a;
+            --indicator: #e8943a;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Syne', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 32px 16px 60px;
+        }
+        h1 {
+            font-weight: 800;
+            font-size: 1.9rem;
+            letter-spacing: -0.03em;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, #ff4d6a 0%, #4da6ff 50%, #f0a050 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .sub {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-align: center;
+            max-width: 860px;
+            line-height: 1.7;
+            margin-bottom: 28px;
+        }
+        .wrap {
+            width: 100%;
+            max-width: 1200px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        svg { display: block; width: 100%; height: auto; }
+        .leg { display:flex; flex-wrap:wrap; gap:16px 28px; justify-content:center;
+            margin-top:24px; font-size:0.75rem; font-family:'DM Mono',monospace; color:var(--muted); }
+        .leg span { display:flex; align-items:center; gap:6px; }
+        .leg i { display:inline-block; width:14px; height:14px; border-radius:3px; }
+        @keyframes dash { to { stroke-dashoffset: -24; } }
+        .conn { stroke-dasharray: 8 5; animation: dash 1.8s linear infinite; }
+        .tip {
+            position: fixed;
+            background: #1e2230;
+            border: 1px solid #3a3f50;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-family: 'DM Mono', monospace;
+            font-size: 0.75rem;
+            color: #c0c6d4;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.18s;
+            z-index: 100;
+            max-width: 280px;
+            line-height: 1.55;
+            box-shadow: 0 8px 30px rgba(0,0,0,.55);
+        }
+        .tip.show { opacity:1; }
+    </style>
+</head>
+<body>
+
+<h1>Wide &amp; Deep Architecture</h1>
+<p class="sub">
+    Wide部分通过交叉特征（movieId × userRatedMovie1）直接记忆历史共现模式；
+    Deep部分通过Embedding + Dense(128)×2自动学习高阶特征交互的泛化能力。
+</p>
+
+<div class="wrap">
+    <svg id="svg" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#141820"/><stop offset="100%" stop-color="#181d28"/>
+            </linearGradient>
+            <filter id="gl"><feGaussianBlur stdDeviation="6" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <marker id="ah" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+                <path d="M0 0 L8 4 L0 8z" fill="#3a3f50"/></marker>
+        </defs>
+
+        <!-- ============ SECTION BACKGROUNDS ============ -->
+        <rect x="24" y="8" width="1152" height="140" rx="14" fill="url(#sg)" stroke="#2a2e3a" stroke-width="1"/>
+        <rect x="24" y="164" width="560" height="330" rx="14" fill="url(#sg)" stroke="#ff4d6a" stroke-width="1" stroke-opacity=".25"/>
+        <rect x="608" y="164" width="568" height="330" rx="14" fill="url(#sg)" stroke="#4da6ff" stroke-width="1" stroke-opacity=".25"/>
+        <rect x="24" y="510" width="1152" height="270" rx="14" fill="url(#sg)" stroke="#2a2e3a" stroke-width="1"/>
+
+        <!-- ============ SECTION LABELS ============ -->
+        <text x="44" y="32" fill="#6b7084" font-size="12" font-weight="700" letter-spacing=".06em" font-family="Syne,sans-serif">① INPUT FEATURES (18 features)</text>
+        <text x="44" y="188" fill="#ff4d6a" font-size="12" font-weight="700" letter-spacing=".06em">②-a WIDE BRANCH — 记忆能力</text>
+        <text x="628" y="188" fill="#4da6ff" font-size="12" font-weight="700" letter-spacing=".06em">②-b DEEP BRANCH — 泛化能力</text>
+        <text x="44" y="534" fill="#6b7084" font-size="12" font-weight="700" letter-spacing=".06em">③ OUTPUT</text>
+
+        <!-- ============ CONNECTIONS ============ -->
+        <g opacity=".45">
+
+            <!-- Input → Wide: movieId → Crossed Column -->
+            <path class="conn" d="M112,88 C112,145 300,158 300,214" stroke="#ff4d6a" stroke-width="1.4" fill="none"/>
+            <!-- Input → Wide: userRatedMovie1 → Crossed Column -->
+            <path class="conn" d="M369,88 C369,145 300,158 300,214" stroke="#ff4d6a" stroke-width="1.4" fill="none"/>
+
+            <!-- Input → Deep: movieId → movieId Emb -->
+            <path class="conn" d="M112,88 C112,150 931,170 931,214" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <!-- Input → Deep: userId → userId Emb -->
+            <path class="conn" d="M230,88 C230,150 1051,170 1051,214" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <!-- Input → Deep: userGenre → userGenre Emb -->
+            <path class="conn" d="M148,133 C148,170 691,182 691,214" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <!-- Input → Deep: movieGenre → movieGenre Emb -->
+            <path class="conn" d="M318,133 C318,170 811,182 811,214" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <!-- Input → Deep: Numerical → DenseFeatures -->
+            <path class="conn" d="M888,126 C888,195 894,225 894,278" stroke="#4da6ff" stroke-width="1.4" fill="none"/>
+
+            <!-- Wide internal: Crossed Column → Indicator -->
+            <path class="conn" d="M300,250 L300,280" stroke="#e8943a" stroke-width="1.4" fill="none"/>
+            <!-- Wide internal: Indicator → DenseFeatures -->
+            <path class="conn" d="M300,316 L300,350" stroke="#e8943a" stroke-width="1.4" fill="none"/>
+
+            <!-- Deep internal: Embeddings → DenseFeatures -->
+            <path class="conn" d="M691,246 L691,278" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M811,246 L811,278" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M931,246 L931,278" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M1051,246 L1051,278" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <!-- Deep internal: DenseFeatures → Dense(128) -->
+            <path class="conn" d="M894,314 L894,350" stroke="#4da6ff" stroke-width="1.4" fill="none"/>
+            <!-- Deep internal: Dense(128) → Dense(128) -->
+            <path class="conn" d="M894,386 L894,420" stroke="#4da6ff" stroke-width="1.4" fill="none"/>
+
+            <!-- Wide → Concatenate -->
+            <path class="conn" d="M300,390 C300,470 560,520 600,568" stroke="#ff4d6a" stroke-width="1.6" fill="none"/>
+            <!-- Deep → Concatenate -->
+            <path class="conn" d="M894,456 C894,500 640,530 600,568" stroke="#4da6ff" stroke-width="1.6" fill="none"/>
+
+            <!-- Concatenate → Dense(1, Sigmoid) -->
+            <path d="M600,620 L600,650" stroke="#f0a050" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+            <!-- Dense(1, Sigmoid) → P(Good Rating) -->
+            <path d="M600,694 L600,724" stroke="#f0a050" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+
+        </g>
+
+        <!-- ============ NODES ============ -->
+
+        <!-- ======== ① INPUT FEATURES ======== -->
+
+        <text x="230" y="48" text-anchor="middle" fill="#6b7084" font-size="10" font-family="DM Mono,monospace">Categorical / ID Inputs</text>
+
+        <g class="nd" data-tip="电影ID（整数型，范围 0~1000）&#10;在Wide部分用于构建交叉特征&#10;在Deep部分通过Embedding映射为10维稠密向量">
+            <rect x="60" y="58" width="105" height="30" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/>
+            <text x="112" y="78" text-anchor="middle" fill="#c8ccd4" font-size="11" font-family="DM Mono,monospace">movieId</text>
+        </g>
+
+        <g class="nd" data-tip="用户ID（整数型，范围 0~30000）&#10;仅在Deep部分使用&#10;通过Embedding映射为10维稠密向量">
+            <rect x="180" y="58" width="100" height="30" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/>
+            <text x="230" y="78" text-anchor="middle" fill="#c8ccd4" font-size="11" font-family="DM Mono,monospace">userId</text>
+        </g>
+
+        <g class="nd" data-tip="用户最近评分过的电影ID（整数型，范围 0~1000）&#10;仅在Wide部分使用，与movieId构建交叉特征&#10;捕获"看了电影A → 可能喜欢电影B"的共现规则">
+        <rect x="295" y="58" width="148" height="30" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/>
+        <text x="369" y="78" text-anchor="middle" fill="#c8ccd4" font-size="11" font-family="DM Mono,monospace">userRatedMovie1</text>
+        </g>
+
+        <g class="nd" data-tip="用户历史偏好的Top 5电影类型（string型）&#10;每个字段通过vocabulary_list匹配19种类型&#10;每个字段独立Embedding为10维向量&#10;共5个字段，输出 5×(batch, 10)">
+            <rect x="70" y="103" width="155" height="30" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/>
+            <text x="148" y="123" text-anchor="middle" fill="#c8ccd4" font-size="11" font-family="DM Mono,monospace">userGenre (×5)</text>
+        </g>
+
+        <g class="nd" data-tip="当前电影的类型标签（string型，最多3个）&#10;每个字段通过vocabulary_list匹配19种类型&#10;每个字段独立Embedding为10维向量&#10;共3个字段，输出 3×(batch, 10)">
+            <rect x="240" y="103" width="155" height="30" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/>
+            <text x="318" y="123" text-anchor="middle" fill="#c8ccd4" font-size="11" font-family="DM Mono,monospace">movieGenre (×3)</text>
+        </g>
+
+        <text x="888" y="48" text-anchor="middle" fill="#6b7084" font-size="10" font-family="DM Mono,monospace">Numerical Inputs (7 features)</text>
+        <g class="nd" data-tip="7个数值型特征，直接作为连续值输入：&#10;releaseYear · movieRatingCount · movieAvgRating&#10;movieRatingStddev · userRatingCount&#10;userAvgRating · userRatingStddev">
+            <rect x="615" y="58" width="545" height="68" rx="6" fill="#1a1e28" stroke="#4da6ff" stroke-width=".8" stroke-opacity=".4"/>
+            <text x="888" y="82" text-anchor="middle" fill="#7a8090" font-size="9.5" font-family="DM Mono,monospace">releaseYear · movieRatingCount · movieAvgRating · movieRatingStddev</text>
+            <text x="888" y="98" text-anchor="middle" fill="#7a8090" font-size="9.5" font-family="DM Mono,monospace">userRatingCount · userAvgRating · userRatingStddev</text>
+        </g>
+
+        <!-- ======== ②-a WIDE BRANCH ======== -->
+
+        <g class="nd" data-tip="将movieId和userRatedMovie1做笛卡尔积交叉&#10;哈希桶大小10000，防止特征空间爆炸&#10;本质上是一个二阶特征交叉操作&#10;捕获用户历史行为与当前电影的共现关系">
+            <rect x="75" y="214" width="450" height="36" rx="7" fill="#1e1418" stroke="#e8943a" stroke-width="1.4"/>
+            <text x="300" y="238" text-anchor="middle" fill="#e8943a" font-size="11" font-family="DM Mono,monospace">CrossedColumn [movieId × userRatedMovie1]</text>
+        </g>
+
+        <g class="nd" data-tip="将交叉特征转换为One-Hot指示向量&#10;最多10000维的稀疏向量&#10;每个样本只有一个位置为1，其余为0&#10;适合Wide层的线性模型直接使用">
+            <rect x="115" y="280" width="370" height="36" rx="7" fill="#1e1418" stroke="#e8943a" stroke-width="1.4"/>
+            <text x="300" y="304" text-anchor="middle" fill="#e8943a" font-size="11" font-family="DM Mono,monospace">IndicatorColumn → One-Hot (10000)</text>
+        </g>
+
+        <g class="nd" data-tip="Wide部分的DenseFeatures层&#10;将交叉特征的One-Hot向量直接输出&#10;作为Wide分支的最终表示（无隐藏层）&#10;输出: (batch, 10000) 稀疏向量">
+            <rect x="95" y="350" width="410" height="40" rx="8" fill="#1e1418" stroke="#ff4d6a" stroke-width="1.6"/>
+            <text x="300" y="368" text-anchor="middle" fill="#ff4d6a" font-size="12" font-weight="600" font-family="DM Mono,monospace">DenseFeatures (crossed_feature)</text>
+            <text x="300" y="384" text-anchor="middle" fill="#cc3050" font-size="9.5" font-family="DM Mono,monospace" opacity=".7">→ sparse one-hot (batch, 10000)</text>
+        </g>
+
+        <!-- Wide annotation -->
+        <text x="300" y="440" text-anchor="middle" fill="#ff4d6a" font-size="9.5" font-family="DM Mono,monospace" opacity=".55">无隐藏层 → 直接送入 Concatenate</text>
+
+        <!-- ======== ②-b DEEP BRANCH ======== -->
+
+        <!-- Embedding nodes -->
+        <g class="nd" data-tip="userGenre Embedding: 将用户偏好类型字符串&#10;映射为10维稠密向量&#10;5个genre字段各自独立Embedding&#10;输出: 5 × (batch, 10)">
+            <rect x="636" y="214" width="110" height="32" rx="6" fill="#1a1428" stroke="#9b6dff" stroke-width="1.3"/>
+            <text x="691" y="234" text-anchor="middle" fill="#9b6dff" font-size="10" font-family="DM Mono,monospace">Emb (10)</text>
+        </g>
+        <text x="691" y="260" text-anchor="middle" fill="#6b5a90" font-size="8.5" font-family="DM Mono,monospace">userGenre(×5)</text>
+
+        <g class="nd" data-tip="movieGenre Embedding: 将电影类型标签字符串&#10;映射为10维稠密向量&#10;3个genre字段各自独立Embedding&#10;输出: 3 × (batch, 10)">
+            <rect x="756" y="214" width="110" height="32" rx="6" fill="#1a1428" stroke="#9b6dff" stroke-width="1.3"/>
+            <text x="811" y="234" text-anchor="middle" fill="#9b6dff" font-size="10" font-family="DM Mono,monospace">Emb (10)</text>
+        </g>
+        <text x="811" y="260" text-anchor="middle" fill="#6b5a90" font-size="8.5" font-family="DM Mono,monospace">movieGenre(×3)</text>
+
+        <g class="nd" data-tip="movieId Embedding: 将电影ID (0~1000)&#10;映射为10维稠密向量&#10;每个电影学习一个独立的向量表示&#10;输出: (batch, 10)">
+            <rect x="876" y="214" width="110" height="32" rx="6" fill="#1a1428" stroke="#9b6dff" stroke-width="1.3"/>
+            <text x="931" y="234" text-anchor="middle" fill="#9b6dff" font-size="10" font-family="DM Mono,monospace">Emb (10)</text>
+        </g>
+        <text x="931" y="260" text-anchor="middle" fill="#6b5a90" font-size="8.5" font-family="DM Mono,monospace">movieId</text>
+
+        <g class="nd" data-tip="userId Embedding: 将用户ID (0~30000)&#10;映射为10维稠密向量&#10;每个用户学习一个独立的向量表示&#10;输出: (batch, 10)">
+            <rect x="996" y="214" width="110" height="32" rx="6" fill="#1a1428" stroke="#9b6dff" stroke-width="1.3"/>
+            <text x="1051" y="234" text-anchor="middle" fill="#9b6dff" font-size="10" font-family="DM Mono,monospace">Emb (10)</text>
+        </g>
+        <text x="1051" y="260" text-anchor="middle" fill="#6b5a90" font-size="8.5" font-family="DM Mono,monospace">userId</text>
+
+        <!-- DenseFeatures (Deep) -->
+        <g class="nd" data-tip="Deep部分的DenseFeatures层&#10;将所有数值特征和Embedding特征拼接为稠密向量&#10;数值: 7维 + 嵌入: 10×10=100维 = 共107维&#10;输出: (batch, 107)">
+            <rect x="650" y="278" width="488" height="36" rx="7" fill="#101828" stroke="#4da6ff" stroke-width="1.4"/>
+            <text x="894" y="302" text-anchor="middle" fill="#4da6ff" font-size="11" font-family="DM Mono,monospace">DenseFeatures (numerical + categorical)</text>
+        </g>
+
+        <!-- Dense(128, ReLU) #1 -->
+        <g class="nd" data-tip="第一层隐藏层: 107 → 128&#10;使用ReLU激活函数引入非线性&#10;使网络能够学习复杂的特征交互&#10;输出: (batch, 128)">
+            <rect x="700" y="350" width="388" height="36" rx="7" fill="#0e1e18" stroke="#3ddc84" stroke-width="1.3"/>
+            <text x="894" y="374" text-anchor="middle" fill="#3ddc84" font-size="11" font-family="DM Mono,monospace">Dense (128, ReLU)</text>
+        </g>
+
+        <!-- Dense(128, ReLU) #2 -->
+        <g class="nd" data-tip="第二层隐藏层: 128 → 128&#10;进一步提取高阶特征组合&#10;使用ReLU激活函数&#10;输出: (batch, 128)">
+            <rect x="700" y="420" width="388" height="36" rx="7" fill="#0e1e18" stroke="#3ddc84" stroke-width="1.3"/>
+            <text x="894" y="444" text-anchor="middle" fill="#3ddc84" font-size="11" font-family="DM Mono,monospace">Dense (128, ReLU)</text>
+        </g>
+
+        <!-- Deep shape annotations -->
+        <text x="1100" y="302" fill="#4da6ff" font-size="9" font-family="DM Mono,monospace" opacity=".6">→ (batch, 107)</text>
+        <text x="1100" y="374" fill="#3ddc84" font-size="9" font-family="DM Mono,monospace" opacity=".6">→ (batch, 128)</text>
+        <text x="1100" y="444" fill="#3ddc84" font-size="9" font-family="DM Mono,monospace" opacity=".6">→ (batch, 128)</text>
+
+        <!-- ======== ③ OUTPUT ======== -->
+
+        <!-- Branch annotations -->
+        <text x="420" y="560" fill="#ff4d6a" font-size="8.5" font-family="DM Mono,monospace" opacity=".7">②-a Wide</text>
+        <text x="750" y="560" fill="#4da6ff" font-size="8.5" font-family="DM Mono,monospace" opacity=".7">②-b Deep</text>
+
+        <!-- Concatenate -->
+        <g class="nd" data-tip="将Wide和Deep两部分的输出拼接:&#10;  Wide:  稀疏One-Hot向量 (10000维)&#10;  Deep:  稠密特征向量 (128维)&#10;总输出: (batch, 10107)&#10;&#10;模型同时具备Wide的记忆能力和Deep的泛化能力">
+            <rect x="180" y="568" width="840" height="52" rx="10" fill="#1a1610" stroke="#e0a020" stroke-width="1.5"/>
+            <text x="600" y="590" text-anchor="middle" fill="#e0a020" font-size="13" font-weight="700" font-family="DM Mono,monospace">Concatenate</text>
+            <text x="600" y="610" text-anchor="middle" fill="#c09818" font-size="10" font-family="DM Mono,monospace" opacity=".75">[Wide (10000)] ⊕ [Deep (128)]  →  (batch, 10107)</text>
+        </g>
+
+        <!-- Dense(1, Sigmoid) -->
+        <g class="nd" data-tip="输出层: 10107 → 1&#10;Sigmoid激活函数将输出压缩到 [0, 1]&#10;表示"用户会给好评"的预测概率&#10;输出: (batch, 1)">
+        <rect x="300" y="650" width="600" height="44" rx="10" fill="#1a1210" stroke="#f0a050" stroke-width="1.5"/>
+        <text x="600" y="670" text-anchor="middle" fill="#f0a050" font-size="13" font-weight="700" font-family="DM Mono,monospace">Dense (1, Sigmoid)</text>
+        <text x="600" y="688" text-anchor="middle" fill="#d0903c" font-size="10" font-family="DM Mono,monospace" opacity=".7">→ (batch, 1)</text>
+        </g>
+
+        <!-- P(Good Rating) -->
+        <g class="nd" data-tip="最终预测结果: 好评概率 P(goodRating)&#10;训练目标: 最小化 binary_crossentropy 损失&#10;评估指标: Accuracy, ROC-AUC, PR-AUC">
+            <rect x="400" y="724" width="400" height="42" rx="10" fill="#1e1810" stroke="#f0a050" stroke-width="2" filter="url(#gl)"/>
+            <text x="600" y="750" text-anchor="middle" fill="#f0a050" font-size="14" font-weight="800" font-family="Syne,sans-serif">P ( Good Rating )</text>
+        </g>
+
+        <!-- Decorative glow -->
+        <ellipse cx="600" cy="750" rx="200" ry="25" fill="#f0a050" opacity=".04"/>
+
+    </svg>
+</div>
+
+<!-- Legend -->
+<div class="leg">
+    <span><i style="background:#5a6070"></i> Input</span>
+    <span><i style="background:#e8943a"></i> Crossed / Indicator</span>
+    <span><i style="background:#9b6dff"></i> Embedding</span>
+    <span><i style="background:#4da6ff"></i> DenseFeatures / Dense (Linear)</span>
+    <span><i style="background:#3ddc84"></i> Dense (ReLU)</span>
+    <span><i style="background:#ff4d6a"></i> Wide Branch</span>
+    <span><i style="background:#e0a020"></i> Concatenate</span>
+    <span><i style="background:#f0a050"></i> Output</span>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+    const tip = document.getElementById('tip');
+    document.querySelectorAll('.nd').forEach(g => {
+        const msg = g.getAttribute('data-tip');
+        if (!msg) return;
+        g.style.cursor = 'pointer';
+        g.addEventListener('mouseenter', e => {
+            tip.innerHTML = msg.replace(/\n/g, '<br>');
+            tip.classList.add('show');
+        });
+        g.addEventListener('mousemove', e => {
+            tip.style.left = (e.clientX + 16) + 'px';
+            tip.style.top = (e.clientY + 16) + 'px';
+        });
+        g.addEventListener('mouseleave', () => {
+            tip.classList.remove('show');
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Collaborative Filtering — 网络架构图</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0e14;
+            --surface: #141820;
+            --border: #2a2e3a;
+            --text: #d4d8e0;
+            --muted: #6b7084;
+            --input: #5a6070;
+            --embedding: #9b6dff;
+            --dense-act: #3ddc84;
+            --concat: #e0a020;
+            --output: #f0a050;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Syne', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 32px 16px 60px;
+        }
+        h1 {
+            font-weight: 800;
+            font-size: 1.9rem;
+            letter-spacing: -0.03em;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, #9b6dff 0%, #3ddc84 50%, #f0a050 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .sub {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-align: center;
+            max-width: 820px;
+            line-height: 1.7;
+            margin-bottom: 28px;
+        }
+        .wrap {
+            width: 100%;
+            max-width: 960px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        svg { display: block; width: 100%; height: auto; }
+
+        .leg { display:flex; flex-wrap:wrap; gap:16px 28px; justify-content:center;
+            margin-top:24px; font-size:0.75rem; font-family:'DM Mono',monospace; color:var(--muted); }
+        .leg span { display:flex; align-items:center; gap:6px; }
+        .leg i { display:inline-block; width:14px; height:14px; border-radius:3px; }
+
+        @keyframes dash { to { stroke-dashoffset: -24; } }
+        .conn { stroke-dasharray: 8 5; animation: dash 1.8s linear infinite; }
+
+        .tip {
+            position: fixed;
+            background: #1e2230;
+            border: 1px solid #3a3f50;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-family: 'DM Mono', monospace;
+            font-size: 0.75rem;
+            color: #c0c6d4;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.18s;
+            z-index: 100;
+            max-width: 280px;
+            line-height: 1.55;
+            box-shadow: 0 8px 30px rgba(0,0,0,.55);
+        }
+        .tip.show { opacity:1; }
+    </style>
+</head>
+<body>
+
+<h1>Neural Collaborative Filtering</h1>
+<p class="sub">
+    neural_model_1 架构：双塔各自仅含 Embedding 层，拼接后经两层 MLP(10→10) 学习用户-物品的非线性交互，输出点击概率。
+</p>
+
+<div class="wrap">
+    <svg id="svg" viewBox="0 0 900 680" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#141820"/><stop offset="100%" stop-color="#181d28"/>
+            </linearGradient>
+            <filter id="gl"><feGaussianBlur stdDeviation="6" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <marker id="ah" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+                <path d="M0 0 L8 4 L0 8z" fill="#3a3f50"/></marker>
+        </defs>
+
+        <!-- ============ SECTION BACKGROUNDS ============ -->
+        <rect x="24" y="8" width="852" height="84" rx="14" fill="url(#sg)" stroke="#2a2e3a" stroke-width="1"/>
+        <rect x="24" y="104" width="852" height="120" rx="14" fill="url(#sg)" stroke="#9b6dff" stroke-width="1" stroke-opacity=".25"/>
+        <rect x="24" y="236" width="852" height="272" rx="14" fill="url(#sg)" stroke="#3ddc84" stroke-width="1" stroke-opacity=".2"/>
+        <rect x="24" y="508" width="852" height="162" rx="14" fill="url(#sg)" stroke="#f0a050" stroke-width="1" stroke-opacity=".25"/>
+
+        <!-- ============ SECTION LABELS ============ -->
+        <text x="44" y="32" fill="#6b7084" font-size="12" font-weight="700" letter-spacing=".06em" font-family="Syne,sans-serif">① INPUT FEATURES</text>
+        <text x="44" y="128" fill="#9b6dff" font-size="12" font-weight="700" letter-spacing=".06em" opacity=".85">② EMBEDDING TOWERS</text>
+        <text x="44" y="260" fill="#3ddc84" font-size="12" font-weight="700" letter-spacing=".06em" opacity=".8">③ CONCATENATE &amp; MLP</text>
+        <text x="44" y="532" fill="#f0a050" font-size="12" font-weight="700" letter-spacing=".06em" opacity=".85">④ OUTPUT</text>
+
+        <!-- ============ CONNECTIONS (behind nodes) ============ -->
+        <g opacity=".45">
+
+            <!-- Input → DenseFeatures -->
+            <path class="conn" d="M250,86 L250,152" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M650,86 L650,152" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+
+            <!-- DenseFeatures → Concatenate -->
+            <path class="conn" d="M250,190 C250,233 450,240 450,276" stroke="#e0a020" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M650,190 C650,233 450,240 450,276" stroke="#e0a020" stroke-width="1.4" fill="none"/>
+
+            <!-- Concatenate → Dense(10,ReLU) #1 -->
+            <path class="conn" d="M450,320 L450,358" stroke="#3ddc84" stroke-width="1.4" fill="none"/>
+
+            <!-- Dense(10,ReLU) #1 → Dense(10,ReLU) #2 -->
+            <path class="conn" d="M450,398 L450,438" stroke="#3ddc84" stroke-width="1.4" fill="none"/>
+
+            <!-- Dense(10,ReLU) #2 → Dense(1,Sigmoid) -->
+            <path class="conn" d="M450,478 L450,548" stroke="#f0a050" stroke-width="1.6" fill="none"/>
+
+            <!-- Dense(1,Sigmoid) → Output -->
+            <path d="M450,596 L450,626" stroke="#f0a050" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+
+        </g>
+
+        <!-- ============ NODES ============ -->
+
+        <!-- ===== SECTION 1: INPUT ===== -->
+
+        <!-- Categorical Inputs label -->
+        <text x="450" y="56" text-anchor="middle" fill="#6b7084" font-size="10" font-family="DM Mono,monospace">Categorical Inputs</text>
+
+        <!-- movieId -->
+        <g><rect x="190" y="62" width="120" height="28" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/><text x="250" y="81" text-anchor="middle" fill="#c8ccd4" font-size="11" font-family="DM Mono,monospace">movieId</text></g>
+
+        <!-- userId -->
+        <g><rect x="590" y="62" width="120" height="28" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/><text x="650" y="81" text-anchor="middle" fill="#c8ccd4" font-size="11" font-family="DM Mono,monospace">userId</text></g>
+
+        <!-- ===== SECTION 2: EMBEDDING TOWERS ===== -->
+
+        <!-- Tower path labels -->
+        <text x="250" y="146" text-anchor="middle" fill="#9b6dff" font-size="11" font-weight="700" font-family="DM Mono,monospace" opacity=".8">Item Tower</text>
+        <text x="650" y="146" text-anchor="middle" fill="#9b6dff" font-size="11" font-weight="700" font-family="DM Mono,monospace" opacity=".8">User Tower</text>
+
+        <!-- DenseFeatures (movieId embedding) -->
+        <g class="nd" data-tip="DenseFeatures 层使用 embedding_column(&#10;categorical_column_with_identity(&#10;  key='movieId', num_buckets=1001),&#10;  dimension=10) 将 movieId (0~1000)&#10;映射为 10 维稠密嵌入向量。&#10;输出: (batch, 10)">
+            <rect x="150" y="152" width="200" height="38" rx="7" fill="#1a1428" stroke="#9b6dff" stroke-width="1.4"/>
+            <text x="250" y="176" text-anchor="middle" fill="#9b6dff" font-size="11" font-family="DM Mono,monospace">DenseFeatures</text>
+        </g>
+        <text x="250" y="210" text-anchor="middle" fill="#7a6b9a" font-size="9" font-family="DM Mono,monospace" opacity=".7">→ (batch, 10)</text>
+
+        <!-- DenseFeatures (userId embedding) -->
+        <g class="nd" data-tip="DenseFeatures 层使用 embedding_column(&#10;categorical_column_with_identity(&#10;  key='userId', num_buckets=30001),&#10;  dimension=10) 将 userId (0~30000)&#10;映射为 10 维稠密嵌入向量。&#10;输出: (batch, 10)">
+            <rect x="550" y="152" width="200" height="38" rx="7" fill="#1a1428" stroke="#9b6dff" stroke-width="1.4"/>
+            <text x="650" y="176" text-anchor="middle" fill="#9b6dff" font-size="11" font-family="DM Mono,monospace">DenseFeatures</text>
+        </g>
+        <text x="650" y="210" text-anchor="middle" fill="#7a6b9a" font-size="9" font-family="DM Mono,monospace" opacity=".7">→ (batch, 10)</text>
+
+        <!-- ===== SECTION 3: CONCATENATE & MLP ===== -->
+
+        <!-- Concatenate -->
+        <g class="nd" data-tip="将物品塔和用户塔的 10 维嵌入向量&#10;在最后一维(axis=-1)拼接。&#10;tf.keras.layers.concatenate(&#10;  [item_tower, user_tower])&#10;物品(10) + 用户(10) = 20 维&#10;输出: (batch, 20)">
+            <rect x="275" y="276" width="350" height="44" rx="8" fill="#1e1a10" stroke="#e0a020" stroke-width="1.5"/>
+            <text x="450" y="294" text-anchor="middle" fill="#e0a020" font-size="12" font-weight="600" font-family="DM Mono,monospace">Concatenate</text>
+            <text x="450" y="312" text-anchor="middle" fill="#c09818" font-size="9.5" font-family="DM Mono,monospace" opacity=".7">[movie Emb(10)] + [user Emb(10)]  →  (batch, 20)</text>
+        </g>
+
+        <!-- MLP Section Label -->
+        <text x="450" y="352" text-anchor="middle" fill="#3ddc84" font-size="10" font-weight="600" font-family="DM Mono,monospace" opacity=".6">MLP Interaction Layers</text>
+
+        <!-- Dense(10, ReLU) #1 -->
+        <g class="nd" data-tip="第一层 MLP 全连接层: 20 → 10&#10;tf.keras.layers.Dense(10, activation='relu')&#10;ReLU 激活函数引入非线性，&#10;学习用户-物品之间的复杂交互模式。&#10;输出: (batch, 10)">
+            <rect x="340" y="358" width="220" height="40" rx="7" fill="#0e1e18" stroke="#3ddc84" stroke-width="1.3"/>
+            <text x="450" y="377" text-anchor="middle" fill="#3ddc84" font-size="11" font-family="DM Mono,monospace">Dense (10, ReLU)</text>
+            <text x="450" y="392" text-anchor="middle" fill="#2ba060" font-size="9" font-family="DM Mono,monospace" opacity=".6">→ (batch, 10)</text>
+        </g>
+
+        <!-- Dense(10, ReLU) #2 -->
+        <g class="nd" data-tip="第二层 MLP 全连接层: 10 → 10&#10;tf.keras.layers.Dense(10, activation='relu')&#10;进一步提取高阶交互特征。&#10;hidden_units=[10, 10] 中的第二个 10。&#10;输出: (batch, 10)">
+            <rect x="340" y="438" width="220" height="40" rx="7" fill="#0e1e18" stroke="#3ddc84" stroke-width="1.3"/>
+            <text x="450" y="457" text-anchor="middle" fill="#3ddc84" font-size="11" font-family="DM Mono,monospace">Dense (10, ReLU)</text>
+            <text x="450" y="472" text-anchor="middle" fill="#2ba060" font-size="9" font-family="DM Mono,monospace" opacity=".6">→ (batch, 10)</text>
+        </g>
+
+        <!-- ===== SECTION 4: OUTPUT ===== -->
+
+        <!-- Dense(1, Sigmoid) -->
+        <g class="nd" data-tip="输出层: 10 → 1&#10;tf.keras.layers.Dense(1, activation='sigmoid')&#10;Sigmoid 将输出压缩到 [0, 1] 区间，&#10;表示用户点击/喜欢该物品的概率。&#10;输出: (batch, 1)">
+            <rect x="275" y="548" width="350" height="48" rx="10" fill="#1a1210" stroke="#f0a050" stroke-width="1.5"/>
+            <text x="450" y="568" text-anchor="middle" fill="#f0a050" font-size="13" font-weight="700" font-family="DM Mono,monospace">Dense (1, Sigmoid)</text>
+            <text x="450" y="586" text-anchor="middle" fill="#d0903c" font-size="10" font-family="DM Mono,monospace" opacity=".7">→ (batch, 1)</text>
+        </g>
+
+        <!-- Output -->
+        <g class="nd" data-tip="最终预测结果: P(goodRating)&#10;训练: model.fit(train_dataset, epochs=5)&#10;损失: binary_crossentropy&#10;优化器: Adam&#10;评估: accuracy, AUC-ROC, AUC-PR">
+            <rect x="325" y="626" width="250" height="40" rx="10" fill="#1e1810" stroke="#f0a050" stroke-width="2" filter="url(#gl)"/>
+            <text x="450" y="651" text-anchor="middle" fill="#f0a050" font-size="14" font-weight="800" font-family="Syne,sans-serif">P ( Good Rating )</text>
+        </g>
+
+        <!-- Decorative: output glow -->
+        <ellipse cx="450" cy="646" rx="150" ry="22" fill="#f0a050" opacity=".04"/>
+
+        <!-- ============ SHAPE FLOW ANNOTATIONS ============ -->
+        <!-- Left side: dimension flow -->
+        <text x="80" y="176" text-anchor="middle" fill="#5a5070" font-size="8" font-family="DM Mono,monospace" opacity=".5">int32</text>
+        <text x="80" y="298" text-anchor="middle" fill="#5a5070" font-size="8" font-family="DM Mono,monospace" opacity=".5">10+10</text>
+        <text x="80" y="378" text-anchor="middle" fill="#5a5070" font-size="8" font-family="DM Mono,monospace" opacity=".5">10</text>
+        <text x="80" y="458" text-anchor="middle" fill="#5a5070" font-size="8" font-family="DM Mono,monospace" opacity=".5">10</text>
+        <text x="80" y="572" text-anchor="middle" fill="#5a5070" font-size="8" font-family="DM Mono,monospace" opacity=".5">1</text>
+
+        <!-- Right side: architecture note -->
+        <text x="820" y="176" text-anchor="middle" fill="#5a5070" font-size="8" font-family="DM Mono,monospace" opacity=".5">embedding</text>
+        <text x="820" y="298" text-anchor="middle" fill="#5a5070" font-size="8" font-family="DM Mono,monospace" opacity=".5">concat</text>
+        <text x="820" y="378" text-anchor="middle" fill="#5a5070" font-size="8" font-family="DM Mono,monospace" opacity=".5">relu</text>
+        <text x="820" y="458" text-anchor="middle" fill="#5a5070" font-size="8" font-family="DM Mono,monospace" opacity=".5">relu</text>
+        <text x="820" y="572" text-anchor="middle" fill="#5a5070" font-size="8" font-family="DM Mono,monospace" opacity=".5">sigmoid</text>
+
+    </svg>
+</div>
+
+<!-- Legend -->
+<div class="leg">
+    <span><i style="background:#5a6070"></i> Input</span>
+    <span><i style="background:#9b6dff"></i> Embedding / DenseFeatures</span>
+    <span><i style="background:#e0a020"></i> Concatenate</span>
+    <span><i style="background:#3ddc84"></i> Dense (ReLU)</span>
+    <span><i style="background:#f0a050"></i> Output / Sigmoid</span>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+    const tip = document.getElementById('tip');
+    document.querySelectorAll('.nd').forEach(g => {
+        const msg = g.getAttribute('data-tip');
+        if (!msg) return;
+        g.style.cursor = 'pointer';
+        g.addEventListener('mouseenter', e => {
+            tip.innerHTML = msg.replace(/\n/g, '<br>');
+            tip.classList.add('show');
+        });
+        g.addEventListener('mousemove', e => {
+            tip.style.left = (e.clientX + 16) + 'px';
+            tip.style.top = (e.clientY + 16) + 'px';
+        });
+        g.addEventListener('mouseleave', () => {
+            tip.classList.remove('show');
+        });
+    });
+</script>
+
+</body>
+</html>

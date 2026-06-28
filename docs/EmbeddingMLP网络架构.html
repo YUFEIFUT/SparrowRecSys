@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embedding+MLP — 网络架构图</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0e14;
+            --surface: #141820;
+            --border: #2a2e3a;
+            --text: #d4d8e0;
+            --muted: #6b7084;
+            --input: #5a6070;
+            --embedding: #9b6dff;
+            --dense: #4da6ff;
+            --relu: #3ddc84;
+            --concat: #e0a020;
+            --flatten: #7a7f92;
+            --output: #f0a050;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Syne', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 32px 16px 60px;
+        }
+        h1 {
+            font-weight: 800;
+            font-size: 1.9rem;
+            letter-spacing: -0.03em;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, #9b6dff 0%, #3ddc84 50%, #f0a050 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .sub {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-align: center;
+            max-width: 860px;
+            line-height: 1.7;
+            margin-bottom: 28px;
+        }
+        .wrap {
+            width: 100%;
+            max-width: 1200px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        svg { display: block; width: 100%; height: auto; }
+        .leg { display:flex; flex-wrap:wrap; gap:16px 28px; justify-content:center;
+            margin-top:24px; font-size:0.75rem; font-family:'DM Mono',monospace; color:var(--muted); }
+        .leg span { display:flex; align-items:center; gap:6px; }
+        .leg i { display:inline-block; width:14px; height:14px; border-radius:3px; }
+        @keyframes dash { to { stroke-dashoffset: -24; } }
+        .conn { stroke-dasharray: 8 5; animation: dash 1.8s linear infinite; }
+        .tip {
+            position: fixed;
+            background: #1e2230;
+            border: 1px solid #3a3f50;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-family: 'DM Mono', monospace;
+            font-size: 0.75rem;
+            color: #c0c6d4;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.18s;
+            z-index: 100;
+            max-width: 300px;
+            line-height: 1.55;
+            box-shadow: 0 8px 30px rgba(0,0,0,.55);
+        }
+        .tip.show { opacity:1; }
+    </style>
+</head>
+<body>
+
+<h1>Embedding + MLP Architecture</h1>
+<p class="sub">
+    类别特征（用户偏好类型 ×5、电影类型 ×3、movieId、userId）经 Embedding(10) 编码后，与 7 个数值特征在 DenseFeatures 层拼接为 107 维向量，通过两层 128 维 ReLU 全连接网络输出好评概率。
+</p>
+
+<div class="wrap">
+    <svg id="svg" viewBox="0 0 1100 700" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#141820"/><stop offset="100%" stop-color="#181d28"/>
+            </linearGradient>
+            <filter id="gl"><feGaussianBlur stdDeviation="6" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <marker id="ah" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+                <path d="M0 0 L8 4 L0 8z" fill="#3a3f50"/></marker>
+        </defs>
+
+        <!-- ============ SECTION BACKGROUNDS ============ -->
+        <rect x="24" y="8" width="1052" height="112" rx="14" fill="url(#sg)" stroke="#2a2e3a" stroke-width="1"/>
+        <rect x="24" y="132" width="1052" height="112" rx="14" fill="url(#sg)" stroke="#2a2e3a" stroke-width="1"/>
+        <rect x="24" y="256" width="1052" height="56" rx="14" fill="url(#sg)" stroke="#2a2e3a" stroke-width="1"/>
+        <rect x="24" y="324" width="1052" height="158" rx="14" fill="url(#sg)" stroke="#3ddc84" stroke-width="1" stroke-opacity=".18"/>
+        <rect x="24" y="494" width="1052" height="140" rx="14" fill="url(#sg)" stroke="#f0a050" stroke-width="1" stroke-opacity=".22"/>
+
+        <!-- ============ SECTION LABELS ============ -->
+        <text x="44" y="32" fill="#6b7084" font-size="12" font-weight="700" letter-spacing=".06em" font-family="Syne,sans-serif">① INPUT FEATURES</text>
+        <text x="44" y="156" fill="#6b7084" font-size="12" font-weight="700" letter-spacing=".06em" font-family="Syne,sans-serif">② FEATURE PROCESSING</text>
+        <text x="44" y="280" fill="#6b7084" font-size="12" font-weight="700" letter-spacing=".06em" font-family="Syne,sans-serif">③ DENSE FEATURES MERGE</text>
+        <text x="44" y="348" fill="#3ddc84" font-size="12" font-weight="700" letter-spacing=".06em" font-family="Syne,sans-serif" opacity=".7">④ DNN LAYERS</text>
+        <text x="44" y="518" fill="#f0a050" font-size="12" font-weight="700" letter-spacing=".06em" font-family="Syne,sans-serif" opacity=".7">⑤ OUTPUT</text>
+
+        <!-- ============ CONNECTIONS (behind nodes) ============ -->
+        <g opacity=".45">
+
+            <!-- Categorical inputs → Embedding processing -->
+            <path class="conn" d="M125,94 L125,175" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M285,94 L285,175" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M427,94 L427,175" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M552,94 L552,175" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+
+            <!-- Numerical input → Numeric processing -->
+            <path class="conn" d="M865,94 L865,175" stroke="#4da6ff" stroke-width="1.4" fill="none"/>
+
+            <!-- Embedding processing → DenseFeatures -->
+            <path class="conn" d="M125,211 C125,242 550,242 550,264" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M285,211 C285,242 550,242 550,264" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M427,211 C427,242 550,242 550,264" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+            <path class="conn" d="M552,211 C552,242 550,242 550,264" stroke="#9b6dff" stroke-width="1.4" fill="none"/>
+
+            <!-- Numeric processing → DenseFeatures -->
+            <path class="conn" d="M865,211 C865,242 550,242 550,264" stroke="#4da6ff" stroke-width="1.4" fill="none"/>
+
+            <!-- DenseFeatures → Dense(128) #1 -->
+            <path class="conn" d="M550,304 L550,340" stroke="#e0a020" stroke-width="1.6" fill="none"/>
+
+            <!-- Dense(128) #1 → Dense(128) #2 -->
+            <path class="conn" d="M550,382 L550,400" stroke="#3ddc84" stroke-width="1.6" fill="none"/>
+
+            <!-- Dense(128) #2 → Dense(1, Sigmoid) -->
+            <path class="conn" d="M550,442 L550,510" stroke="#3ddc84" stroke-width="1.6" fill="none"/>
+
+            <!-- Dense(1, Sigmoid) → P(Good Rating) -->
+            <path d="M550,552 L550,575" stroke="#f0a050" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+
+        </g>
+
+        <!-- ============ NODES ============ -->
+
+        <!-- ── INPUT: Categorical Features ── -->
+        <text x="350" y="50" text-anchor="middle" fill="#6b7084" font-size="10" font-family="DM Mono,monospace">Categorical Features</text>
+
+        <g class="nd" data-tip="用户偏好的 5 个电影类型标签 (userGenre1~5)。&#10;每个特征使用 categorical_column_with_vocabulary_list 编码，&#10;匹配 19 种电影类型，经 embedding_column 转为 10 维向量。">
+            <rect x="50" y="58" width="150" height="36" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/>
+            <text x="125" y="81" text-anchor="middle" fill="#c8ccd4" font-size="11" font-family="DM Mono,monospace">userGenre 1~5</text>
+        </g>
+
+        <g class="nd" data-tip="电影的 3 个类型标签 (movieGenre1~3)。&#10;每个特征使用 categorical_column_with_vocabulary_list 编码，&#10;匹配 19 种电影类型，经 embedding_column 转为 10 维向量。">
+            <rect x="210" y="58" width="150" height="36" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/>
+            <text x="285" y="81" text-anchor="middle" fill="#c8ccd4" font-size="11" font-family="DM Mono,monospace">movieGenre 1~3</text>
+        </g>
+
+        <g class="nd" data-tip="电影 ID (movieId)。&#10;使用 categorical_column_with_identity 映射，&#10;num_buckets=1001，支持 ID 0~1000。&#10;经 embedding_column 转为 10 维稠密向量。">
+            <rect x="370" y="58" width="115" height="36" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/>
+            <text x="427" y="81" text-anchor="middle" fill="#c8ccd4" font-size="11" font-family="DM Mono,monospace">movieId</text>
+        </g>
+
+        <g class="nd" data-tip="用户 ID (userId)。&#10;使用 categorical_column_with_identity 映射，&#10;num_buckets=30001，支持 ID 0~30000。&#10;经 embedding_column 转为 10 维稠密向量。">
+            <rect x="495" y="58" width="115" height="36" rx="6" fill="#1a1e28" stroke="#5a6070" stroke-width="1.2"/>
+            <text x="552" y="81" text-anchor="middle" fill="#c8ccd4" font-size="11" font-family="DM Mono,monospace">userId</text>
+        </g>
+
+        <!-- ── INPUT: Numerical Features ── -->
+        <text x="865" y="50" text-anchor="middle" fill="#6b7084" font-size="10" font-family="DM Mono,monospace">Numerical Features (7)</text>
+        <g class="nd" data-tip="7 个数值特征，直接作为连续值输入模型:&#10;• releaseYear — 电影上映年份&#10;• movieRatingCount — 电影评分次数&#10;• movieAvgRating — 电影平均评分&#10;• movieRatingStddev — 电影评分标准差&#10;• userRatingCount — 用户评分次数&#10;• userAvgRating — 用户平均评分&#10;• userRatingStddev — 用户评分标准差">
+            <rect x="680" y="58" width="370" height="36" rx="6" fill="#1a1e28" stroke="#4da6ff" stroke-width=".8" stroke-opacity=".4"/>
+            <text x="865" y="74" text-anchor="middle" fill="#7a8090" font-size="9" font-family="DM Mono,monospace">releaseYear · movieRatingCnt · movieAvgRating · movieRatingStddev</text>
+            <text x="865" y="87" text-anchor="middle" fill="#7a8090" font-size="9" font-family="DM Mono,monospace">userRatingCnt · userAvgRating · userRatingStddev</text>
+        </g>
+
+        <!-- ── FEATURE PROCESSING: Embedding Nodes ── -->
+
+        <g class="nd" data-tip="将 userGenre1~5 通过 embedding_column 映射为 5 个 10 维稠密向量。&#10;每个 Embedding 矩阵形状: (19, 10)&#10;总输出维度: 5 × 10 = 50 维&#10;→ (batch, 50)">
+            <rect x="35" y="175" width="180" height="36" rx="6" fill="#1a1428" stroke="#9b6dff" stroke-width="1.3"/>
+            <text x="125" y="198" text-anchor="middle" fill="#9b6dff" font-size="11" font-family="DM Mono,monospace">Emb(10) ×5</text>
+        </g>
+
+        <g class="nd" data-tip="将 movieGenre1~3 通过 embedding_column 映射为 3 个 10 维稠密向量。&#10;每个 Embedding 矩阵形状: (19, 10)&#10;总输出维度: 3 × 10 = 30 维&#10;→ (batch, 30)">
+            <rect x="195" y="175" width="180" height="36" rx="6" fill="#1a1428" stroke="#9b6dff" stroke-width="1.3"/>
+            <text x="285" y="198" text-anchor="middle" fill="#9b6dff" font-size="11" font-family="DM Mono,monospace">Emb(10) ×3</text>
+        </g>
+
+        <g class="nd" data-tip="将 movieId 通过 embedding_column 映射为 10 维稠密向量。&#10;Embedding 矩阵形状: (1001, 10)&#10;每个 ID 对应一行可学习的向量。&#10;输出: (batch, 10)">
+            <rect x="360" y="175" width="135" height="36" rx="6" fill="#1a1428" stroke="#9b6dff" stroke-width="1.3"/>
+            <text x="427" y="198" text-anchor="middle" fill="#9b6dff" font-size="11" font-family="DM Mono,monospace">Emb(10)</text>
+        </g>
+
+        <g class="nd" data-tip="将 userId 通过 embedding_column 映射为 10 维稠密向量。&#10;Embedding 矩阵形状: (30001, 10)&#10;每个 ID 对应一行可学习的向量。&#10;输出: (batch, 10)">
+            <rect x="485" y="175" width="135" height="36" rx="6" fill="#1a1428" stroke="#9b6dff" stroke-width="1.3"/>
+            <text x="552" y="198" text-anchor="middle" fill="#9b6dff" font-size="11" font-family="DM Mono,monospace">Emb(10)</text>
+        </g>
+
+        <g class="nd" data-tip="7 个数值特征通过 numeric_column 直接提取。&#10;无需编码或 Embedding，保持原始连续值。&#10;输出: (batch, 7)">
+            <rect x="680" y="175" width="370" height="36" rx="6" fill="#101828" stroke="#4da6ff" stroke-width="1.2"/>
+            <text x="865" y="198" text-anchor="middle" fill="#4da6ff" font-size="11" font-family="DM Mono,monospace">Numeric Column (7 features)</text>
+        </g>
+
+        <!-- Shape annotations -->
+        <text x="125" y="224" text-anchor="middle" fill="#7a7f92" font-size="8" font-family="DM Mono,monospace" opacity=".6">→ (batch, 50)</text>
+        <text x="285" y="224" text-anchor="middle" fill="#7a7f92" font-size="8" font-family="DM Mono,monospace" opacity=".6">→ (batch, 30)</text>
+        <text x="427" y="224" text-anchor="middle" fill="#7a7f92" font-size="8" font-family="DM Mono,monospace" opacity=".6">→ (batch, 10)</text>
+        <text x="552" y="224" text-anchor="middle" fill="#7a7f92" font-size="8" font-family="DM Mono,monospace" opacity=".6">→ (batch, 10)</text>
+        <text x="865" y="224" text-anchor="middle" fill="#7a7f92" font-size="8" font-family="DM Mono,monospace" opacity=".6">→ (batch, 7)</text>
+
+        <!-- Feature type annotations -->
+        <text x="125" y="236" text-anchor="middle" fill="#6b5a90" font-size="8" font-family="DM Mono,monospace" opacity=".5">vocab_list · 19 types</text>
+        <text x="285" y="236" text-anchor="middle" fill="#6b5a90" font-size="8" font-family="DM Mono,monospace" opacity=".5">vocab_list · 19 types</text>
+        <text x="427" y="236" text-anchor="middle" fill="#6b5a90" font-size="8" font-family="DM Mono,monospace" opacity=".5">identity · 0~1000</text>
+        <text x="552" y="236" text-anchor="middle" fill="#6b5a90" font-size="8" font-family="DM Mono,monospace" opacity=".5">identity · 0~30000</text>
+        <text x="865" y="236" text-anchor="middle" fill="#3a80c0" font-size="8" font-family="DM Mono,monospace" opacity=".5">continuous values</text>
+
+        <!-- ── DENSE FEATURES MERGE ── -->
+
+        <g class="nd" data-tip="TensorFlow Feature Column API 的核心层。&#10;将所有特征列拼接为一个稠密向量:&#10;  Embedding: 5×10 + 3×10 + 10 + 10 = 100 维&#10;  Numerical: 7 维&#10;  总计: 107 维&#10;内部自动完成 Embedding 查询和数值拼接。">
+            <rect x="100" y="264" width="900" height="40" rx="8" fill="#1e1a10" stroke="#e0a020" stroke-width="1.5"/>
+            <text x="550" y="283" text-anchor="middle" fill="#e0a020" font-size="12" font-weight="600" font-family="DM Mono,monospace">DenseFeatures (Concatenate All Feature Columns)</text>
+            <text x="550" y="299" text-anchor="middle" fill="#c09818" font-size="9.5" font-family="DM Mono,monospace" opacity=".7">Emb(50) + Emb(30) + Emb(10) + Emb(10) + Num(7) → (batch, 107)</text>
+        </g>
+
+        <!-- ── DNN LAYERS ── -->
+
+        <g class="nd" data-tip="第一层全连接隐藏层: 107 → 128&#10;使用 ReLU 激活函数引入非线性。&#10;将拼接后的特征向量映射为 128 维隐藏表示，&#10;学习输入特征之间的高阶交互模式。&#10;输出: (batch, 128)">
+            <rect x="250" y="340" width="600" height="42" rx="8" fill="#0e1e18" stroke="#3ddc84" stroke-width="1.5"/>
+            <text x="550" y="362" text-anchor="middle" fill="#3ddc84" font-size="13" font-weight="700" font-family="DM Mono,monospace">Dense (128, ReLU)</text>
+            <text x="550" y="376" text-anchor="middle" fill="#2aaa60" font-size="9.5" font-family="DM Mono,monospace" opacity=".7">→ (batch, 128)</text>
+        </g>
+
+        <g class="nd" data-tip="第二层全连接隐藏层: 128 → 128&#10;进一步提取更抽象的特征组合和非线性模式。&#10;ReLU 激活保持稀疏性，减少过拟合风险。&#10;输出: (batch, 128)">
+            <rect x="250" y="400" width="600" height="42" rx="8" fill="#0e1e18" stroke="#3ddc84" stroke-width="1.5"/>
+            <text x="550" y="422" text-anchor="middle" fill="#3ddc84" font-size="13" font-weight="700" font-family="DM Mono,monospace">Dense (128, ReLU)</text>
+            <text x="550" y="436" text-anchor="middle" fill="#2aaa60" font-size="9.5" font-family="DM Mono,monospace" opacity=".7">→ (batch, 128)</text>
+        </g>
+
+        <!-- ── OUTPUT ── -->
+
+        <g class="nd" data-tip="输出层: 128 → 1&#10;Sigmoid 激活将输出压缩到 [0, 1] 区间。&#10;表示用户对电影给出好评的预测概率。&#10;训练损失: binary_crossentropy&#10;优化器: Adam">
+            <rect x="250" y="510" width="600" height="42" rx="8" fill="#1a1210" stroke="#f0a050" stroke-width="1.5"/>
+            <text x="550" y="532" text-anchor="middle" fill="#f0a050" font-size="13" font-weight="700" font-family="DM Mono,monospace">Dense (1, Sigmoid)</text>
+            <text x="550" y="546" text-anchor="middle" fill="#d0903c" font-size="9.5" font-family="DM Mono,monospace" opacity=".7">→ (batch, 1)</text>
+        </g>
+
+        <g class="nd" data-tip="最终预测: 好评概率 P(goodRating | features)&#10;评估指标: Accuracy, ROC-AUC, PR-AUC&#10;训练配置: Adam + BinaryCrossentropy, 5 epochs">
+            <rect x="310" y="575" width="480" height="42" rx="10" fill="#1e1810" stroke="#f0a050" stroke-width="2" filter="url(#gl)"/>
+            <text x="550" y="601" text-anchor="middle" fill="#f0a050" font-size="14" font-weight="800" font-family="Syne,sans-serif">P ( Good Rating )</text>
+        </g>
+
+        <!-- Decorative glow on output -->
+        <ellipse cx="550" cy="596" rx="200" ry="25" fill="#f0a050" opacity=".04"/>
+
+        <!-- ── ANNOTATIONS ── -->
+
+        <!-- Feature Column API annotation -->
+        <text x="550" y="316" text-anchor="middle" fill="#4a4e5e" font-size="8.5" font-family="DM Mono,monospace" opacity=".5">Feature Column API: embedding_column + numeric_column → DenseFeatures</text>
+
+        <!-- Data flow labels along connections -->
+        <text x="445" y="250" text-anchor="middle" fill="#6b5a90" font-size="8" font-family="DM Mono,monospace" opacity=".45">feature vectors converge</text>
+
+    </svg>
+</div>
+
+<!-- Legend -->
+<div class="leg">
+    <span><i style="background:#5a6070"></i> Input Feature</span>
+    <span><i style="background:#9b6dff"></i> Embedding</span>
+    <span><i style="background:#4da6ff"></i> Numeric Column</span>
+    <span><i style="background:#e0a020"></i> DenseFeatures (Concat)</span>
+    <span><i style="background:#3ddc84"></i> Dense (ReLU)</span>
+    <span><i style="background:#f0a050"></i> Output (Sigmoid)</span>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+    const tip = document.getElementById('tip');
+    document.querySelectorAll('.nd').forEach(g => {
+        const msg = g.getAttribute('data-tip');
+        if (!msg) return;
+        g.style.cursor = 'pointer';
+        g.addEventListener('mouseenter', e => {
+            tip.innerHTML = msg.replace(/&#10;/g, '<br>');
+            tip.classList.add('show');
+        });
+        g.addEventListener('mousemove', e => {
+            tip.style.left = (e.clientX + 16) + 'px';
+            tip.style.top = (e.clientY + 16) + 'px';
+        });
+        g.addEventListener('mouseleave', () => {
+            tip.classList.remove('show');
+        });
+    });
+</script>
+
+</body>
+</html>
