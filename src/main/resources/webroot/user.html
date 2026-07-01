@@ -67,6 +67,21 @@
                     <input type="radio" name="rankModel" value="embmlp" /> EmbeddingMLP
                 </label>
                 <label style="margin-right: 15px; cursor: pointer;">
+                    <input type="radio" name="rankModel" value="widendeep" /> Wide&Deep
+                </label>
+                <label style="margin-right: 15px; cursor: pointer;">
+                    <input type="radio" name="rankModel" value="deepfm" /> DeepFM
+                </label>
+                <label style="margin-right: 15px; cursor: pointer;">
+                    <input type="radio" name="rankModel" value="deepfm_v2" /> DeepFM_v2
+                </label>
+                <label style="margin-right: 15px; cursor: pointer;">
+                    <input type="radio" name="rankModel" value="din" /> DIN
+                </label>
+                <label style="margin-right: 15px; cursor: pointer;">
+                    <input type="radio" name="rankModel" value="dien" /> DIEN
+                </label>
+                <label style="margin-right: 15px; cursor: pointer;">
                     <input type="radio" name="rankModel" value="emb" /> Embedding
                 </label>
                 <label style="cursor: pointer;">
@@ -149,7 +164,12 @@ var model = getQueryString("model",windowLocation);
 if(null == model){
     // model = "emb";
     // model = "nerualcf"
-    model = "embmlp";
+    // model = "embmlp";
+    // model = "widendeep"
+    // model = "deepfm"
+    // model = "deepfm_v2"
+    // model = "din"
+    model = "dien"
 }
 
 var baseUrl = windowLocation.protocol + "//" + windowLocation.host + "/"

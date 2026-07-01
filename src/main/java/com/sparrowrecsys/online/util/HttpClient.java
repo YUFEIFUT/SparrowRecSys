@@ -23,15 +23,13 @@ public class HttpClient {
             return null;
         }
 
-        try {
-            final CloseableHttpAsyncClient client = HttpAsyncClients.createDefault();
+        try (CloseableHttpAsyncClient client = HttpAsyncClients.createDefault()) {
             client.start();
             HttpEntity bodyEntity = new ByteArrayEntity(body.getBytes(StandardCharsets.UTF_8));
             HttpPost request = new HttpPost(host);
             request.setEntity(bodyEntity);
             final Future<HttpResponse> future = client.execute(request, null);
             final HttpResponse response = future.get();
-            client.close();
             return getRespondContent(response);
         }catch (Exception e){
             e.printStackTrace();

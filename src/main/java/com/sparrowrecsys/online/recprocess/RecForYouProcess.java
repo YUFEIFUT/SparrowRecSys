@@ -243,6 +243,21 @@ public class RecForYouProcess {
             case "embmlp":
                 callEmbeddingMLPTFServing(user, candidates, candidateScoreMap);
                 break;
+            case "widendeep":
+                callWideDeepTFServing(user, candidates, candidateScoreMap);
+                break;
+            case "deepfm":
+                callDeepFMTFServing(user, candidates, candidateScoreMap);
+                break;
+            case "deepfm_v2":
+                callDeepFMTFServing(user, candidates, candidateScoreMap, Config.TF_SERVING_DFM_V2_URL);
+                break;
+            case "din":
+                callDINTFServing(user, candidates, candidateScoreMap);
+                break;
+            case "dien":
+                callDIENTFServing(user, candidates, candidateScoreMap);
+                break;
             default:
                 //default ranking in candidate set
                 for (int i = 0 ; i < candidates.size(); i++){
@@ -293,7 +308,7 @@ public class RecForYouProcess {
         //need to confirm the tf serving end point
         // curl -X POST "http://localhost:8501/v1/models/sparrow_ncf:predict" -H "Content-Type: application/json" -d "{\"instances\":[{\"movieId\":223,\"userId\":9077}]}"
         String predictionScores = asyncSinglePostRequest(Config.TF_SERVING_NCF_URL, instancesRoot.toString());
-        System.out.println("send user" + user.getUserId() + " request to tf serving.");
+        System.out.println("send user" + user.getUserId() + " request to NerualCF tf serving.");
 
         JSONObject predictionsObject = new JSONObject(predictionScores);
         JSONArray scores = predictionsObject.getJSONArray("predictions");
@@ -324,7 +339,7 @@ public class RecForYouProcess {
      * @param candidateScoreMap save prediction score into the score map
      */
     public static void callEmbeddingMLPTFServing(User user, List<Movie> candidates, HashMap<Movie, Double> candidateScoreMap){
-        if (null == user || null == candidates || candidates.size() == 0){
+        if (null == user || null == candidates || candidates.isEmpty()){
             return;
         }
 
@@ -343,25 +358,26 @@ public class RecForYouProcess {
             JSONObject instance = new JSONObject();
 
             // --- Movie features (from Redis mf:movieId) ---
+            // EmbeddingMLP_tf220: numeric fillna(0), genre fillna('None')
             instance.put("movieId", new JSONArray().put(m.getMovieId()));
-            instance.put("releaseYear", new JSONArray().put(Double.parseDouble(mf.getOrDefault("releaseYear", "0"))));
-            instance.put("movieRatingCount", new JSONArray().put(Double.parseDouble(mf.getOrDefault("movieRatingCount", "0"))));
-            instance.put("movieAvgRating", new JSONArray().put(Double.parseDouble(mf.getOrDefault("movieAvgRating", "0"))));
-            instance.put("movieRatingStddev", new JSONArray().put(Double.parseDouble(mf.getOrDefault("movieRatingStddev", "0"))));
-            instance.put("movieGenre1", new JSONArray().put(mf.getOrDefault("movieGenre1", "None")));
-            instance.put("movieGenre2", new JSONArray().put(mf.getOrDefault("movieGenre2", "None")));
-            instance.put("movieGenre3", new JSONArray().put(mf.getOrDefault("movieGenre3", "None")));
+            instance.put("releaseYear", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("releaseYear")))));
+            instance.put("movieRatingCount", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("movieRatingCount")))));
+            instance.put("movieAvgRating", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("movieAvgRating")))));
+            instance.put("movieRatingStddev", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("movieRatingStddev")))));
+            instance.put("movieGenre1", new JSONArray().put(safeGenre(mf.get("movieGenre1"), "None")));
+            instance.put("movieGenre2", new JSONArray().put(safeGenre(mf.get("movieGenre2"), "None")));
+            instance.put("movieGenre3", new JSONArray().put(safeGenre(mf.get("movieGenre3"), "None")));
 
             // --- User features (from Redis uf:userId) ---
             instance.put("userId", new JSONArray().put(user.getUserId()));
-            instance.put("userRatingCount", new JSONArray().put(Double.parseDouble(uf.getOrDefault("userRatingCount", "0"))));
-            instance.put("userAvgRating", new JSONArray().put(Double.parseDouble(uf.getOrDefault("userAvgRating", "0"))));
-            instance.put("userRatingStddev", new JSONArray().put(Double.parseDouble(uf.getOrDefault("userRatingStddev", "0"))));
-            instance.put("userGenre1", new JSONArray().put(uf.getOrDefault("userGenre1", "None")));
-            instance.put("userGenre2", new JSONArray().put(uf.getOrDefault("userGenre2", "None")));
-            instance.put("userGenre3", new JSONArray().put(uf.getOrDefault("userGenre3", "None")));
-            instance.put("userGenre4", new JSONArray().put(uf.getOrDefault("userGenre4", "None")));
-            instance.put("userGenre5", new JSONArray().put(uf.getOrDefault("userGenre5", "None")));
+            instance.put("userRatingCount", new JSONArray().put(Double.parseDouble(safeNumeric(uf.get("userRatingCount")))));
+            instance.put("userAvgRating", new JSONArray().put(Double.parseDouble(safeNumeric(uf.get("userAvgRating")))));
+            instance.put("userRatingStddev", new JSONArray().put(Double.parseDouble(safeNumeric(uf.get("userRatingStddev")))));
+            instance.put("userGenre1", new JSONArray().put(safeGenre(uf.get("userGenre1"), "None")));
+            instance.put("userGenre2", new JSONArray().put(safeGenre(uf.get("userGenre2"), "None")));
+            instance.put("userGenre3", new JSONArray().put(safeGenre(uf.get("userGenre3"), "None")));
+            instance.put("userGenre4", new JSONArray().put(safeGenre(uf.get("userGenre4"), "None")));
+            instance.put("userGenre5", new JSONArray().put(safeGenre(uf.get("userGenre5"), "None")));
 
             instances.put(instance);
             validCandidates.add(m);
@@ -382,5 +398,330 @@ public class RecForYouProcess {
         for (int i = 0; i < validCandidates.size(); i++){
             candidateScoreMap.put(validCandidates.get(i), scores.getJSONArray(i).getDouble(0));
         }
+    }
+
+    /**
+     * call TensorFlow Serving to get the Wide & Deep model inference result.
+     * <p>
+     * Wide & Deep has one more feature than EmbeddingMLP: userRatedMovie1 (the user's most recent rated movie).
+     * <p>
+     * Features (all from Redis, wrapped in single-element arrays):
+     * <pre>
+     *   movieId, releaseYear, movieRatingCount, movieAvgRating, movieRatingStddev,
+     *   movieGenre1..3,
+     *   userId, userRatingCount, userAvgRating, userRatingStddev,
+     *   userGenre1..5, userRatedMovie1
+     * </pre>
+     *
+     * @param user              input user
+     * @param candidates        candidate movies
+     * @param candidateScoreMap save prediction score into the score map
+     */
+    public static void callWideDeepTFServing(User user, List<Movie> candidates, HashMap<Movie, Double> candidateScoreMap){
+        if (null == user || null == candidates || candidates.isEmpty()){
+            return;
+        }
+
+        Map<String, String> uf = user.getUserFeatures();
+
+        JSONArray instances = new JSONArray();
+        List<Movie> validCandidates = new ArrayList<>();
+        for (Movie m : candidates){
+            Map<String, String> mf = m.getMovieFeatures();
+            if (null == mf || null == uf){
+                continue;
+            }
+
+            JSONObject instance = new JSONObject();
+
+            // WideNDeep_tf220: na_value="0" → genre empty → "0", numeric empty → 0
+            // --- Movie features (from Redis mf:movieId) ---
+            instance.put("movieId", new JSONArray().put(m.getMovieId()));
+            instance.put("releaseYear", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("releaseYear")))));
+            instance.put("movieRatingCount", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("movieRatingCount")))));
+            instance.put("movieAvgRating", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("movieAvgRating")))));
+            instance.put("movieRatingStddev", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("movieRatingStddev")))));
+            instance.put("movieGenre1", new JSONArray().put(safeGenre(mf.get("movieGenre1"), "0")));
+            instance.put("movieGenre2", new JSONArray().put(safeGenre(mf.get("movieGenre2"), "0")));
+            instance.put("movieGenre3", new JSONArray().put(safeGenre(mf.get("movieGenre3"), "0")));
+
+            // --- User features (from Redis uf:userId) ---
+            instance.put("userId", new JSONArray().put(user.getUserId()));
+            instance.put("userRatingCount", new JSONArray().put(Double.parseDouble(safeNumeric(uf.get("userRatingCount")))));
+            instance.put("userAvgRating", new JSONArray().put(Double.parseDouble(safeNumeric(uf.get("userAvgRating")))));
+            instance.put("userRatingStddev", new JSONArray().put(Double.parseDouble(safeNumeric(uf.get("userRatingStddev")))));
+            instance.put("userGenre1", new JSONArray().put(safeGenre(uf.get("userGenre1"), "0")));
+            instance.put("userGenre2", new JSONArray().put(safeGenre(uf.get("userGenre2"), "0")));
+            instance.put("userGenre3", new JSONArray().put(safeGenre(uf.get("userGenre3"), "0")));
+            instance.put("userGenre4", new JSONArray().put(safeGenre(uf.get("userGenre4"), "0")));
+            instance.put("userGenre5", new JSONArray().put(safeGenre(uf.get("userGenre5"), "0")));
+            instance.put("userRatedMovie1", new JSONArray().put(Integer.parseInt(safeNumeric(uf.get("userRatedMovie1")))));
+
+            instances.put(instance);
+            validCandidates.add(m);
+        }
+
+        if (instances.isEmpty()){
+            return;
+        }
+
+        JSONObject requestBody = new JSONObject();
+        requestBody.put("instances", instances);
+
+        String predictionScores = asyncSinglePostRequest(Config.TF_SERVING_WD_URL, requestBody.toString());
+        System.out.println("send user" + user.getUserId() + " request to Wide&Deep tf serving.");
+
+        JSONObject predictionsObject = new JSONObject(predictionScores);
+        JSONArray scores = predictionsObject.getJSONArray("predictions");
+        for (int i = 0; i < validCandidates.size(); i++){
+            candidateScoreMap.put(validCandidates.get(i), scores.getJSONArray(i).getDouble(0));
+        }
+    }
+
+    /**
+     * call TensorFlow Serving to get the DeepFM model inference result.
+     * <p>
+     * DeepFM uses fewer features than EmbeddingMLP/Wide&Deep:
+     * only one genre per side (userGenre1, movieGenre1) instead of five/three.
+     * <p>
+     * Features (all from Redis, wrapped in single-element arrays):
+     * <pre>
+     *   movieId, releaseYear, movieRatingCount, movieAvgRating, movieRatingStddev,
+     *   movieGenre1,
+     *   userId, userRatingCount, userAvgRating, userRatingStddev,
+     *   userGenre1
+     * </pre>
+     *
+     * @param user              input user
+     * @param candidates        candidate movies
+     * @param candidateScoreMap save prediction score into the score map
+     */
+    public static void callDeepFMTFServing(User user, List<Movie> candidates, HashMap<Movie, Double> candidateScoreMap){
+        callDeepFMTFServing(user, candidates, candidateScoreMap, Config.TF_SERVING_DFM_URL);
+    }
+
+    public static void callDeepFMTFServing(User user, List<Movie> candidates, HashMap<Movie, Double> candidateScoreMap, String tfServingUrl){
+        if (null == user || null == candidates || candidates.isEmpty()){
+            return;
+        }
+
+        Map<String, String> uf = user.getUserFeatures();
+
+        JSONArray instances = new JSONArray();
+        List<Movie> validCandidates = new ArrayList<>();
+        for (Movie m : candidates){
+            Map<String, String> mf = m.getMovieFeatures();
+            if (null == mf || null == uf){
+                continue;
+            }
+
+            JSONObject instance = new JSONObject();
+
+            // DeepFM_tf220: na_value="0" → genre empty → "0", numeric empty → 0
+            // --- Movie features (from Redis mf:movieId) ---
+            instance.put("movieId", new JSONArray().put(m.getMovieId()));
+            instance.put("releaseYear", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("releaseYear")))));
+            instance.put("movieRatingCount", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("movieRatingCount")))));
+            instance.put("movieAvgRating", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("movieAvgRating")))));
+            instance.put("movieRatingStddev", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("movieRatingStddev")))));
+            instance.put("movieGenre1", new JSONArray().put(safeGenre(mf.get("movieGenre1"), "0")));
+
+            // --- User features (from Redis uf:userId) ---
+            instance.put("userId", new JSONArray().put(user.getUserId()));
+            instance.put("userRatingCount", new JSONArray().put(Double.parseDouble(safeNumeric(uf.get("userRatingCount")))));
+            instance.put("userAvgRating", new JSONArray().put(Double.parseDouble(safeNumeric(uf.get("userAvgRating")))));
+            instance.put("userRatingStddev", new JSONArray().put(Double.parseDouble(safeNumeric(uf.get("userRatingStddev")))));
+            instance.put("userGenre1", new JSONArray().put(safeGenre(uf.get("userGenre1"), "0")));
+
+            instances.put(instance);
+            validCandidates.add(m);
+        }
+
+        if (instances.isEmpty()){
+            return;
+        }
+
+        JSONObject requestBody = new JSONObject();
+        requestBody.put("instances", instances);
+
+        String predictionScores = asyncSinglePostRequest(tfServingUrl, requestBody.toString());
+        System.out.println("send user" + user.getUserId() + " request to DeepFM tf serving.");
+
+        JSONObject predictionsObject = new JSONObject(predictionScores);
+        JSONArray scores = predictionsObject.getJSONArray("predictions");
+        for (int i = 0; i < validCandidates.size(); i++){
+            candidateScoreMap.put(validCandidates.get(i), scores.getJSONArray(i).getDouble(0));
+        }
+    }
+
+    /**
+     * call TensorFlow Serving to get the DIN model inference result.
+     * <p>
+     * DIN extends DeepFM by adding user behavior sequence (userRatedMovie1~5),
+     * which the attention mechanism uses to model user interest w.r.t. the candidate movie.
+     * <p>
+     * Features (all from Redis, wrapped in single-element arrays):
+     * <pre>
+     *   movieId, releaseYear, movieRatingCount, movieAvgRating, movieRatingStddev,
+     *   movieGenre1,
+     *   userId, userRatingCount, userAvgRating, userRatingStddev,
+     *   userGenre1, userRatedMovie1..5
+     * </pre>
+     *
+     * @param user              input user
+     * @param candidates        candidate movies
+     * @param candidateScoreMap save prediction score into the score map
+     */
+    public static void callDINTFServing(User user, List<Movie> candidates, HashMap<Movie, Double> candidateScoreMap){
+        if (null == user || null == candidates || candidates.isEmpty()){
+            return;
+        }
+
+        Map<String, String> uf = user.getUserFeatures();
+
+        JSONArray instances = new JSONArray();
+        List<Movie> validCandidates = new ArrayList<>();
+        for (Movie m : candidates){
+            Map<String, String> mf = m.getMovieFeatures();
+            if (null == mf || null == uf){
+                continue;
+            }
+
+            JSONObject instance = new JSONObject();
+
+            // DIN_tf220: na_value="0" → genre empty → "0", numeric empty → 0
+            // --- Movie features (from Redis mf:movieId) ---
+            instance.put("movieId", new JSONArray().put(m.getMovieId()));
+            instance.put("releaseYear", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("releaseYear")))));
+            instance.put("movieRatingCount", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("movieRatingCount")))));
+            instance.put("movieAvgRating", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("movieAvgRating")))));
+            instance.put("movieRatingStddev", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("movieRatingStddev")))));
+            instance.put("movieGenre1", new JSONArray().put(safeGenre(mf.get("movieGenre1"), "0")));
+
+            // --- User features (from Redis uf:userId) ---
+            instance.put("userId", new JSONArray().put(user.getUserId()));
+            instance.put("userRatingCount", new JSONArray().put(Double.parseDouble(safeNumeric(uf.get("userRatingCount")))));
+            instance.put("userAvgRating", new JSONArray().put(Double.parseDouble(safeNumeric(uf.get("userAvgRating")))));
+            instance.put("userRatingStddev", new JSONArray().put(Double.parseDouble(safeNumeric(uf.get("userRatingStddev")))));
+            instance.put("userGenre1", new JSONArray().put(safeGenre(uf.get("userGenre1"), "0")));
+            // User behavior sequence for DIN attention mechanism
+            instance.put("userRatedMovie1", new JSONArray().put(Integer.parseInt(safeNumeric(uf.get("userRatedMovie1")))));
+            instance.put("userRatedMovie2", new JSONArray().put(Integer.parseInt(safeNumeric(uf.get("userRatedMovie2")))));
+            instance.put("userRatedMovie3", new JSONArray().put(Integer.parseInt(safeNumeric(uf.get("userRatedMovie3")))));
+            instance.put("userRatedMovie4", new JSONArray().put(Integer.parseInt(safeNumeric(uf.get("userRatedMovie4")))));
+            instance.put("userRatedMovie5", new JSONArray().put(Integer.parseInt(safeNumeric(uf.get("userRatedMovie5")))));
+
+            instances.put(instance);
+            validCandidates.add(m);
+        }
+
+        if (instances.isEmpty()){
+            return;
+        }
+
+        JSONObject requestBody = new JSONObject();
+        requestBody.put("instances", instances);
+
+        String predictionScores = asyncSinglePostRequest(Config.TF_SERVING_DIN_URL, requestBody.toString());
+        System.out.println("send user" + user.getUserId() + " request to DIN tf serving.");
+
+        JSONObject predictionsObject = new JSONObject(predictionScores);
+        JSONArray scores = predictionsObject.getJSONArray("predictions");
+        for (int i = 0; i < validCandidates.size(); i++){
+            candidateScoreMap.put(validCandidates.get(i), scores.getJSONArray(i).getDouble(0));
+        }
+    }
+
+    /**
+     * call TensorFlow Serving to get the DIEN model inference result.
+     * <p>
+     * DIEN extends DIN by adding auxiliary negative samples (negative_userRatedMovie2~5)
+     * for the GRU auxiliary loss during training. At serving time these are filled with 0
+     * as placeholders since auxiliary loss is not computed during inference.
+     * <p>
+     * Features (all from Redis, wrapped in single-element arrays):
+     * <pre>
+     *   movieId, releaseYear, movieRatingCount, movieAvgRating, movieRatingStddev,
+     *   movieGenre1,
+     *   userId, userRatingCount, userAvgRating, userRatingStddev,
+     *   userGenre1, userRatedMovie1..5,
+     *   negative_userRatedMovie2..5
+     * </pre>
+     *
+     * @param user              input user
+     * @param candidates        candidate movies
+     * @param candidateScoreMap save prediction score into the score map
+     */
+    public static void callDIENTFServing(User user, List<Movie> candidates, HashMap<Movie, Double> candidateScoreMap){
+        if (null == user || null == candidates || candidates.isEmpty()){
+            return;
+        }
+
+        Map<String, String> uf = user.getUserFeatures();
+
+        JSONArray instances = new JSONArray();
+        List<Movie> validCandidates = new ArrayList<>();
+        for (Movie m : candidates){
+            Map<String, String> mf = m.getMovieFeatures();
+            if (null == mf || null == uf){
+                continue;
+            }
+
+            JSONObject instance = new JSONObject();
+
+            // DIEN_tf220: fillna(0) → genre empty → "0", numeric empty → 0
+            // --- Movie features (from Redis mf:movieId) ---
+            instance.put("movieId", new JSONArray().put(m.getMovieId()));
+            instance.put("releaseYear", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("releaseYear")))));
+            instance.put("movieRatingCount", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("movieRatingCount")))));
+            instance.put("movieAvgRating", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("movieAvgRating")))));
+            instance.put("movieRatingStddev", new JSONArray().put(Double.parseDouble(safeNumeric(mf.get("movieRatingStddev")))));
+            instance.put("movieGenre1", new JSONArray().put(safeGenre(mf.get("movieGenre1"), "0")));
+
+            // --- User features (from Redis uf:userId) ---
+            instance.put("userId", new JSONArray().put(user.getUserId()));
+            instance.put("userRatingCount", new JSONArray().put(Double.parseDouble(safeNumeric(uf.get("userRatingCount")))));
+            instance.put("userAvgRating", new JSONArray().put(Double.parseDouble(safeNumeric(uf.get("userAvgRating")))));
+            instance.put("userRatingStddev", new JSONArray().put(Double.parseDouble(safeNumeric(uf.get("userRatingStddev")))));
+            instance.put("userGenre1", new JSONArray().put(safeGenre(uf.get("userGenre1"), "0")));
+            // User behavior sequence
+            instance.put("userRatedMovie1", new JSONArray().put(Integer.parseInt(safeNumeric(uf.get("userRatedMovie1")))));
+            instance.put("userRatedMovie2", new JSONArray().put(Integer.parseInt(safeNumeric(uf.get("userRatedMovie2")))));
+            instance.put("userRatedMovie3", new JSONArray().put(Integer.parseInt(safeNumeric(uf.get("userRatedMovie3")))));
+            instance.put("userRatedMovie4", new JSONArray().put(Integer.parseInt(safeNumeric(uf.get("userRatedMovie4")))));
+            instance.put("userRatedMovie5", new JSONArray().put(Integer.parseInt(safeNumeric(uf.get("userRatedMovie5")))));
+            // Negative samples: placeholders for GRU auxiliary loss (not used at inference time)
+            instance.put("negative_userRatedMovie2", new JSONArray().put(0));
+            instance.put("negative_userRatedMovie3", new JSONArray().put(0));
+            instance.put("negative_userRatedMovie4", new JSONArray().put(0));
+            instance.put("negative_userRatedMovie5", new JSONArray().put(0));
+
+            instances.put(instance);
+            validCandidates.add(m);
+        }
+
+        if (instances.isEmpty()){
+            return;
+        }
+
+        JSONObject requestBody = new JSONObject();
+        requestBody.put("instances", instances);
+
+        String predictionScores = asyncSinglePostRequest(Config.TF_SERVING_DIEN_URL, requestBody.toString());
+        System.out.println("send user" + user.getUserId() + " request to DIEN tf serving.");
+
+        JSONObject predictionsObject = new JSONObject(predictionScores);
+        JSONArray scores = predictionsObject.getJSONArray("predictions");
+        for (int i = 0; i < validCandidates.size(); i++){
+            candidateScoreMap.put(validCandidates.get(i), scores.getJSONArray(i).getDouble(0));
+        }
+    }
+
+    private static String safeGenre(String value, String defaultVal){
+        return (value == null || value.isEmpty()) ? defaultVal : value;
+    }
+
+    private static String safeNumeric(String value){
+        return (value == null || value.isEmpty()) ? "0" : value;
     }
 }
